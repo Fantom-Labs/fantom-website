@@ -88,6 +88,10 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  .glass {
+    @apply bg-white/10 backdrop-blur-lg border-b border-white/20;
+  }
 }
 
 @layer base {
