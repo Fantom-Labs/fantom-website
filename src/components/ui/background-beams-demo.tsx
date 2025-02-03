@@ -16,9 +16,11 @@ function BackgroundBeamsDemo() {
             <a href="#" className="text-sm font-medium text-white/80 hover:text-blue-500 transition-colors">Contato</a>
           </div>
         </div>
-        <Button className="bg-[#0033FF] hover:bg-[#0029CC] text-white px-6 rounded-full">
-          Fale com a Fantom
-        </Button>
+        <div className="flex justify-center">
+          <Button className="bg-[#0033FF] hover:bg-[#0029CC] text-white px-6 rounded-full">
+            Fale com a Fantom
+          </Button>
+        </div>
       </nav>
 
       <div className="max-w-2xl mx-auto p-4">
@@ -30,9 +32,11 @@ function BackgroundBeamsDemo() {
           <p className="text-white/60 max-w-lg mx-auto my-4 text-sm md:text-base">
             Criamos experiências digitais que impulsionam negócios por meio de estratégia, design e tecnologia.
           </p>
-          <Button className="bg-[#0033FF] hover:bg-[#0029CC] text-white px-8 py-6 text-lg mt-6 rounded-full">
-            Fale com a Fantom
-          </Button>
+          <div className="flex justify-center">
+            <Button className="bg-[#0033FF] hover:bg-[#0029CC] text-white px-8 py-6 text-lg mt-6 rounded-full">
+              Fale com a Fantom
+            </Button>
+          </div>
         </div>
       </div>
       <BackgroundBeams />
