@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 
 function BackgroundBeamsDemo() {
   return (
-    <div className="h-[40rem] w-full rounded-md bg-[#000033] relative flex flex-col items-center justify-center antialiased">
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-black/20 backdrop-blur-sm border-b border-white/10">
+    <div className="h-[40rem] w-full rounded-md bg-background relative flex flex-col items-center justify-center antialiased">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 glass">
         <div className="flex items-center gap-4">
           <img src="/lovable-uploads/e7304a40-916b-49b5-9a92-2fa7927dfe98.png" alt="Fantom Logo" className="h-8" />
           <div className="hidden md:flex gap-6 ml-8">
@@ -24,8 +24,8 @@ function BackgroundBeamsDemo() {
       <div className="max-w-2xl mx-auto p-4">
         <div className="relative z-10 text-center">
           <h1 className="text-4xl md:text-7xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-[#0033FF] via-[#0033FF] to-[#0029CC] bg-clip-text text-transparent">Eleve</span> seu negócio<br />
-            e escale no digital
+            <span className="bg-gradient-to-r from-[#0033FF] via-[#0033FF] to-[#0029CC] bg-clip-text text-transparent">Eleve seu negócio</span><br />
+            <span className="bg-gradient-to-r from-[#0033FF] via-[#0033FF] to-[#0029CC] bg-clip-text text-transparent">e escale no digital</span>
           </h1>
           <p className="text-white/60 max-w-lg mx-auto my-4 text-sm md:text-base">
             Criamos experiências digitais que impulsionam negócios por meio de estratégia, design e tecnologia.
