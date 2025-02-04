@@ -10,6 +10,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { RevealImageList } from "@/components/ui/reveal-images";
+import InteractiveBentoGallery from "@/components/blocks/interactive-bento-gallery";
 
 const testimonials = [
   {
@@ -36,6 +37,41 @@ const testimonials = [
     },
     text: "Melhor decisão que tomamos foi trabalhar com a Fantom. Nossa conversão aumentou 150% após o redesign do site.",
   }
+];
+
+const mediaItems = [
+  {
+    id: 1,
+    type: "image",
+    title: "Design Digital",
+    desc: "Criação de interfaces modernas",
+    url: "https://images.unsplash.com/photo-1512295767273-ac109ac3acfa?w=200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
+    span: "md:col-span-1 md:row-span-3 sm:col-span-1 sm:row-span-2",
+  },
+  {
+    id: 2,
+    type: "image",
+    title: "Desenvolvimento Web",
+    desc: "Sites e aplicações web",
+    url: "https://images.unsplash.com/photo-1587440871875-191322ee64b0?w=200&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
+    span: "md:col-span-2 md:row-span-2 col-span-1 sm:col-span-2 sm:row-span-2",
+  },
+  {
+    id: 3,
+    type: "image",
+    title: "Marketing Digital",
+    desc: "Estratégias de crescimento",
+    url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e",
+    span: "md:col-span-1 md:row-span-3 sm:col-span-2 sm:row-span-2",
+  },
+  {
+    id: 4,
+    type: "image",
+    title: "SEO",
+    desc: "Otimização para buscadores",
+    url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+    span: "md:col-span-2 md:row-span-2 sm:col-span-1 sm:row-span-2",
+  },
 ];
 
 function BackgroundBeamsDemo() {
@@ -155,7 +191,16 @@ function BackgroundBeamsDemo() {
       </div>
 
       <div className="w-full relative py-20">
-        <RevealImageList />
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 px-4">
+          <RevealImageList />
+          <div className="w-full h-full">
+            <InteractiveBentoGallery
+              mediaItems={mediaItems}
+              title="Nossos Projetos"
+              description="Explore nossa galeria de cases de sucesso"
+            />
+          </div>
+        </div>
       </div>
 
       <TestimonialsSection
