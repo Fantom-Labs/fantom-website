@@ -124,8 +124,8 @@ function BackgroundBeamsDemo() {
         <BackgroundBeams />
       </div>
 
-      <div className="w-full bg-gradient-to-b from-[#000B2F] to-[#000614] py-20">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 px-4">
+      <div className="w-full glass border-y border-white/10">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 px-4 py-20">
           <div className="text-center">
             <h3 className="text-5xl font-bold text-white mb-2">+5</h3>
             <p className="text-white/60 text-sm">Projetos em<br />mais de 5 países</p>
