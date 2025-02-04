@@ -2,7 +2,7 @@
 import React from "react";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Menu, X } from "lucide-react";
+import { ArrowUpRight, Menu } from "lucide-react";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import {
   Sheet,
@@ -46,11 +46,14 @@ function BackgroundBeamsDemo() {
     <>
       <div className="h-[40rem] w-full rounded-md bg-neutral-950 relative flex flex-col items-center justify-center antialiased">
         <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 glass">
-          <div className="flex items-center gap-4">
-            <img src="/lovable-uploads/e7304a40-916b-49b5-9a92-2fa7927dfe98.png" alt="Fantom Logo" className="h-8" />
-            
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex gap-6 ml-8">
+          {/* Logo */}
+          <div className="flex-shrink-0">
+            <img src="/lovable-uploads/1d056377-00cb-4002-9af8-d368246a5452.png" alt="Fantom Logo" className="h-8" />
+          </div>
+
+          {/* Desktop Navigation - Centered */}
+          <div className="hidden md:flex items-center justify-center flex-grow">
+            <div className="flex gap-8">
               <a href="#" className="text-sm font-medium text-white/80 hover:text-blue-500 transition-colors">Home</a>
               <a href="#" className="text-sm font-medium text-white/80 hover:text-blue-500 transition-colors">Sobre</a>
               <a href="#" className="text-sm font-medium text-white/80 hover:text-blue-500 transition-colors">Serviços</a>
