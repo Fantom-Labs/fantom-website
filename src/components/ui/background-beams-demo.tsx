@@ -2,8 +2,13 @@
 import React from "react";
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Menu, X } from "lucide-react";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const testimonials = [
   {
@@ -35,12 +40,16 @@ const testimonials = [
 ];
 
 function BackgroundBeamsDemo() {
+  const [isOpen, setIsOpen] = React.useState(false);
+
   return (
     <>
       <div className="h-[40rem] w-full rounded-md bg-neutral-950 relative flex flex-col items-center justify-center antialiased">
         <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 glass">
           <div className="flex items-center gap-4">
             <img src="/lovable-uploads/e7304a40-916b-49b5-9a92-2fa7927dfe98.png" alt="Fantom Logo" className="h-8" />
+            
+            {/* Desktop Navigation */}
             <div className="hidden md:flex gap-6 ml-8">
               <a href="#" className="text-sm font-medium text-white/80 hover:text-blue-500 transition-colors">Home</a>
               <a href="#" className="text-sm font-medium text-white/80 hover:text-blue-500 transition-colors">Sobre</a>
@@ -48,13 +57,41 @@ function BackgroundBeamsDemo() {
               <a href="#" className="text-sm font-medium text-white/80 hover:text-blue-500 transition-colors">Contato</a>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Desktop Buttons */}
+          <div className="hidden md:flex items-center gap-2">
             <Button className="bg-[#4B3BFF] hover:bg-[#3F32D9] text-white px-6 rounded-full">
               Fale com a Fantom
             </Button>
             <Button className="bg-[#4B3BFF] hover:bg-[#3F32D9] text-white aspect-square w-10 h-10 p-0 rounded-full">
               <ArrowUpRight className="w-5 h-5" />
             </Button>
+          </div>
+
+          {/* Mobile Menu */}
+          <div className="md:hidden">
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-white">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] bg-neutral-950 border-neutral-800">
+                <div className="flex flex-col gap-8 mt-8">
+                  <div className="flex flex-col gap-4">
+                    <a href="#" className="text-lg font-medium text-white/80 hover:text-blue-500 transition-colors">Home</a>
+                    <a href="#" className="text-lg font-medium text-white/80 hover:text-blue-500 transition-colors">Sobre</a>
+                    <a href="#" className="text-lg font-medium text-white/80 hover:text-blue-500 transition-colors">Serviços</a>
+                    <a href="#" className="text-lg font-medium text-white/80 hover:text-blue-500 transition-colors">Contato</a>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <Button className="bg-[#4B3BFF] hover:bg-[#3F32D9] text-white w-full rounded-full">
+                      Fale com a Fantom
+                    </Button>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </nav>
 
