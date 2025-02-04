@@ -18,6 +18,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Satoshi', 'sans-serif'],
+      },
       maxWidth: {
         container: "1280px",
       },
