@@ -9,6 +9,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { RevealImageList } from "@/components/ui/reveal-images";
 
 const testimonials = [
   {
@@ -151,6 +152,10 @@ function BackgroundBeamsDemo() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="w-full relative py-20">
+        <RevealImageList />
       </div>
 
       <TestimonialsSection
