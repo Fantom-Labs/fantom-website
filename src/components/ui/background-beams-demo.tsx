@@ -48,30 +48,33 @@ function BackgroundBeamsDemo() {
               <a href="#" className="text-sm font-medium text-white/80 hover:text-blue-500 transition-colors">Contato</a>
             </div>
           </div>
-          <div className="flex justify-center">
-            <Button className="bg-[#0033FF] hover:bg-[#0029CC] text-white px-6 rounded-full">
+          <div className="flex items-center gap-2">
+            <Button className="bg-[#4B3BFF] hover:bg-[#3F32D9] text-white px-6 rounded-full">
               Fale com a Fantom
+            </Button>
+            <Button className="bg-[#4B3BFF] hover:bg-[#3F32D9] text-white p-2 rounded-full">
+              <ArrowUpRight className="w-5 h-5" />
             </Button>
           </div>
         </nav>
 
         <div className="max-w-2xl mx-auto p-4">
           <div className="relative z-10 text-center">
-            <div className="bg-white/10 text-white text-sm py-1 px-3 rounded-full inline-flex items-center mb-4">
+            <div className="bg-black/30 backdrop-blur-md text-white text-sm py-2 px-4 rounded-full inline-flex items-center mb-6">
               Fantom Web
             </div>
             <h1 className="text-4xl md:text-[56px] font-bold mb-4 leading-tight">
               <span className="bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#0029FF] bg-clip-text text-transparent">Eleve seu negócio</span><br />
               <span className="bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#0029FF] bg-clip-text text-transparent">e escale no digital</span>
             </h1>
-            <p className="text-white/60 max-w-lg mx-auto my-4 text-sm md:text-base">
+            <p className="text-white/60 max-w-lg mx-auto my-6 text-sm md:text-base">
               Criamos experiências digitais que impulsionam negócios por meio de estratégia, design e tecnologia.
             </p>
-            <div className="flex justify-center gap-4 items-center">
-              <Button className="bg-[#0033FF] hover:bg-[#0029CC] text-white px-8 py-6 text-lg rounded-full">
+            <div className="flex justify-center items-center gap-4">
+              <Button className="bg-[#4B3BFF] hover:bg-[#3F32D9] text-white px-8 py-6 text-lg rounded-full">
                 Fale com a Fantom
               </Button>
-              <Button className="bg-[#0033FF] hover:bg-[#0029CC] text-white p-3 rounded-full">
+              <Button className="bg-[#4B3BFF] hover:bg-[#3F32D9] text-white p-3 rounded-full">
                 <ArrowUpRight className="w-6 h-6" />
               </Button>
             </div>
