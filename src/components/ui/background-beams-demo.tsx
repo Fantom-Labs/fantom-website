@@ -124,23 +124,33 @@ function BackgroundBeamsDemo() {
         <BackgroundBeams />
       </div>
 
-      <div className="w-full glass border-y border-white/10">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 px-4 py-20">
-          <div className="text-center">
-            <h3 className="text-5xl font-bold text-white mb-2">+5</h3>
-            <p className="text-white/60 text-sm">Projetos em<br />mais de 5 países</p>
-          </div>
-          <div className="text-center">
-            <h3 className="text-5xl font-bold text-white mb-2">10M</h3>
-            <p className="text-white/60 text-sm">Faturados para<br />nossos clientes</p>
-          </div>
-          <div className="text-center">
-            <h3 className="text-5xl font-bold text-white mb-2">+100</h3>
-            <p className="text-white/60 text-sm">Projetos<br />desenvolvido</p>
-          </div>
-          <div className="text-center">
-            <h3 className="text-5xl font-bold text-white mb-2">90%</h3>
-            <p className="text-white/60 text-sm">mais eficiência<br />com IA</p>
+      <div className="w-full relative">
+        <div 
+          className="absolute inset-0 w-full h-full"
+          style={{
+            backgroundImage: "url('/lovable-uploads/b6feb9f9-dac0-4da7-96e4-8e6c80da9005.png')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+        <div className="w-full glass border-y border-white/10 relative z-10">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 px-4 py-20">
+            <div className="text-center">
+              <h3 className="text-5xl font-bold text-white mb-2">+5</h3>
+              <p className="text-white/60 text-sm">Projetos em<br />mais de 5 países</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-5xl font-bold text-white mb-2">10M</h3>
+              <p className="text-white/60 text-sm">Faturados para<br />nossos clientes</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-5xl font-bold text-white mb-2">+100</h3>
+              <p className="text-white/60 text-sm">Projetos<br />desenvolvido</p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-5xl font-bold text-white mb-2">90%</h3>
+              <p className="text-white/60 text-sm">mais eficiência<br />com IA</p>
+            </div>
           </div>
         </div>
       </div>
