@@ -25,7 +25,7 @@ function BackgroundBeamsDemo() {
 
       <div className="max-w-2xl mx-auto p-4">
         <div className="relative z-10 text-center">
-          <h1 className="text-5xl md:text-[64px] font-bold mb-4 leading-tight">
+          <h1 className="text-4xl md:text-[56px] font-bold mb-4 leading-tight">
             <span className="bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#0029FF] bg-clip-text text-transparent">Eleve seu negócio</span><br />
             <span className="bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#0029FF] bg-clip-text text-transparent">e escale no digital</span>
           </h1>
