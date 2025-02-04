@@ -13,29 +13,24 @@ import {
 const testimonials = [
   {
     author: {
-      name: "Emma Thompson",
-      handle: "@emmaai",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face"
+      name: "Ana Silva",
+      handle: "@anasilvadesign",
     },
-    text: "Using this AI platform has transformed how we handle data analysis. The speed and accuracy are unprecedented.",
-    href: "https://twitter.com/emmaai"
+    text: "A Fantom transformou completamente a presença digital da nossa empresa. O design é impecável e os resultados são extraordinários.",
   },
   {
     author: {
-      name: "David Park",
-      handle: "@davidtech",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+      name: "Ricardo Santos",
+      handle: "@ricardoweb",
     },
-    text: "The API integration is flawless. We've reduced our development time by 60% since implementing this solution.",
-    href: "https://twitter.com/davidtech"
+    text: "Profissionalismo e criatividade em cada projeto. A equipe da Fantom entende exatamente o que precisamos.",
   },
   {
     author: {
-      name: "Sofia Rodriguez",
-      handle: "@sofiaml",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face"
+      name: "Mariana Oliveira",
+      handle: "@maridesigner",
     },
-    text: "Finally, an AI tool that actually understands context! The accuracy in natural language processing is impressive."
+    text: "Melhor decisão que tomamos foi trabalhar com a Fantom. Nossa conversão aumentou 150% após o redesign do site.",
   }
 ];
 
@@ -156,8 +151,8 @@ function BackgroundBeamsDemo() {
       </div>
 
       <TestimonialsSection
-        title="Trusted by developers worldwide"
-        description="Join thousands of developers who are already building the future with our AI platform"
+        title="O que nossos clientes dizem"
+        description="Conheça as histórias de sucesso de quem já transformou seu negócio com a Fantom"
         testimonials={testimonials}
       />
     </>
