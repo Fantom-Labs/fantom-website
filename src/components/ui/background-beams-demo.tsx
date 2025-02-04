@@ -15,6 +15,7 @@ const testimonials = [
     author: {
       name: "Ana Silva",
       handle: "@anasilvadesign",
+      avatar: "/placeholder.svg"
     },
     text: "A Fantom transformou completamente a presença digital da nossa empresa. O design é impecável e os resultados são extraordinários.",
   },
@@ -22,6 +23,7 @@ const testimonials = [
     author: {
       name: "Ricardo Santos",
       handle: "@ricardoweb",
+      avatar: "/placeholder.svg"
     },
     text: "Profissionalismo e criatividade em cada projeto. A equipe da Fantom entende exatamente o que precisamos.",
   },
@@ -29,6 +31,7 @@ const testimonials = [
     author: {
       name: "Mariana Oliveira",
       handle: "@maridesigner",
+      avatar: "/placeholder.svg"
     },
     text: "Melhor decisão que tomamos foi trabalhar com a Fantom. Nossa conversão aumentou 150% após o redesign do site.",
   }
