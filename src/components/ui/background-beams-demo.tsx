@@ -100,7 +100,7 @@ function BackgroundBeamsDemo() {
 
         <div className="max-w-2xl mx-auto p-4">
           <div className="relative z-10 text-center">
-            <div className="bg-[#020202] text-white text-sm py-3 px-6 rounded-[127px] inline-flex items-center gap-2 mb-6">
+            <div className="bg-[#020202]/10 backdrop-blur-[2px] text-white text-sm py-3 px-6 rounded-[127px] inline-flex items-center gap-2 mb-6 border border-[#3B3D41]">
               <div className="w-4 h-4 bg-white rounded-full"></div>
               Fantom Web
             </div>
