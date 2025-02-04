@@ -71,7 +71,7 @@
 }
 
 .glass {
-  @apply bg-black/20 backdrop-blur-[120px] border-b border-white/10;
+  @apply bg-black/20 backdrop-blur-[80px] border-b border-white/10;
 }
 
 @font-face {
