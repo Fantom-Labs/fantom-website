@@ -35,8 +35,34 @@ const Index = () => {
       <div className="fixed inset-0 -z-10">
         <SquaresDemo />
       </div>
+      
+      {/* Barra de navegação fixa */}
+      <header className="fixed top-0 left-0 right-0 z-50 glass">
+        <nav className="container mx-auto px-4 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8">
+              <img src="/placeholder.svg" alt="Fantom Logo" className="h-full w-full" />
+            </div>
+            <span className="font-medium">Fantom</span>
+          </div>
+          
+          <div className="flex items-center gap-8">
+            <a href="#" className="text-sm text-gray-300 hover:text-white">Home</a>
+            <a href="#" className="text-sm text-gray-300 hover:text-white">Sobre</a>
+            <a href="#" className="text-sm text-gray-300 hover:text-white">Serviços</a>
+            <a href="#" className="text-sm text-gray-300 hover:text-white">Portfolio</a>
+            <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-full hover:bg-blue-700">
+              Fale com a Fantom
+              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
+          </div>
+        </nav>
+      </header>
+
       <div className="relative z-10">
-        <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center">
+        <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center pt-20">
           <div className="inline-flex items-center justify-center px-4 py-1.5 mb-8 text-sm border rounded-full border-white/20 gap-2 bg-white/5 backdrop-blur">
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
             Fantom Web
