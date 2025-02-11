@@ -1,5 +1,4 @@
 
-import { FlickeringGridDemo } from "@/components/ui/flickering-grid-demo";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu } from "lucide-react";
@@ -38,10 +37,6 @@ const Index = () => {
 
   return (
     <div className="relative min-h-screen">
-      <div className="fixed inset-0 -z-10">
-        <FlickeringGridDemo />
-      </div>
-      
       {/* Barra de navegação fixa */}
       <header className="fixed top-0 left-0 right-0 z-50 glass">
         <nav className="container mx-auto px-4 h-20 flex items-center justify-between">
