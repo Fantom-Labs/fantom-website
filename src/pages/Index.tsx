@@ -1,10 +1,8 @@
-import { BackgroundBeamsDemo } from "@/components/ui/background-beams-demo";
 
 const Index = () => {
   return (
-    <>
-      <BackgroundBeamsDemo />
-    </>
+    <div className="relative min-h-screen">
+    </div>
   );
 };
 
