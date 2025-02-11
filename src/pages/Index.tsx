@@ -1,5 +1,4 @@
 
-import { SquaresDemo } from "@/components/ui/squares-demo";
 import InteractiveBentoGallery from "@/components/blocks/interactive-bento-gallery";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 
@@ -63,10 +62,6 @@ const Index = () => {
 
   return (
     <div className="relative min-h-screen">
-      <div className="fixed inset-0 -z-10">
-        <SquaresDemo />
-      </div>
-      
       <div className="relative z-10">
         <div className="container mx-auto px-4 py-24">
           <InteractiveBentoGallery
