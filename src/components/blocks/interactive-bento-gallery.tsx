@@ -91,7 +91,7 @@ const MediaItem = ({ item, className, onClick }: { item: MediaItemType, classNam
     // Render either a video or image based on item.type
     if (item.type === 'video') {
         return (
-            <div className={`${className} relative overflow-hidden`}>
+            <div className={`${className} relative overflow-hidden rounded-lg`}>
                 <video
                     ref={videoRef}
                     className="w-full h-full object-cover"
@@ -122,7 +122,7 @@ const MediaItem = ({ item, className, onClick }: { item: MediaItemType, classNam
         <img
             src={item.url} // Image source URL
             alt={item.title} // Alt text for the image
-            className={`${className} object-cover cursor-pointer`} // Style the image
+            className={`${className} object-cover cursor-pointer rounded-lg`} // Style the image
             onClick={onClick} // Trigger onClick when the image is clicked
             loading="lazy" // Lazy load the image for performance
             decoding="async" // Decode the image asynchronously
@@ -345,7 +345,7 @@ const InteractiveBentoGallery: React.FC<InteractiveBentoGalleryProps> = ({ media
                             <motion.div
                                 key={item.id}
                                 layoutId={`media-${item.id}`}
-                                className={`relative overflow-hidden rounded-xl cursor-move ${item.span}`}
+                                className={`relative overflow-hidden rounded-lg cursor-move ${item.span}`}
                                 onClick={() => !isDragging && setSelectedItem(item)}
                                 variants={{
                                     hidden: { y: 50, scale: 0.9, opacity: 0 },
@@ -393,7 +393,7 @@ const InteractiveBentoGallery: React.FC<InteractiveBentoGalleryProps> = ({ media
                                     transition={{ duration: 0.2 }}
                                 >
                                     <div className="absolute inset-0 flex flex-col justify-end p-2 sm:p-3 md:p-4">
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg" />
                                         <h3 className="relative text-white text-xs sm:text-sm md:text-base font-medium line-clamp-1">
                                             {item.title}
                                         </h3>
