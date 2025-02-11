@@ -1,8 +1,8 @@
-
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu } from "lucide-react";
 import { useState } from "react";
+import { HoverButton } from "@/components/ui/hover-button";
 
 const testimonials = [
   {
@@ -78,12 +78,9 @@ const Index = () => {
               <a href="#" className="text-sm text-gray-300 hover:text-white">Sobre</a>
               <a href="#" className="text-sm text-gray-300 hover:text-white">Serviços</a>
               <a href="#" className="text-sm text-gray-300 hover:text-white">Portfolio</a>
-              <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-full hover:bg-blue-700">
+              <HoverButton>
                 Fale com a Fantom
-                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </button>
+              </HoverButton>
             </div>
           )}
         </nav>
@@ -103,12 +100,9 @@ const Index = () => {
             Criamos experiências digitais que impulsionam negócios<br />
             por meio de estratégia, design e tecnologia.
           </p>
-          <button className="inline-flex items-center px-6 py-3 text-sm font-medium text-white transition-colors bg-blue-600 rounded-full hover:bg-blue-700">
+          <HoverButton>
             Fale com a Fantom
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </button>
+          </HoverButton>
         </div>
 
         <div className="relative py-24" style={{
