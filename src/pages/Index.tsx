@@ -1,10 +1,10 @@
 
-import { BackgroundBeamsDemo } from "@/components/ui/background-beams-demo";
+import { SquaresDemo } from "@/components/ui/squares-demo";
 
 const Index = () => {
   return (
     <div className="relative min-h-screen">
-      <BackgroundBeamsDemo />
+      <SquaresDemo />
     </div>
   );
 };
