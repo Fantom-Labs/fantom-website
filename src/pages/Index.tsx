@@ -1,5 +1,9 @@
+
 import { SquaresDemo } from "@/components/ui/squares-demo";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Menu } from "lucide-react";
+import { useState } from "react";
 
 const testimonials = [
   {
@@ -29,6 +33,9 @@ const testimonials = [
 ];
 
 const Index = () => {
+  const isMobile = useIsMobile();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
     <div className="relative min-h-screen">
       <div className="fixed inset-0 -z-10">
@@ -45,18 +52,41 @@ const Index = () => {
             <span className="font-medium">Fantom</span>
           </div>
           
-          <div className="flex items-center gap-8">
-            <a href="#" className="text-sm text-gray-300 hover:text-white">Home</a>
-            <a href="#" className="text-sm text-gray-300 hover:text-white">Sobre</a>
-            <a href="#" className="text-sm text-gray-300 hover:text-white">Serviços</a>
-            <a href="#" className="text-sm text-gray-300 hover:text-white">Portfolio</a>
-            <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-full hover:bg-blue-700">
-              Fale com a Fantom
-              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </button>
-          </div>
+          {isMobile ? (
+            <div className="relative">
+              <button 
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 text-gray-300 hover:text-white"
+              >
+                <Menu size={24} />
+              </button>
+              
+              {isMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-black/90 backdrop-blur-lg rounded-lg shadow-lg">
+                  <a href="#" className="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+                  <a href="#" className="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10">Sobre</a>
+                  <a href="#" className="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10">Serviços</a>
+                  <a href="#" className="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10">Portfolio</a>
+                  <a href="#" className="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10">
+                    Fale com a Fantom
+                  </a>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-8">
+              <a href="#" className="text-sm text-gray-300 hover:text-white">Home</a>
+              <a href="#" className="text-sm text-gray-300 hover:text-white">Sobre</a>
+              <a href="#" className="text-sm text-gray-300 hover:text-white">Serviços</a>
+              <a href="#" className="text-sm text-gray-300 hover:text-white">Portfolio</a>
+              <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-full hover:bg-blue-700">
+                Fale com a Fantom
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </button>
+            </div>
+          )}
         </nav>
       </header>
 
@@ -66,7 +96,7 @@ const Index = () => {
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
             Fantom Web
           </div>
-          <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#0029FF] bg-clip-text text-transparent bg-[size:200%_200%] animate-gradient">
+          <h1 className="text-[56px] font-bold mb-6 bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#0029FF] bg-clip-text text-transparent bg-[size:200%_200%] animate-gradient leading-[120%]">
             Eleve seu negócio<br />
             e escale no digital
           </h1>
