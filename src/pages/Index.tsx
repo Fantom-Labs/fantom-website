@@ -8,7 +8,7 @@ const Index = () => {
     {
       author: {
         name: "John Doe",
-        title: "CEO at TechCorp",
+        handle: "CEO at TechCorp", // Changed title to handle as per TestimonialAuthor type
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=1"
       },
       text: "Amazing work! Exceeded our expectations.",
@@ -17,7 +17,7 @@ const Index = () => {
     {
       author: {
         name: "Jane Smith",
-        title: "Designer at CreativeCo",
+        handle: "Designer at CreativeCo", // Changed title to handle
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2"
       },
       text: "Professional and creative team. Great results!",
@@ -26,7 +26,7 @@ const Index = () => {
     {
       author: {
         name: "Mike Johnson",
-        title: "Founder of StartupX",
+        handle: "Founder of StartupX", // Changed title to handle
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=3"
       },
       text: "Fantastic experience working with them.",
@@ -36,7 +36,7 @@ const Index = () => {
 
   const mediaItems = [
     {
-      id: "1",
+      id: 1, // Changed from string to number
       type: "image",
       title: "Nossa História",
       desc: "Uma jornada de inovação e sucesso",
@@ -44,7 +44,7 @@ const Index = () => {
       span: "row-span-2 col-span-2"
     },
     {
-      id: "2",
+      id: 2, // Changed from string to number
       type: "image",
       title: "Nosso Time",
       desc: "Uma equipe dedicada e talentosa",
@@ -52,7 +52,7 @@ const Index = () => {
       span: "row-span-1"
     },
     {
-      id: "3",
+      id: 3, // Changed from string to number
       type: "image",
       title: "Nossos Projetos",
       desc: "Soluções que transformam negócios",
