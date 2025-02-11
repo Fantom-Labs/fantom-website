@@ -11,7 +11,7 @@ interface SquaresProps {
 }
 
 export function Squares({
-  direction = "up",
+  direction = "right",
   speed = 1,
   borderColor = "#333",
   squareSize = 40,
@@ -35,6 +35,7 @@ export function Squares({
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    // Set canvas background
     canvas.style.background = "#060606"
 
     const resizeCanvas = () => {
@@ -43,6 +44,9 @@ export function Squares({
       numSquaresX.current = Math.ceil(canvas.width / squareSize) + 1
       numSquaresY.current = Math.ceil(canvas.height / squareSize) + 1
     }
+
+    window.addEventListener("resize", resizeCanvas)
+    resizeCanvas()
 
     const drawGrid = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -57,32 +61,20 @@ export function Squares({
           const squareX = x - (gridOffset.current.x % squareSize)
           const squareY = y - (gridOffset.current.y % squareSize)
 
-          const currentSquareX = Math.floor((x - startX) / squareSize)
-          const currentSquareY = Math.floor((y - startY) / squareSize)
-
           if (
             hoveredSquare &&
-            currentSquareX === hoveredSquare.x &&
-            currentSquareY === hoveredSquare.y
+            Math.floor((x - startX) / squareSize) === hoveredSquare.x &&
+            Math.floor((y - startY) / squareSize) === hoveredSquare.y
           ) {
-            // Efeito de hover
             ctx.fillStyle = hoverFillColor
             ctx.fillRect(squareX, squareY, squareSize, squareSize)
-            
-            // Efeito de brilho
-            ctx.shadowColor = "#ffffff"
-            ctx.shadowBlur = 15
-            ctx.strokeStyle = "#ffffff"
-            ctx.strokeRect(squareX, squareY, squareSize, squareSize)
-            ctx.shadowBlur = 0
-          } else {
-            ctx.strokeStyle = borderColor
-            ctx.strokeRect(squareX, squareY, squareSize, squareSize)
           }
+
+          ctx.strokeStyle = borderColor
+          ctx.strokeRect(squareX, squareY, squareSize, squareSize)
         }
       }
 
-      // Adiciona gradiente radial
       const gradient = ctx.createRadialGradient(
         canvas.width / 2,
         canvas.height / 2,
@@ -103,20 +95,26 @@ export function Squares({
 
       switch (direction) {
         case "right":
-          gridOffset.current.x = (gridOffset.current.x - effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.x =
+            (gridOffset.current.x - effectiveSpeed + squareSize) % squareSize
           break
         case "left":
-          gridOffset.current.x = (gridOffset.current.x + effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.x =
+            (gridOffset.current.x + effectiveSpeed + squareSize) % squareSize
           break
         case "up":
-          gridOffset.current.y = (gridOffset.current.y + effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.y =
+            (gridOffset.current.y + effectiveSpeed + squareSize) % squareSize
           break
         case "down":
-          gridOffset.current.y = (gridOffset.current.y - effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.y =
+            (gridOffset.current.y - effectiveSpeed + squareSize) % squareSize
           break
         case "diagonal":
-          gridOffset.current.x = (gridOffset.current.x - effectiveSpeed + squareSize) % squareSize
-          gridOffset.current.y = (gridOffset.current.y - effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.x =
+            (gridOffset.current.x - effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.y =
+            (gridOffset.current.y - effectiveSpeed + squareSize) % squareSize
           break
       }
 
@@ -129,9 +127,15 @@ export function Squares({
       const mouseX = event.clientX - rect.left
       const mouseY = event.clientY - rect.top
 
-      // Calcula a posição do quadrado baseado na posição atual do mouse
-      const hoveredSquareX = Math.floor(mouseX / squareSize)
-      const hoveredSquareY = Math.floor(mouseY / squareSize)
+      const startX = Math.floor(gridOffset.current.x / squareSize) * squareSize
+      const startY = Math.floor(gridOffset.current.y / squareSize) * squareSize
+
+      const hoveredSquareX = Math.floor(
+        (mouseX + gridOffset.current.x - startX) / squareSize,
+      )
+      const hoveredSquareY = Math.floor(
+        (mouseY + gridOffset.current.y - startY) / squareSize,
+      )
 
       setHoveredSquare({ x: hoveredSquareX, y: hoveredSquareY })
     }
@@ -140,13 +144,16 @@ export function Squares({
       setHoveredSquare(null)
     }
 
+    // Event listeners
     window.addEventListener("resize", resizeCanvas)
     canvas.addEventListener("mousemove", handleMouseMove)
     canvas.addEventListener("mouseleave", handleMouseLeave)
 
+    // Initial setup
     resizeCanvas()
     requestRef.current = requestAnimationFrame(updateAnimation)
 
+    // Cleanup
     return () => {
       window.removeEventListener("resize", resizeCanvas)
       canvas.removeEventListener("mousemove", handleMouseMove)
