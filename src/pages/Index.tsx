@@ -82,7 +82,12 @@ const Index = () => {
           </button>
         </div>
 
-        <div className="relative bg-gradient-to-b from-blue-950/80 to-blue-900/80 backdrop-blur-sm py-24">
+        <div className="relative py-24" style={{
+          backgroundImage: 'url("/lovable-uploads/29bb302c-78b2-40d7-905d-a0d12232521d.png")',
+          backgroundPosition: 'center',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat'
+        }}>
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
               <div>
