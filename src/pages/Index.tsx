@@ -47,9 +47,13 @@ const Index = () => {
         <nav className="container mx-auto px-4 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8">
-              <img src="/placeholder.svg" alt="Fantom Logo" className="h-full w-full" />
+              <img 
+                src="/lovable-uploads/6407fbb5-1dae-4ac0-b67c-c288ac7df83c.png" 
+                alt="Fantom Logo" 
+                className="h-full w-full object-contain" 
+              />
             </div>
-            <span className="font-medium">Fantom</span>
+            <span className="font-clash font-medium">Fantom</span>
           </div>
           
           {isMobile ? (
