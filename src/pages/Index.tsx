@@ -53,7 +53,7 @@ const Index = () => {
                 className="h-full w-full object-contain" 
               />
             </div>
-            <span className="font-clash font-medium">Fantom</span>
+            <span className="font-clash font-light">Fantom</span>
           </div>
           
           {isMobile ? (
