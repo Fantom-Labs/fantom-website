@@ -11,7 +11,7 @@ interface SquaresProps {
 }
 
 export function Squares({
-  direction = "right",
+  direction = "up",
   speed = 1,
   borderColor = "#333",
   squareSize = 40,
@@ -61,6 +61,7 @@ export function Squares({
           const squareX = x - (gridOffset.current.x % squareSize)
           const squareY = y - (gridOffset.current.y % squareSize)
 
+          // Adiciona efeito de hover
           if (
             hoveredSquare &&
             Math.floor((x - startX) / squareSize) === hoveredSquare.x &&
@@ -68,10 +69,17 @@ export function Squares({
           ) {
             ctx.fillStyle = hoverFillColor
             ctx.fillRect(squareX, squareY, squareSize, squareSize)
+            
+            // Adiciona um efeito de brilho
+            ctx.shadowColor = "#ffffff"
+            ctx.shadowBlur = 15
+            ctx.strokeStyle = "#ffffff"
+            ctx.strokeRect(squareX, squareY, squareSize, squareSize)
+            ctx.shadowBlur = 0
+          } else {
+            ctx.strokeStyle = borderColor
+            ctx.strokeRect(squareX, squareY, squareSize, squareSize)
           }
-
-          ctx.strokeStyle = borderColor
-          ctx.strokeRect(squareX, squareY, squareSize, squareSize)
         }
       }
 
@@ -95,26 +103,20 @@ export function Squares({
 
       switch (direction) {
         case "right":
-          gridOffset.current.x =
-            (gridOffset.current.x - effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.x = (gridOffset.current.x - effectiveSpeed + squareSize) % squareSize
           break
         case "left":
-          gridOffset.current.x =
-            (gridOffset.current.x + effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.x = (gridOffset.current.x + effectiveSpeed + squareSize) % squareSize
           break
         case "up":
-          gridOffset.current.y =
-            (gridOffset.current.y + effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.y = (gridOffset.current.y + effectiveSpeed + squareSize) % squareSize
           break
         case "down":
-          gridOffset.current.y =
-            (gridOffset.current.y - effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.y = (gridOffset.current.y - effectiveSpeed + squareSize) % squareSize
           break
         case "diagonal":
-          gridOffset.current.x =
-            (gridOffset.current.x - effectiveSpeed + squareSize) % squareSize
-          gridOffset.current.y =
-            (gridOffset.current.y - effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.x = (gridOffset.current.x - effectiveSpeed + squareSize) % squareSize
+          gridOffset.current.y = (gridOffset.current.y - effectiveSpeed + squareSize) % squareSize
           break
       }
 
