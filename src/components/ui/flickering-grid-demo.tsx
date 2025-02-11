@@ -9,7 +9,7 @@ export function FlickeringGridDemo() {
         squareSize={4}
         gridGap={6}
         color="#6B7280"
-        maxOpacity={0.5}
+        maxOpacity={0.7}
         flickerChance={0.1}
       />
     </div>
