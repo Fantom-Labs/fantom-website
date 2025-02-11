@@ -79,9 +79,9 @@ export default {
           to: { transform: "translateX(calc(-100% - var(--gap)))" },
         },
         gradient: {
-          '0%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
-          '100%': { backgroundPosition: '0% 50%' },
+          '0%': { backgroundPosition: '50% 100%' },
+          '50%': { backgroundPosition: '50% 0%' },
+          '100%': { backgroundPosition: '50% 100%' },
         },
       },
       animation: {
