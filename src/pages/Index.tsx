@@ -1,4 +1,3 @@
-
 import { SquaresDemo } from "@/components/ui/squares-demo";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -125,15 +124,15 @@ const Index = () => {
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
               <div>
-                <div className="text-4xl font-bold text-blue-500 mb-2">250+</div>
+                <div className="text-4xl font-bold text-white mb-2">250+</div>
                 <div className="text-gray-400">Projetos Entregues</div>
               </div>
               <div>
-                <div className="text-4xl font-bold text-blue-500 mb-2">95%</div>
+                <div className="text-4xl font-bold text-white mb-2">95%</div>
                 <div className="text-gray-400">Clientes Satisfeitos</div>
               </div>
               <div>
-                <div className="text-4xl font-bold text-blue-500 mb-2">10+</div>
+                <div className="text-4xl font-bold text-white mb-2">10+</div>
                 <div className="text-gray-400">Anos de Experiência</div>
               </div>
             </div>
