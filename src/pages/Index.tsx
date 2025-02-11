@@ -1,5 +1,6 @@
 
 import { SquaresDemo } from "@/components/ui/squares-demo";
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu";
 
 const Index = () => {
   return (
@@ -7,6 +8,76 @@ const Index = () => {
       <div className="fixed inset-0 -z-10">
         <SquaresDemo />
       </div>
+      <header className="fixed top-0 left-0 right-0 z-50">
+        <nav className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="text-xl font-bold">Fantom Web</div>
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Sobre</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[400px] gap-3 p-4">
+                      <li className="p-2">
+                        <NavigationMenuLink asChild>
+                          <a href="#" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                            <div className="text-sm font-medium leading-none">História</div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              Conheça nossa trajetória
+                            </p>
+                          </a>
+                        </NavigationMenuLink>
+                      </li>
+                      <li className="p-2">
+                        <NavigationMenuLink asChild>
+                          <a href="#" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                            <div className="text-sm font-medium leading-none">Equipe</div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              Conheça nosso time
+                            </p>
+                          </a>
+                        </NavigationMenuLink>
+                      </li>
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Serviços</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[400px] gap-3 p-4">
+                      <li className="p-2">
+                        <NavigationMenuLink asChild>
+                          <a href="#" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                            <div className="text-sm font-medium leading-none">Web Design</div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              Criação de sites e aplicações web
+                            </p>
+                          </a>
+                        </NavigationMenuLink>
+                      </li>
+                      <li className="p-2">
+                        <NavigationMenuLink asChild>
+                          <a href="#" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                            <div className="text-sm font-medium leading-none">Marketing Digital</div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              Estratégias para crescimento online
+                            </p>
+                          </a>
+                        </NavigationMenuLink>
+                      </li>
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50" href="#">
+                    Contato
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
+          </div>
+        </nav>
+      </header>
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 text-center">
         <div className="inline-flex items-center justify-center px-4 py-1.5 mb-8 text-sm border rounded-full border-white/20 gap-2 bg-white/5 backdrop-blur">
           <span className="w-2 h-2 rounded-full bg-blue-500"></span>
