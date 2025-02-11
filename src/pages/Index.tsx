@@ -67,7 +67,7 @@ const Index = () => {
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
             Fantom Web
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#0029FF] bg-clip-text text-transparent bg-[size:200%_200%] animate-gradient leading-[120%]">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#0029FF] bg-clip-text text-transparent bg-[size:200%_200%] animate-gradient leading-[120%]">
             Eleve seu negócio<br />
             e escale no digital
           </h1>
