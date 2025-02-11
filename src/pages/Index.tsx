@@ -1,3 +1,4 @@
+
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu } from "lucide-react";
@@ -87,7 +88,15 @@ const Index = () => {
       </header>
 
       <div className="relative z-10">
-        <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center pt-20">
+        <div 
+          className="flex flex-col items-center justify-center min-h-screen px-4 text-center pt-20"
+          style={{
+            backgroundImage: 'url("/lovable-uploads/2f19b172-8a31-46a1-ad9d-9b46f1873fda.png")',
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
           <div className="inline-flex items-center justify-center px-4 py-1.5 mb-8 text-sm border rounded-full border-white/20 gap-2 bg-white/5 backdrop-blur">
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
             Fantom Web
