@@ -1,7 +1,7 @@
 
 import { SquaresDemo } from "@/components/ui/squares-demo";
 import { BackgroundBeamsDemo } from "@/components/ui/background-beams-demo";
-import { InteractiveBentoGallery } from "@/components/blocks/interactive-bento-gallery";
+import InteractiveBentoGallery from "@/components/blocks/interactive-bento-gallery";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 
 const Index = () => {
