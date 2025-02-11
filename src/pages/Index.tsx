@@ -1,4 +1,5 @@
-import { SquaresDemo } from "@/components/ui/squares-demo";
+
+import { FlickeringGridDemo } from "@/components/ui/flickering-grid-demo";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu } from "lucide-react";
@@ -38,7 +39,7 @@ const Index = () => {
   return (
     <div className="relative min-h-screen">
       <div className="fixed inset-0 -z-10">
-        <SquaresDemo />
+        <FlickeringGridDemo />
       </div>
       
       {/* Barra de navegação fixa */}
@@ -52,7 +53,7 @@ const Index = () => {
                 className="h-full w-full object-contain" 
               />
             </div>
-            <span className="font-clash font-light">Fantom</span>
+            <span className="font-clash font-light tracking-[0.1em]">Fantom</span>
           </div>
           
           {isMobile ? (
