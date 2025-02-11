@@ -31,15 +31,15 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-grow">
-        <BackgroundBeamsDemo />
+    <div className="min-h-screen">
+      <BackgroundBeamsDemo />
+      <div className="relative">
+        <InteractiveBentoGallery 
+          mediaItems={mediaItems}
+          title="Our Gallery"
+          description="Explore our collection of amazing images"
+        />
       </div>
-      <InteractiveBentoGallery 
-        mediaItems={mediaItems}
-        title="Our Gallery"
-        description="Explore our collection of amazing images"
-      />
     </div>
   );
 };
