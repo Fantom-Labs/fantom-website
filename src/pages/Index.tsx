@@ -1,4 +1,3 @@
-
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu } from "lucide-react";
@@ -114,13 +113,8 @@ const Index = () => {
           </HoverButton>
         </div>
 
-        <div className="relative py-24" style={{
-          backgroundImage: 'url("/lovable-uploads/29bb302c-78b2-40d7-905d-a0d12232521d.png")',
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
-          backgroundRepeat: 'no-repeat'
-        }}>
-          <div className="container mx-auto px-4">
+        <div className="relative glass">
+          <div className="relative py-24 container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
               <div>
                 <div className="text-4xl font-bold text-white mb-2">250+</div>
@@ -150,4 +144,3 @@ const Index = () => {
 };
 
 export default Index;
-
