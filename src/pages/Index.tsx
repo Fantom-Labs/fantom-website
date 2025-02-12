@@ -1,3 +1,4 @@
+
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu } from "lucide-react";
@@ -37,6 +38,17 @@ const Index = () => {
 
   return (
     <div className="relative min-h-screen">
+      {/* Background do hero section */}
+      <div 
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: 'url("/lovable-uploads/71e29b4a-32ac-4ba9-b4f3-317df46ef9f0.png")',
+          backgroundPosition: 'center',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat'
+        }}
+      />
+
       {/* Barra de navegação fixa */}
       <header className="fixed top-0 left-0 right-0 z-50 glass">
         <nav className="container mx-auto px-4 h-20 flex items-center justify-between">
@@ -87,15 +99,7 @@ const Index = () => {
       </header>
 
       <div className="relative z-10">
-        <div 
-          className="flex flex-col items-center justify-center min-h-screen px-4 text-center pt-20"
-          style={{
-            backgroundImage: 'url("/lovable-uploads/71e29b4a-32ac-4ba9-b4f3-317df46ef9f0.png")',
-            backgroundPosition: 'center',
-            backgroundSize: 'cover',
-            backgroundRepeat: 'no-repeat'
-          }}
-        >
+        <div className="flex flex-col items-center justify-center min-h-screen px-4 text-center pt-20">
           <div className="inline-flex items-center justify-center px-4 py-1.5 mb-8 text-sm border rounded-full border-white/20 gap-2 bg-white/5 backdrop-blur">
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
             Fantom Web
