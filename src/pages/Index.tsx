@@ -1,3 +1,4 @@
+
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu } from "lucide-react";
@@ -9,7 +10,7 @@ const testimonials = [
     author: {
       name: "João Silva",
       handle: "@joaosilva",
-      avatar: "/lovable-uploads/photo-1581091226825-a6a2a5aee158"
+      avatar: "/lovable-uploads/29bb302c-78b2-40d7-905d-a0d12232521d.png"
     },
     text: "Fantástico trabalho! A equipe da Fantom Web foi extremamente profissional e entregou além das expectativas."
   },
@@ -17,7 +18,7 @@ const testimonials = [
     author: {
       name: "Maria Santos",
       handle: "@mariasantos",
-      avatar: "/lovable-uploads/photo-1581091226825-a6a2a5aee158"
+      avatar: "/lovable-uploads/1d056377-00cb-4002-9af8-d368246a5452.png"
     },
     text: "Transformaram completamente nossa presença digital. Resultados impressionantes!"
   },
@@ -25,7 +26,7 @@ const testimonials = [
     author: {
       name: "Pedro Oliveira",
       handle: "@pedrooliveira",
-      avatar: "/lovable-uploads/photo-1581092795360-fd1ca04f0952"
+      avatar: "/lovable-uploads/689653a3-b9fc-47f4-a78e-11c9414a67a3.png"
     },
     text: "Melhor investimento que fizemos para nossa empresa. Profissionais altamente qualificados."
   }
