@@ -101,7 +101,12 @@ const Index = () => {
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
             Fantom Web
           </div>
-          <div className="relative max-w-3xl scale-115 mx-auto px-10 py-12 rounded-xl bg-black/30 backdrop-blur-sm shadow-[0_0_20px_rgba(0,0,0,0.3)] before:content-[''] before:absolute before:inset-0 before:p-[2px] before:rounded-xl before:bg-gradient-to-r before:from-[#0033FF]/30 before:via-transparent before:to-[#0033FF]/30 before:-z-10">
+          <div className="relative max-w-3xl scale-115 mx-auto px-10 py-12 rounded-xl bg-black/30 backdrop-blur-sm shadow-[0_0_20px_rgba(0,0,0,0.3)]" style={{
+            backgroundImage: 'linear-gradient(45deg, transparent 0%, transparent calc(50% - 1px), #0033FF20 50%, transparent calc(50% + 1px), transparent 100%)',
+            backgroundSize: '100% 100%',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}>
             <h1 className="text-[48px] md:text-[56px] font-bold mb-6 bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#7F92F3] bg-clip-text text-transparent bg-[size:200%_200%] animate-gradient leading-[120%]">
               Eleve seu negócio<br />
               e escale no digital
