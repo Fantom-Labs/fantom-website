@@ -1,4 +1,3 @@
-
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu } from "lucide-react";
@@ -10,7 +9,7 @@ const testimonials = [
     author: {
       name: "João Silva",
       handle: "@joaosilva",
-      avatar: "/placeholder.svg"
+      avatar: "/lovable-uploads/photo-1581091226825-a6a2a5aee158"
     },
     text: "Fantástico trabalho! A equipe da Fantom Web foi extremamente profissional e entregou além das expectativas."
   },
@@ -18,7 +17,7 @@ const testimonials = [
     author: {
       name: "Maria Santos",
       handle: "@mariasantos",
-      avatar: "/placeholder.svg"
+      avatar: "/lovable-uploads/photo-1581091226825-a6a2a5aee158"
     },
     text: "Transformaram completamente nossa presença digital. Resultados impressionantes!"
   },
@@ -26,7 +25,7 @@ const testimonials = [
     author: {
       name: "Pedro Oliveira",
       handle: "@pedrooliveira",
-      avatar: "/placeholder.svg"
+      avatar: "/lovable-uploads/photo-1581092795360-fd1ca04f0952"
     },
     text: "Melhor investimento que fizemos para nossa empresa. Profissionais altamente qualificados."
   }
@@ -38,14 +37,15 @@ const Index = () => {
 
   return (
     <div className="relative min-h-screen">
-      {/* Background do hero section */}
+      {/* Background do hero section e stats */}
       <div 
-        className="fixed top-0 left-0 right-0 h-[calc(100vh-10rem)] z-0"
+        className="fixed top-0 left-0 right-0 h-[calc(100vh+10rem)] z-0"
         style={{
           backgroundImage: 'url("/lovable-uploads/71e29b4a-32ac-4ba9-b4f3-317df46ef9f0.png")',
           backgroundPosition: 'center',
           backgroundSize: 'cover',
-          backgroundRepeat: 'no-repeat'
+          backgroundRepeat: 'no-repeat',
+          maxHeight: 'calc(100vh + 10rem)'
         }}
       />
 
@@ -136,12 +136,14 @@ const Index = () => {
           </div>
         </div>
 
-        <TestimonialsSection
-          title="O que nossos clientes dizem"
-          description="Depoimentos de clientes que transformaram seus negócios com a Fantom Web"
-          testimonials={testimonials}
-          className="bg-black/50 backdrop-blur-sm"
-        />
+        <div className="relative bg-black">
+          <TestimonialsSection
+            title="O que nossos clientes dizem"
+            description="Depoimentos de clientes que transformaram seus negócios com a Fantom Web"
+            testimonials={testimonials}
+            className="bg-black/50 backdrop-blur-sm"
+          />
+        </div>
       </div>
     </div>
   );
