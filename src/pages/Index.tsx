@@ -101,14 +101,16 @@ const Index = () => {
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
             Fantom Web
           </div>
-          <h1 className="text-[56px] font-bold mb-6 bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#0029FF] bg-clip-text text-transparent bg-[size:200%_200%] animate-gradient leading-[120%]">
-            Eleve seu negócio<br />
-            e escale no digital
-          </h1>
-          <p className="text-lg text-gray-400 mb-12 max-w-2xl">
-            Criamos experiências digitais que impulsionam negócios<br />
-            por meio de estratégia, design e tecnologia.
-          </p>
+          <div className="p-6 rounded-lg bg-black/20 backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.2)]">
+            <h1 className="text-[56px] font-bold mb-6 bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#0029FF] bg-clip-text text-transparent bg-[size:200%_200%] animate-gradient leading-[120%]">
+              Eleve seu negócio<br />
+              e escale no digital
+            </h1>
+            <p className="text-lg text-gray-400 mb-12 max-w-2xl">
+              Criamos experiências digitais que impulsionam negócios<br />
+              por meio de estratégia, design e tecnologia.
+            </p>
+          </div>
           <HoverButton>
             Fale com a Fantom
           </HoverButton>
