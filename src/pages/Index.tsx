@@ -40,7 +40,7 @@ const Index = () => {
     <div className="relative min-h-screen">
       {/* Background do hero section */}
       <div 
-        className="fixed inset-0 z-0"
+        className="absolute top-0 left-0 right-0 h-screen z-0"
         style={{
           backgroundImage: 'url("/lovable-uploads/71e29b4a-32ac-4ba9-b4f3-317df46ef9f0.png")',
           backgroundPosition: 'center',
