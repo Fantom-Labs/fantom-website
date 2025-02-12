@@ -102,7 +102,7 @@ const Index = () => {
             Fantom Web
           </div>
           <div className="max-w-3xl mx-auto px-8 py-10 rounded-xl bg-black/30 backdrop-blur-sm shadow-[0_0_20px_rgba(0,0,0,0.3)]">
-            <h1 className="text-[48px] md:text-[56px] font-bold mb-6 bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#0029FF] bg-clip-text text-transparent bg-[size:200%_200%] animate-gradient leading-[120%]">
+            <h1 className="text-[48px] md:text-[56px] font-bold mb-6 bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#7F92F3] bg-clip-text text-transparent bg-[size:200%_200%] animate-gradient leading-[120%]">
               Eleve seu negócio<br />
               e escale no digital
             </h1>
