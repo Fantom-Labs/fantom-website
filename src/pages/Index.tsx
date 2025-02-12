@@ -100,19 +100,17 @@ const Index = () => {
             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
             Fantom Web
           </div>
-          <div className="relative max-w-3xl scale-115 mx-auto px-10 py-12 rounded-xl bg-black/30 backdrop-blur-sm shadow-[0_0_20px_rgba(0,0,0,0.3)]">
-            <h1 className="text-[48px] md:text-[56px] font-bold mb-6 bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#7F92F3] bg-clip-text text-transparent bg-[size:200%_200%] animate-gradient leading-[120%]">
-              Eleve seu negócio<br />
-              e escale no digital
-            </h1>
-            <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">
-              Criamos experiências digitais que impulsionam negócios<br />
-              por meio de estratégia, design e tecnologia.
-            </p>
-            <HoverButton>
-              Fale com a Fantom
-            </HoverButton>
-          </div>
+          <h1 className="text-[48px] md:text-[56px] font-bold mb-6 bg-gradient-to-r from-[#0033FF] via-[#E9E9E9] to-[#7F92F3] bg-clip-text text-transparent bg-[size:200%_200%] animate-gradient leading-[120%] relative max-w-3xl scale-115 mx-auto px-10 py-12 rounded-xl bg-black/30 backdrop-blur-sm shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+            Eleve seu negócio<br />
+            e escale no digital
+          </h1>
+          <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto">
+            Criamos experiências digitais que impulsionam negócios<br />
+            por meio de estratégia, design e tecnologia.
+          </p>
+          <HoverButton>
+            Fale com a Fantom
+          </HoverButton>
         </div>
 
         <div className="relative py-24" style={{
