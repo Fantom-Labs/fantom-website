@@ -42,7 +42,7 @@ const Index = () => {
       <div 
         className="fixed top-0 left-0 right-0 h-[calc(100vh+10rem)] z-0"
         style={{
-          backgroundImage: 'url("/lovable-uploads/71e29b4a-32ac-4ba9-b4f3-317df46ef9f0.png")',
+          backgroundImage: 'url("/lovable-uploads/41f5dca3-9f14-4d4c-833d-92ee78ff85cc.png")',
           backgroundPosition: 'center',
           backgroundSize: 'cover',
           backgroundRepeat: 'no-repeat',
