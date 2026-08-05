@@ -126,6 +126,13 @@
   }
   html {
     @apply font-sans;
+    scrollbar-width: none; /* firefox */
+    -ms-overflow-style: none; /* edge legado */
+  }
+
+  /* substituída pela SectionNav (barras à esquerda, meia altura) */
+  html::-webkit-scrollbar {
+    display: none;
   }
 
   /* cursor custom só em desktop (ponteiro fino + hover); toque mantém o padrão */
