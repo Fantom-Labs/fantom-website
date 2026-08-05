@@ -140,9 +140,9 @@ Objetivo: qualidade e imersão de sites Framer, construídas em código próprio
 | CMS | **Sanity** | Conteúdo e imagens dos cases; Studio embutido em `/studio` |
 | Imagens | **next/image** + `@sanity/image-url` | Pipeline de otimização (AVIF/WebP, crop, hotspot) |
 | Fontes | **next/font** | Auto-host, sem layout shift |
-| Deploy | **Vercel** | Melhor DX para Next; ISR com webhook do Sanity |
+| Deploy | **Netlify** | Suporte nativo a Next.js via adapter OpenNext, zero-config para SSR/ISR/Route Handlers |
 
-**Resumo:** Next.js 16 + TS + Tailwind v4 + shadcn/ui + Motion + Lenis + Sanity + next/image, na Vercel.
+**Resumo:** Next.js 16 + TS + Tailwind v4 + shadcn/ui + Motion + Lenis + Sanity + next/image, na Netlify.
 
 ### Estrutura de pastas (proposta)
 
