@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useMotionValueEvent, useScroll } from "motion/react"
+import { LOBBY_SCROLL_HEIGHT_VH, LOBBY_SECTION_2_PROGRESS } from "@/components/motion/lobby"
 
 // seções da home (project.md, seção 6: Início · Portfólio · O que
 // fazemos · Método · FAQ · Contato).
@@ -17,6 +19,19 @@ const SECTIONS = [
 // direita, meia altura, indicando a seção atual pela cor (branco vs cinza).
 export function SectionNav() {
   const [activeId, setActiveId] = useState(SECTIONS[0].id)
+
+  // TEMPORÁRIO: ainda não existem seções reais no DOM pra observar (o
+  // lobby ocupa o topo da página sozinho), então usamos o progresso do
+  // próprio scroll do lobby pra saber quando "chegamos na section 2"
+  // (Portfólio) — assim que o deslocamento à esquerda termina. Quando as
+  // seções reais existirem, o IntersectionObserver abaixo assume.
+  const { scrollY } = useScroll()
+  useMotionValueEvent(scrollY, "change", (y) => {
+    const lobbyMaxScroll = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
+    if (lobbyMaxScroll <= 0) return
+    const progress = y / lobbyMaxScroll
+    setActiveId(progress >= LOBBY_SECTION_2_PROGRESS ? SECTIONS[1].id : SECTIONS[0].id)
+  })
 
   useEffect(() => {
     const elements = SECTIONS.map((section) =>

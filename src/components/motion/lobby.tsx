@@ -31,7 +31,11 @@ const POSTER_SRC =
 // original (2752x1536, sem nenhum corte de viewport) — são frações fixas,
 // intrínsecas à imagem, então funcionam em qualquer proporção de tela.
 // Reajustar se a imagem trocar.
-const SCROLL_HEIGHT = "300vh"
+// altura do scroll do lobby em vh (número, não string) — exportada pra
+// SectionNav conseguir calcular quando o lobby termina sem precisar de
+// uma ref cruzada entre os dois componentes.
+export const LOBBY_SCROLL_HEIGHT_VH = 300
+const SCROLL_HEIGHT = `${LOBBY_SCROLL_HEIGHT_VH}vh`
 // fases do scroll (frações de scrollYProgress): zoom pra dentro da tela,
 // uma pausa, depois desloca o conjunto (tv + vídeo + logo) pra esquerda,
 // liberando a coluna direita pra conteúdo futuro, e uma pausa final antes
@@ -39,6 +43,10 @@ const SCROLL_HEIGHT = "300vh"
 const ZOOM_RANGE: [number, number] = [0, 0.5]
 const SHIFT_RANGE: [number, number] = [0.65, 0.9]
 const SHIFT_X_TARGET = "-18vw"
+// progresso em que consideramos "chegamos na section 2" (Portfólio) —
+// mesmo ponto em que o deslocamento pra esquerda termina. Exportado pra
+// SectionNav usar enquanto não existem seções reais no DOM pra observar.
+export const LOBBY_SECTION_2_PROGRESS = SHIFT_RANGE[1]
 const SCREEN_FRAC_LEFT = 980 / 2752
 const SCREEN_FRAC_RIGHT = 1782 / 2752
 const SCREEN_FRAC_TOP = 234 / 1536
