@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react"
+import { useEffect, useRef, useState, useSyncExternalStore } from "react"
+import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from "motion/react"
 import { AsciiArt, AsciiArtFrame } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
+import { FloatingRock } from "@/components/motion/floating-rock"
 
 // mesmo poster usado pelo <AsciiArt>, servido como fallback estático
 // quando o usuário prefere motion reduzido (project.md, seção 10).
@@ -133,6 +134,32 @@ function useScreenAnchor() {
   return anchor
 }
 
+const emptySubscribe = () => () => {}
+// true só depois de montar no cliente — usado pra liberar valores
+// sorteados com Math.random() sem quebrar a hidratação (o servidor e o
+// primeiro render do cliente sempre concordam em "false").
+function useMounted() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  )
+}
+
+// sorteia, uma vez por carregamento de página, a posição vertical inicial
+// das pedras (o sentido da órbita em si já é fixo e oposto entre as duas,
+// via a prop reverse). antes de montar, usa valores fixos razoáveis (o
+// resultado visual muda sozinho assim que monta).
+function useRockOrbit() {
+  const mounted = useMounted()
+  const [randomOrbit] = useState(() => ({
+    topPct1: 15 + Math.random() * 30, // banda superior
+    topPct2: 50 + Math.random() * 30, // banda inferior
+  }))
+
+  return mounted ? randomOrbit : { topPct1: 28, topPct2: 58 }
+}
+
 // elementos fixos que não participam do zoom: logo-left e ícone de menu.
 function LobbyChrome() {
   return (
@@ -190,6 +217,15 @@ export function Lobby() {
   // e volta assim que a página retorna ao topo (baseado no scroll real da
   // página, não no progresso da animação da tv).
   const frameOpacity = useTransform(scrollY, [0, 50], [1, 0])
+  // pedras flutuantes: a entrada NÃO é scrubada continuamente pelo scroll
+  // — é autônoma (anima sozinha assim que dispara), só a saída reage ao
+  // scroll voltando pro início. o gatilho é um booleano (cruza
+  // SHIFT_RANGE[0] em qualquer direção), não um valor contínuo.
+  const [insideSection2, setInsideSection2] = useState(false)
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    setInsideSection2(v >= SHIFT_RANGE[0])
+  })
+  const rockOrbit = useRockOrbit()
 
   // fallback estático: sem scroll-zoom, sem parallax, uma tela só (project.md, seção 10).
   if (prefersReducedMotion) {
@@ -284,6 +320,49 @@ export function Lobby() {
             />
           </MouseResponsiveBackground>
         </motion.div>
+
+        {/* pedras flutuantes: órbita elíptica contínua (tipo elétron ao
+            redor do núcleo — a própria tela cheia do dispositivo, não a
+            tela da tv), sempre no mesmo sentido, sem ida-e-volta na mesma
+            linha. por isso as âncoras horizontais das duas são o centro
+            real da viewport (left-1/2), independente de shiftX/posição da
+            tv — senão a órbita fica presa à composição da tv em vez da
+            tela inteira. o ponto de entrada (fora da tela) é o próprio
+            ângulo 180° da elipse, então já nasce orbitando dali (ver
+            FloatingRock) — sem opacidade: escondidas por saírem da área
+            visível (overflow-hidden do container pai). sentido oposto
+            entre as duas (reverse), posição vertical sorteada por
+            carregamento de página. */}
+        <div className="pointer-events-none absolute inset-0 z-10">
+          <div
+            style={{ top: `${rockOrbit.topPct1}%` }}
+            className="absolute left-1/2 w-40 -translate-x-1/2 -translate-y-1/2 sm:w-56"
+          >
+            <FloatingRock
+              src="/images/rock1-img.svg"
+              active={insideSection2}
+              entryX={-100}
+              duration={34}
+              reverse={false}
+              className="w-full"
+            />
+          </div>
+
+          <div
+            style={{ top: `${rockOrbit.topPct2}%` }}
+            className="absolute left-1/2 w-28 -translate-x-1/2 -translate-y-1/2 sm:w-40"
+          >
+            <FloatingRock
+              src="/images/rock2-img.svg"
+              active={insideSection2}
+              entryX={100}
+              duration={41}
+              delay={1.2}
+              reverse={true}
+              className="w-full"
+            />
+          </div>
+        </div>
 
         {/* moldura decorativa: some conforme a cena encolhe, volta se rolar de volta */}
         <AsciiArtFrame opacity={frameOpacity} />
