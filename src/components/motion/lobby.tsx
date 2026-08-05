@@ -46,7 +46,7 @@ export function Lobby() {
         src="/bg-frame.svg"
         alt=""
         aria-hidden="true"
-        className="pointer-events-none fixed left-4 right-4 top-4 z-20 h-auto w-[calc(100vw-32px)]"
+        className="pointer-events-none fixed left-2 right-2 top-3 z-20 h-auto w-[calc(100vw-16px)]"
       />
 
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-6 px-6">
@@ -64,7 +64,7 @@ export function Lobby() {
       <img
         src="/logo-left.png"
         alt="Fantom"
-        className="absolute left-5 top-5 z-20 max-w-[88px] sm:left-8 sm:top-8"
+        className="absolute left-5 top-8 z-20 max-w-[88px] sm:left-8 sm:top-8"
       />
 
       {/* TODO: sem funcionalidade ainda, só o visual do botão (menu real vem depois). */}
