@@ -37,16 +37,19 @@ const POSTER_SRC =
 // uma ref cruzada entre os dois componentes.
 export const LOBBY_SCROLL_HEIGHT_VH = 300
 const SCROLL_HEIGHT = `${LOBBY_SCROLL_HEIGHT_VH}vh`
-// fases do scroll (frações de scrollYProgress): zoom pra dentro da tela,
-// uma pausa, depois desloca o conjunto (tv + vídeo + logo) pra esquerda,
-// liberando a coluna direita pra conteúdo futuro, e uma pausa final antes
-// do sticky soltar. Ajustar os limiares se o "feel" do scroll não convencer.
+// fases do scroll (frações de scrollYProgress): zoom pra dentro da tela e,
+// dentro da mesma janela, o conjunto (tv + vídeo + logo) já desloca pra
+// esquerda — os dois acontecem juntos, então o deslocamento lateral fica
+// quase imperceptível (dissolvido no próprio movimento do zoom, não uma
+// segunda animação separada) — seguido de uma pausa antes do sticky
+// soltar. Ajustar os limiares se o "feel" do scroll não convencer.
 const ZOOM_RANGE: [number, number] = [0, 0.5]
-const SHIFT_RANGE: [number, number] = [0.65, 0.9]
+const SHIFT_RANGE: [number, number] = ZOOM_RANGE
 const SHIFT_X_TARGET = "-18vw"
 // progresso em que consideramos "chegamos na section 2" (Portfólio) —
-// mesmo ponto em que o deslocamento pra esquerda termina. Exportado pra
-// SectionNav usar enquanto não existem seções reais no DOM pra observar.
+// mesmo ponto em que o zoom e o deslocamento pra esquerda terminam juntos.
+// Exportado pra SectionNav usar enquanto não existem seções reais no DOM
+// pra observar.
 export const LOBBY_SECTION_2_PROGRESS = SHIFT_RANGE[1]
 const SCREEN_FRAC_LEFT = 980 / 2752
 const SCREEN_FRAC_RIGHT = 1782 / 2752
@@ -220,10 +223,13 @@ export function Lobby() {
   // pedras flutuantes: a entrada NÃO é scrubada continuamente pelo scroll
   // — é autônoma (anima sozinha assim que dispara), só a saída reage ao
   // scroll voltando pro início. o gatilho é um booleano (cruza
-  // SHIFT_RANGE[0] em qualquer direção), não um valor contínuo.
+  // LOBBY_SECTION_2_PROGRESS, o fim do zoom+deslocamento, em qualquer
+  // direção), não um valor contínuo. NÃO usar SHIFT_RANGE[0]: agora que o
+  // deslocamento corre junto com o zoom, esse limiar é 0 — usaria a pedra
+  // como ativa desde o topo da página.
   const [insideSection2, setInsideSection2] = useState(false)
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    setInsideSection2(v >= SHIFT_RANGE[0])
+    setInsideSection2(v >= LOBBY_SECTION_2_PROGRESS)
   })
   const rockOrbit = useRockOrbit()
 
