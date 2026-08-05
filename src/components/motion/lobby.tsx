@@ -2,17 +2,13 @@
 
 import { useEffect, useRef, useState } from "react"
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react"
-import { AsciiArt } from "@/components/ui/mo-mosaic"
+import { AsciiArt, AsciiArtFrame } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 
 // mesmo poster usado pelo <AsciiArt>, servido como fallback estático
 // quando o usuário prefere motion reduzido (project.md, seção 10).
 const POSTER_SRC =
   "https://assets.21st.dev/ascii-recipes/thumbnails/user_39AUrstSGWJUKmRU9spgBJgd1hs/95b377f8-e226-434d-be5c-2c7159b3e244.webp"
-
-// margem única da moldura (esquerda, direita, topo). Um só valor: left,
-// right e a largura calculada nunca desincronizam entre si.
-const FRAME_MARGIN = 16 // px
 
 // EXPERIMENTAL — protótipo da ideia "zoom pra dentro da tela de TV" (ainda
 // não documentado no project.md, é uma direção em avaliação). A saída do
@@ -153,6 +149,9 @@ export function Lobby() {
     target: containerRef,
     offset: ["start start", "end end"],
   })
+  // scroll bruto da página (px), não o progresso relativo ao container —
+  // usado só pra moldura, que precisa reagir ao topo absoluto do site.
+  const { scrollY } = useScroll()
 
   const maskScale = useTransform(scrollYProgress, [0, 0.9], [ZOOM_START, 1])
   // cancela o zoom do wrapper no conteúdo do vídeo: a "janela" da máscara
@@ -165,9 +164,10 @@ export function Lobby() {
   // useScreenAnchor), acompanhando o scroll — não é uma posição fixa.
   const logoLeft = useTransform(scrollYProgress, [0, 0.9], ["50%", `${screenAnchor.xPct}%`])
   const logoTop = useTransform(scrollYProgress, [0, 0.9], ["50%", `${screenAnchor.yPct}%`])
-  // some com o scroll e volta se rolar de volta pro início — sempre função
-  // da posição atual do scroll, não de um "máximo já alcançado".
-  const frameOpacity = useTransform(scrollYProgress, [0, 0.35], [1, 0])
+  // só aparece no topo absoluto do site: some nos primeiros 50px de scroll
+  // e volta assim que a página retorna ao topo (baseado no scroll real da
+  // página, não no progresso da animação da tv).
+  const frameOpacity = useTransform(scrollY, [0, 50], [1, 0])
 
   // fallback estático: sem scroll-zoom, sem parallax, uma tela só (project.md, seção 10).
   if (prefersReducedMotion) {
@@ -187,19 +187,7 @@ export function Lobby() {
           />
         </div>
 
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/bg-frame.svg"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none fixed z-20 h-auto"
-          style={{
-            left: FRAME_MARGIN,
-            right: FRAME_MARGIN,
-            top: FRAME_MARGIN,
-            width: `calc(100vw - ${FRAME_MARGIN * 2}px)`,
-          }}
-        />
+        <AsciiArtFrame />
 
         <LobbyChrome />
       </div>
@@ -274,20 +262,8 @@ export function Lobby() {
           </MouseResponsiveBackground>
         </motion.div>
 
-        {/* moldura decorativa: some conforme a cena encolhe */}
-        <motion.img
-          src="/bg-frame.svg"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none fixed z-30 h-auto"
-          style={{
-            opacity: frameOpacity,
-            left: FRAME_MARGIN,
-            right: FRAME_MARGIN,
-            top: FRAME_MARGIN,
-            width: `calc(100vw - ${FRAME_MARGIN * 2}px)`,
-          }}
-        />
+        {/* moldura decorativa: some conforme a cena encolhe, volta se rolar de volta */}
+        <AsciiArtFrame opacity={frameOpacity} />
 
         <LobbyChrome />
       </div>
