@@ -13,8 +13,8 @@ const SECTIONS = [
   { id: "contato", label: "Contato" },
 ]
 
-// substitui a scrollbar tradicional: barras horizontais empilhadas no
-// canto inferior direito, indicando a seção atual pela cor (branco vs cinza).
+// substitui a scrollbar tradicional: barras horizontais empilhadas à
+// direita, meia altura, indicando a seção atual pela cor (branco vs cinza).
 export function SectionNav() {
   const [activeId, setActiveId] = useState(SECTIONS[0].id)
 
@@ -43,7 +43,7 @@ export function SectionNav() {
     <nav
       aria-label="Navegação de seções"
       // z-[60]: fica acima do lobby (z-50), visível mesmo antes de sair dele.
-      className="fixed bottom-5 right-5 z-[60] flex flex-col items-end gap-4 sm:bottom-8 sm:right-8"
+      className="fixed right-5 top-1/2 z-[60] flex -translate-y-1/2 flex-col items-end gap-4 sm:right-8"
     >
       {SECTIONS.map((section) => (
         <a
@@ -52,7 +52,7 @@ export function SectionNav() {
           aria-label={section.label}
           aria-current={activeId === section.id ? "true" : undefined}
           className={`h-0.5 w-8 rounded-full transition-colors duration-300 hover:bg-white ${
-            activeId === section.id ? "bg-white" : "bg-gray-500"
+            activeId === section.id ? "bg-white" : "bg-gray-400"
           }`}
         />
       ))}
