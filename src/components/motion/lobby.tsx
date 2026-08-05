@@ -31,7 +31,14 @@ const POSTER_SRC =
 // original (2752x1536, sem nenhum corte de viewport) — são frações fixas,
 // intrínsecas à imagem, então funcionam em qualquer proporção de tela.
 // Reajustar se a imagem trocar.
-const SCROLL_HEIGHT = "220vh"
+const SCROLL_HEIGHT = "300vh"
+// fases do scroll (frações de scrollYProgress): zoom pra dentro da tela,
+// uma pausa, depois desloca o conjunto (tv + vídeo + logo) pra esquerda,
+// liberando a coluna direita pra conteúdo futuro, e uma pausa final antes
+// do sticky soltar. Ajustar os limiares se o "feel" do scroll não convencer.
+const ZOOM_RANGE: [number, number] = [0, 0.5]
+const SHIFT_RANGE: [number, number] = [0.65, 0.9]
+const SHIFT_X_TARGET = "-18vw"
 const SCREEN_FRAC_LEFT = 980 / 2752
 const SCREEN_FRAC_RIGHT = 1782 / 2752
 const SCREEN_FRAC_TOP = 234 / 1536
@@ -153,17 +160,24 @@ export function Lobby() {
   // usado só pra moldura, que precisa reagir ao topo absoluto do site.
   const { scrollY } = useScroll()
 
-  const maskScale = useTransform(scrollYProgress, [0, 0.9], [ZOOM_START, 1])
+  const maskScale = useTransform(scrollYProgress, ZOOM_RANGE, [ZOOM_START, 1])
   // cancela o zoom do wrapper no conteúdo do vídeo: a "janela" da máscara
   // precisa encolher, mas o enquadramento do vídeo em si não deveria
   // começar ampliado — ele só devia diminuir de tamanho, não de zoom.
   const videoCounterScale = useTransform(maskScale, (s) => 1 / s)
-  const logoScale = useTransform(scrollYProgress, [0, 0.9], [1, LOGO_ZOOM_END])
+  const logoScale = useTransform(scrollYProgress, ZOOM_RANGE, [1, LOGO_ZOOM_END])
   // a logo começa no centro puro da viewport (onde o vídeo está em tela
   // cheia) e termina no centro real da tela do tv (calculado por
   // useScreenAnchor), acompanhando o scroll — não é uma posição fixa.
-  const logoLeft = useTransform(scrollYProgress, [0, 0.9], ["50%", `${screenAnchor.xPct}%`])
-  const logoTop = useTransform(scrollYProgress, [0, 0.9], ["50%", `${screenAnchor.yPct}%`])
+  const logoLeft = useTransform(scrollYProgress, ZOOM_RANGE, ["50%", `${screenAnchor.xPct}%`])
+  const logoTop = useTransform(scrollYProgress, ZOOM_RANGE, ["50%", `${screenAnchor.yPct}%`])
+  // depois do zoom completo (com uma pausa), desloca o conjunto inteiro
+  // (fundo + vídeo mascarado + logo) suavemente pra esquerda, liberando a
+  // coluna direita pra conteúdo. mesmo valor aplicado aos três, então se
+  // movem colados.
+  const shiftX = useTransform(scrollYProgress, SHIFT_RANGE, ["0vw", SHIFT_X_TARGET])
+  // combina o deslocamento com a centralização própria da logo (-50%).
+  const logoX = useTransform(shiftX, (v) => `calc(-50% + ${v})`)
   // só aparece no topo absoluto do site: some nos primeiros 50px de scroll
   // e volta assim que a página retorna ao topo (baseado no scroll real da
   // página, não no progresso da animação da tv).
@@ -204,7 +218,7 @@ export function Lobby() {
           src="/images/tv-img.jpeg"
           alt=""
           aria-hidden="true"
-          style={{ scale: maskScale, objectPosition: TV_POSITION }}
+          style={{ scale: maskScale, x: shiftX, objectPosition: TV_POSITION }}
           className="absolute inset-0 h-full w-full object-cover"
         />
 
@@ -215,6 +229,7 @@ export function Lobby() {
         <motion.div
           style={{
             scale: maskScale,
+            x: shiftX,
             maskImage: "url(/images/tv-mask.png)",
             WebkitMaskImage: "url(/images/tv-mask.png)",
             // máscara dedicada (preto e branco, gerada por limiar de
@@ -247,7 +262,7 @@ export function Lobby() {
             scale: logoScale,
             left: logoLeft,
             top: logoTop,
-            x: "-50%",
+            x: logoX,
             y: "-50%",
           }}
           className="pointer-events-none absolute z-20"
