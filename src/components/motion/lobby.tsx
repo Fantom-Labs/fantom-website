@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { useReducedMotion } from "motion/react"
 import { AsciiArt } from "@/components/ui/mo-mosaic"
+import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 
 // mesmo poster usado pelo <AsciiArt>, servido como fallback estático
 // quando o usuário prefere motion reduzido (project.md, seção 10).
@@ -29,7 +30,7 @@ export function Lobby() {
 
   return (
     <div className="fixed inset-0 z-50 bg-black">
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 overflow-hidden">
         {prefersReducedMotion ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -38,7 +39,9 @@ export function Lobby() {
             className="h-full w-full object-cover"
           />
         ) : (
-          <AsciiArt className="h-full w-full" />
+          <MouseResponsiveBackground className="absolute left-0 top-0 h-[110%] w-[110%]">
+            <AsciiArt className="h-full w-full" />
+          </MouseResponsiveBackground>
         )}
       </div>
 
@@ -60,12 +63,23 @@ export function Lobby() {
       />
 
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-6 px-6">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/logo-centralized.svg"
-          alt="Fantom"
-          className="w-[416px] sm:w-[416px]"
-        />
+        {prefersReducedMotion ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/images/logo-centralized.svg"
+            alt="Fantom"
+            className="w-[416px] sm:w-[416px]"
+          />
+        ) : (
+          <MouseResponsiveBackground>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/logo-centralized.svg"
+              alt="Fantom"
+              className="w-[416px] sm:w-[416px]"
+            />
+          </MouseResponsiveBackground>
+        )}
         {/* TODO: texto "Acessando..." + barra de progresso desativados por
             enquanto (project.md, seção 12). */}
       </div>
