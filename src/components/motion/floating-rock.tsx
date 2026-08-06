@@ -39,17 +39,20 @@ function buildArcPath(
 
 // pedra que orbita como um elétron ao redor do núcleo (a tela inteira do
 // dispositivo): uma volta de elipse contínua e fechada, sempre no mesmo
-// sentido — nada de ida e volta na mesma linha. a órbita de cada pedra
-// nunca cruza pro outro lado do centro (raio = metade de |entryX|), então
-// a borda mais próxima é sempre a sua própria entryX — não precisa
-// escolher entre as duas.
+// sentido — nada de ida e volta na mesma linha. o centro da elipse é o
+// centro real da viewport (não um ponto no meio do caminho até entryX) e
+// o raio horizontal cobre a distância inteira até o lado oposto — os dois
+// vértices da elipse (ângulo 180° e 0°) ficam fora da tela, um de cada
+// lado. É o que faz a pedra atravessar de uma borda até a outra a cada
+// meia volta, em vez de encostar perto do centro da tela e voltar pro
+// mesmo lado (o que acontecia quando o raio ia só até o meio do caminho).
 //
 // restrita à section 2: assim que `active` vira false a pedra NÃO some
 // nem corta reto pro ponto de entrada (isso pareceria mudar de direção
 // ainda visível em tela) — ela segue a mesma curva, em fast-forward, até
-// o mais próximo dos dois pontos fora da tela (t=0 ou t=1, os dois lados
-// do ângulo 180°), pra nunca precisar atravessar o trecho perto do centro
-// da tela antes de sair.
+// o mais próximo dos três pontos fora da tela (t=0, t=0.5 ou t=1 — os dois
+// vértices da elipse, um de cada lado), pra nunca precisar atravessar o
+// trecho perto do centro da tela antes de sair.
 export function FloatingRock({
   src,
   className,
@@ -86,13 +89,13 @@ export function FloatingRock({
     let cancelled = false
     const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-    const centerX = entryX / 2
-    // sinal invertido (não Math.abs): garante que o ângulo 180°, o ponto
-    // de partida da órbita, caia exatamente em entryX (fora da tela) pros
-    // dois sinais de entryX — com abs() isso só valia pro lado negativo, e
-    // a pedra que entra pela direita nascia já perto do centro em vez de
-    // vir de fora.
-    const radiusX = -centerX
+    // centro real da viewport (0), não um ponto a meio caminho até entryX
+    // — assim os dois vértices da elipse ficam nas duas bordas opostas.
+    const centerX = 0
+    // sinal invertido de entryX (não abs()): garante que o ângulo 180°, o
+    // ponto de partida, caia exatamente em entryX (fora da tela, do lado
+    // de entrada dessa pedra) pros dois sinais de entryX.
+    const radiusX = -entryX
 
     async function run() {
       if (active) {
@@ -115,21 +118,24 @@ export function FloatingRock({
           { duration, ease: "linear", repeat: Infinity }
         )
       } else if (startedRef.current) {
-        // fração da volta já percorrida (0 a 1). t=0 e t=1 são o mesmo
-        // ponto físico (ângulo 180°, fora da tela) — só que por lados
-        // opostos da elipse. Segue pro mais próximo dos dois: se ainda não
-        // passou da metade (< 0.5), volta (retrocede) até t=0 em vez de
-        // continuar até t=1 — senão a pedra precisaria atravessar o ponto
-        // mais perto do centro da tela antes de conseguir sair. Retroceder
-        // é só reproduzir ao contrário o trecho que ela acabou de
-        // percorrer, então continua parecendo uma curva natural, não um
+        // fração da volta já percorrida (0 a 1). com a elipse cobrindo as
+        // duas bordas, existem TRÊS pontos fora da tela por volta: t=0 e
+        // t=1 (mesmo ponto físico, o vértice do lado de entrada) e t=0.5
+        // (o vértice do lado oposto). Segue pro mais próximo dos três —
+        // senão a pedra poderia precisar atravessar o trecho perto do
+        // centro da tela antes de conseguir sair. Seguir até um ponto
+        // "pra trás" é só reproduzir ao contrário o trecho que ela acabou
+        // de percorrer, então continua parecendo uma curva natural, não um
         // corte reto nem uma inversão brusca.
         const elapsedMs = performance.now() - lapStartRef.current
         const tNow = (elapsedMs % (duration * 1000)) / (duration * 1000)
-        const goBackward = tNow <= 0.5
-        const targetT = goBackward ? 0 : 1
+        const candidates = [0, 0.5, 1]
+        const targetT = candidates.reduce((closest, t) =>
+          Math.abs(t - tNow) < Math.abs(closest - tNow) ? t : closest
+        )
         const path = buildArcPath(centerX, 0, radiusX, driftY, reverse, tNow, targetT, EXIT_POINTS)
-        // trecho mais curto = saída mais rápida; nunca mais que meia volta.
+        // trecho mais curto = saída mais rápida; nunca mais que meia volta
+        // (a maior distância possível entre dois pontos consecutivos).
         const exitDuration = EXIT_DURATION * (Math.abs(targetT - tNow) / 0.5)
 
         await animate(
