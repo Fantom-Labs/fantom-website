@@ -59,10 +59,12 @@ const SCREEN_FRAC_W = SCREEN_FRAC_RIGHT - SCREEN_FRAC_LEFT
 const SCREEN_FRAC_H = SCREEN_FRAC_BOTTOM - SCREEN_FRAC_TOP
 const ZOOM_START = Math.max(1 / SCREEN_FRAC_W, 1 / SCREEN_FRAC_H)
 
-// empurra a cena do tv mais pra baixo no quadro (pedido: "a imagem da tv
-// tem que estar mais abaixo"). Ajustar visualmente se necessário.
-const TV_POSITION_Y = 68
-const TV_POSITION = `center ${TV_POSITION_Y}%`
+// empurra a cena do tv mais pra baixo e um pouco mais pra esquerda no
+// quadro (pedidos: "a imagem da tv tem que estar mais abaixo", depois "um
+// pouco mais pra esquerda"). Ajustar visualmente se necessário.
+const TV_POSITION_X = 58
+const TV_POSITION_Y = 52
+const TV_POSITION = `${TV_POSITION_X}% ${TV_POSITION_Y}%`
 
 // escala final da logo — menor o suficiente pra caber dentro da tela do
 // tv sem estourar (ajustado a olho).
@@ -97,7 +99,7 @@ function useScreenAnchor() {
         sw = naturalW
         sh = sw / boxRatio
       }
-      const sx = (naturalW - sw) * 0.5 // TV_POSITION x = "center"
+      const sx = (naturalW - sw) * (TV_POSITION_X / 100)
       const sy = (naturalH - sh) * (TV_POSITION_Y / 100)
 
       const canvas = document.createElement("canvas")
