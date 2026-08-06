@@ -67,7 +67,7 @@ export function SectionNav() {
           aria-label={section.label}
           aria-current={activeId === section.id ? "true" : undefined}
           className={`h-0.5 w-8 rounded-full transition-colors duration-300 hover:bg-white ${
-            activeId === section.id ? "bg-white" : "bg-gray-400"
+            activeId === section.id ? "bg-white" : "bg-gray-300"
           }`}
         />
       ))}
