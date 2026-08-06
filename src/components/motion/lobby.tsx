@@ -342,7 +342,7 @@ export function Lobby() {
         <div className="pointer-events-none absolute inset-0 z-10">
           <div
             style={{ top: `${rockOrbit.topPct1}%` }}
-            className="absolute left-1/2 w-40 -translate-x-1/2 -translate-y-1/2 sm:w-56"
+            className="absolute left-1/2 w-32 -translate-x-1/2 -translate-y-1/2 sm:w-[179.2px]"
           >
             <FloatingRock
               src="/images/rock1-img.svg"
@@ -356,7 +356,7 @@ export function Lobby() {
 
           <div
             style={{ top: `${rockOrbit.topPct2}%` }}
-            className="absolute left-1/2 w-28 -translate-x-1/2 -translate-y-1/2 sm:w-40"
+            className="absolute left-1/2 w-[89.6px] -translate-x-1/2 -translate-y-1/2 sm:w-32"
           >
             <FloatingRock
               src="/images/rock2-img.svg"
