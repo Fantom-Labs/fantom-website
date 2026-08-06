@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { useMotionValueEvent, useScroll } from "motion/react"
-import { LOBBY_SCROLL_HEIGHT_VH, LOBBY_SECTION_2_PROGRESS } from "@/components/motion/lobby"
+import { LOBBY_SCROLL_HEIGHT_VH, LOBBY_SECTIONS, getActiveLobbySection } from "@/components/motion/lobby"
 
 // seções da home (project.md, seção 6: Início · Portfólio · O que
-// fazemos · Método · FAQ · Contato).
+// fazemos · Método · FAQ · Contato). As 3 primeiras vêm de LOBBY_SECTIONS
+// — fonte única de verdade compartilhada com o Lobby, que já define onde
+// (no scroll) cada uma começa. As demais ainda não têm gatilho: aguardam
+// virar seções reais no DOM (ver IntersectionObserver abaixo).
 const SECTIONS = [
-  { id: "inicio", label: "Início" },
-  { id: "portfolio", label: "Portfólio" },
-  { id: "o-que-fazemos", label: "O que fazemos" },
+  ...LOBBY_SECTIONS.map(({ id, label }) => ({ id, label })),
   { id: "metodo", label: "Método" },
   { id: "faq", label: "FAQ" },
   { id: "contato", label: "Contato" },
@@ -22,15 +23,15 @@ export function SectionNav() {
 
   // TEMPORÁRIO: ainda não existem seções reais no DOM pra observar (o
   // lobby ocupa o topo da página sozinho), então usamos o progresso do
-  // próprio scroll do lobby pra saber quando "chegamos na section 2"
-  // (Portfólio) — assim que o deslocamento à esquerda termina. Quando as
-  // seções reais existirem, o IntersectionObserver abaixo assume.
+  // próprio scroll do lobby (mesma tabela LOBBY_SECTIONS que o Lobby usa)
+  // pra saber em qual das 3 primeiras seções estamos. Quando as seções
+  // reais existirem, o IntersectionObserver abaixo assume — pras 6.
   const { scrollY } = useScroll()
   useMotionValueEvent(scrollY, "change", (y) => {
     const lobbyMaxScroll = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
     if (lobbyMaxScroll <= 0) return
     const progress = y / lobbyMaxScroll
-    setActiveId(progress >= LOBBY_SECTION_2_PROGRESS ? SECTIONS[1].id : SECTIONS[0].id)
+    setActiveId(LOBBY_SECTIONS[getActiveLobbySection(progress)].id)
   })
 
   useEffect(() => {

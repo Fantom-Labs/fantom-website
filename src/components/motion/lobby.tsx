@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from "motion/react"
 import { AsciiArt, AsciiArtFrame } from "@/components/ui/mo-mosaic"
+import { AsciiArtVV } from "@/components/ui/vv"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 import { FloatingRock } from "@/components/motion/floating-rock"
 
@@ -46,11 +47,38 @@ const SCROLL_HEIGHT = `${LOBBY_SCROLL_HEIGHT_VH}vh`
 const ZOOM_RANGE: [number, number] = [0, 0.5]
 const SHIFT_RANGE: [number, number] = ZOOM_RANGE
 const SHIFT_X_TARGET = "-18vw"
-// progresso em que consideramos "chegamos na section 2" (Portfólio) —
-// mesmo ponto em que o zoom e o deslocamento pra esquerda terminam juntos.
-// Exportado pra SectionNav usar enquanto não existem seções reais no DOM
-// pra observar.
-export const LOBBY_SECTION_2_PROGRESS = SHIFT_RANGE[1]
+// --- seções da home simuladas pelo scroll do lobby -------------------------
+// Enquanto não existem seções reais no DOM pra observar (o lobby ocupa o
+// topo da página sozinho — ver EXPERIMENTAL acima), simulamos "em que
+// seção estamos" a partir do progresso do próprio scroll do lobby
+// (scrollYProgress, 0 a 1). Esta tabela é a ÚNICA fonte de verdade desses
+// limiares: tanto o Lobby (troca do vídeo da tv, aparição das pedras,
+// logo) quanto o SectionNav (qual barra fica acesa) leem dela — nunca
+// declare um limiar solto em outro lugar, ou os dois vão dessincronizar.
+// Quando as seções reais existirem como elementos no DOM, o
+// IntersectionObserver do SectionNav assume e esta tabela deixa de ser
+// necessária.
+//
+// cada `progress` é o limiar MÍNIMO de scrollYProgress pra essa seção
+// contar como "a atual" — a seção ativa é sempre a de maior limiar que a
+// posição do scroll já ultrapassou (ver getActiveLobbySection abaixo).
+export const LOBBY_SECTIONS = [
+  { id: "inicio", label: "Início", progress: 0 },
+  // fim do zoom + deslocamento pra esquerda da cena da tv (SHIFT_RANGE[1]).
+  { id: "portfolio", label: "Portfólio", progress: SHIFT_RANGE[1] },
+  // troca do vídeo exibido na tela da tv e esconde a logo central — ainda
+  // dentro da pausa final do lobby, antes do sticky soltar.
+  { id: "o-que-fazemos", label: "O que fazemos", progress: 0.75 },
+] as const
+
+// índice (em LOBBY_SECTIONS) da seção ativa pra um dado scrollYProgress.
+export function getActiveLobbySection(progress: number) {
+  let index = 0
+  for (let i = 0; i < LOBBY_SECTIONS.length; i++) {
+    if (progress >= LOBBY_SECTIONS[i].progress) index = i
+  }
+  return index
+}
 const SCREEN_FRAC_LEFT = 980 / 2752
 const SCREEN_FRAC_RIGHT = 1782 / 2752
 const SCREEN_FRAC_TOP = 234 / 1536
@@ -222,17 +250,24 @@ export function Lobby() {
   // e volta assim que a página retorna ao topo (baseado no scroll real da
   // página, não no progresso da animação da tv).
   const frameOpacity = useTransform(scrollY, [0, 50], [1, 0])
-  // pedras flutuantes: a entrada NÃO é scrubada continuamente pelo scroll
-  // — é autônoma (anima sozinha assim que dispara), só a saída reage ao
-  // scroll voltando pro início. o gatilho é um booleano (cruza
-  // LOBBY_SECTION_2_PROGRESS, o fim do zoom+deslocamento, em qualquer
-  // direção), não um valor contínuo. NÃO usar SHIFT_RANGE[0]: agora que o
-  // deslocamento corre junto com o zoom, esse limiar é 0 — usaria a pedra
-  // como ativa desde o topo da página.
-  const [insideSection2, setInsideSection2] = useState(false)
+  // seção ativa (índice em LOBBY_SECTIONS), derivada do progresso do
+  // scroll — única leitura de scrollYProgress pra decidir isso; os efeitos
+  // abaixo (pedras, vídeo da tv, logo) só derivam booleanos dela, nunca
+  // recalculam limiar por conta própria. NÃO usar SHIFT_RANGE[0] direto pra
+  // nada disso: agora que o deslocamento corre junto com o zoom, esse
+  // limiar é 0 — usaria como "ativo" desde o topo da página.
+  const [activeSection, setActiveSection] = useState(0)
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    setInsideSection2(v >= LOBBY_SECTION_2_PROGRESS)
+    setActiveSection(getActiveLobbySection(v))
   })
+  // pedras flutuantes: a entrada NÃO é scrubada continuamente pelo scroll —
+  // é autônoma (anima sozinha assim que dispara), só a saída reage ao
+  // scroll voltando pro início. o gatilho é o booleano abaixo (cruza o
+  // limiar da section 2 em qualquer direção), não um valor contínuo.
+  const insideSection2 = activeSection >= 1
+  // troca do vídeo exibido na tela da tv e esconde a logo central: dispara
+  // um scroll depois da section 2, não junto com ela.
+  const insideSection3 = activeSection >= 2
   const rockOrbit = useRockOrbit()
 
   // fallback estático: sem scroll-zoom, sem parallax, uma tela só (project.md, seção 10).
@@ -299,16 +334,38 @@ export function Lobby() {
           className="absolute inset-0 z-10 overflow-hidden"
         >
           <motion.div style={{ scale: videoCounterScale }} className="absolute inset-0">
+            {/* na section 3 troca o vídeo exibido na tela da tv — os dois
+                ficam montados e só a opacidade cruza, pra não recarregar
+                nem reiniciar nenhum dos dois vídeos a cada troca. */}
             <MouseResponsiveBackground className="absolute left-0 top-0 h-[110%] w-[110%]">
-              <AsciiArt className="h-full w-full" />
+              <motion.div
+                className="absolute inset-0"
+                animate={{ opacity: insideSection3 ? 0 : 1 }}
+                transition={{ duration: 0.8 }}
+              >
+                <AsciiArt className="h-full w-full" />
+              </motion.div>
             </MouseResponsiveBackground>
+
+            {/* fora do box de 110% do parallax (que é ancorado no canto
+                top-left, então descentralizaria o "contain" do vv) — este
+                fica exatamente do tamanho da máscara, centralizado de
+                verdade. */}
+            <motion.div
+              className="absolute inset-0"
+              animate={{ opacity: insideSection3 ? 1 : 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <AsciiArtVV className="h-full w-full" />
+            </motion.div>
           </motion.div>
         </motion.div>
 
         {/* logo central: não é mascarada (precisa ficar inteira, sem
             recorte). começa no centro da viewport (vídeo em tela cheia) e
             termina no centro real da tela do tv (useScreenAnchor), junto
-            com o scroll — nunca fica numa posição fixa. */}
+            com o scroll — nunca fica numa posição fixa. some na section 3,
+            junto com a troca do vídeo exibido na tela da tv. */}
         <motion.div
           style={{
             scale: logoScale,
@@ -317,6 +374,8 @@ export function Lobby() {
             x: logoX,
             y: "-50%",
           }}
+          animate={{ opacity: insideSection3 ? 0 : 1 }}
+          transition={{ duration: 0.8 }}
           className="pointer-events-none absolute z-20"
         >
           <MouseResponsiveBackground>
