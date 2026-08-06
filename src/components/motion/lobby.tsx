@@ -348,7 +348,7 @@ export function Lobby() {
               src="/images/rock1-img.svg"
               active={insideSection2}
               entryX={-100}
-              duration={34}
+              duration={55}
               reverse={false}
               className="w-full"
             />
@@ -362,7 +362,7 @@ export function Lobby() {
               src="/images/rock2-img.svg"
               active={insideSection2}
               entryX={100}
-              duration={41}
+              duration={66}
               delay={1.2}
               reverse={true}
               className="w-full"

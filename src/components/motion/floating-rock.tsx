@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useAnimate, useReducedMotion } from "motion/react"
 
-const ORBIT_POINTS = 32
+const ORBIT_POINTS = 48
 // duração do trecho final até sair de tela quando a section 2 termina —
 // rápida (fast-forward), mas ainda uma curva, nunca uma linha reta.
 const EXIT_DURATION = 2.2
