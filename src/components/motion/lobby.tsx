@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from "motion/react"
 import { AsciiArt, AsciiArtFrame } from "@/components/ui/mo-mosaic"
 import { AsciiArtVV } from "@/components/ui/vv"
@@ -167,6 +167,120 @@ function useScreenAnchor() {
   return anchor
 }
 
+// duas coisas relacionadas à máscara da tv (tv-mask.png), usadas pelas
+// pedras flutuantes pra "entrar na tv" (ver FloatingRock e o comentário no
+// bloco das pedras abaixo):
+//
+// 1) isInsideTvMask(x,y): esse ponto da viewport cai na área clara (a
+//    tela)? Desenha a máscara UMA VEZ num canvas do tamanho da viewport
+//    (mesmo cover-fit + TV_POSITION do vídeo) e cacheia os pixels num
+//    array tipado — a leitura por ponto (chamada a cada frame) é só
+//    indexação de array.
+//
+// 2) getTvMaskStyle(rockLeft, rockTop): devolve o mask-image (CSS, direto,
+//    não invertido) que, aplicado à PRÓPRIA pedra, recorta o pixel a pixel
+//    dela pra só mostrar a parte que cai sobre a tela — é o que cria o
+//    efeito de "sumir só a parte que sai da máscara, imediatamente" (o
+//    recorte é feito pelo navegador em tempo real, não por um fade
+//    calculado). mask-size/mask-position não são relativos à viewport,
+//    são relativos à CAIXA DO PRÓPRIO ELEMENTO — por isso o cálculo usa
+//    coordenadas explícitas em px (não "cover"/porcentagem) compensando a
+//    posição atual da pedra, fazendo a máscara "grudar" numa posição fixa
+//    da tela por trás dela, como se fosse uma janela fixa vista por um
+//    buraco que se move.
+//
+// Como as pedras só ficam ativas na section 2+ (zoom e deslocamento já
+// assentados, scale=1), os dois usam a posição final fixa — só precisam
+// desfazer o deslocamento horizontal (SHIFT_X_TARGET).
+function useTvScreenMask() {
+  const dataRef = useRef<{ data: Uint8ClampedArray; width: number; height: number } | null>(null)
+  const geoRef = useRef<{ coverW: number; coverH: number; originX: number; originY: number } | null>(null)
+
+  useEffect(() => {
+    const canvas = document.createElement("canvas")
+    const ctx = canvas.getContext("2d")
+    const img = new Image()
+    img.src = "/images/tv-mask.png"
+
+    const draw = () => {
+      const naturalW = img.naturalWidth
+      const naturalH = img.naturalHeight
+      const boxW = window.innerWidth
+      const boxH = window.innerHeight
+      if (!naturalW || !naturalH || !boxW || !boxH || !ctx) return
+
+      // recorte pro sampling por pixel (isInsideTvMask): mesmo cálculo de
+      // antes, cover-fit encolhendo a imagem NATURAL pro tamanho da caixa.
+      const boxRatio = boxW / boxH
+      const imgRatio = naturalW / naturalH
+      let sw: number, sh: number
+      if (imgRatio > boxRatio) {
+        sh = naturalH
+        sw = sh * boxRatio
+      } else {
+        sw = naturalW
+        sh = sw / boxRatio
+      }
+      const sx = (naturalW - sw) * (TV_POSITION_X / 100)
+      const sy = (naturalH - sh) * (TV_POSITION_Y / 100)
+
+      canvas.width = boxW
+      canvas.height = boxH
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, boxW, boxH)
+      dataRef.current = { data: ctx.getImageData(0, 0, boxW, boxH).data, width: boxW, height: boxH }
+
+      // geometria pro mask-image direto na pedra (getTvMaskStyle): o
+      // inverso — cover-fit AMPLIANDO a imagem natural pra cobrir a caixa
+      // (viewport). coverW/coverH é o tamanho renderizado da imagem
+      // inteira; originX/Y é onde o canto dela cai relativo à viewport.
+      const scale = Math.max(boxW / naturalW, boxH / naturalH)
+      const coverW = naturalW * scale
+      const coverH = naturalH * scale
+      const originX = (boxW - coverW) * (TV_POSITION_X / 100)
+      const originY = (boxH - coverH) * (TV_POSITION_Y / 100)
+      geoRef.current = { coverW, coverH, originX, originY }
+    }
+
+    img.onload = draw
+    if (img.complete) draw()
+    window.addEventListener("resize", draw)
+    return () => window.removeEventListener("resize", draw)
+  }, [])
+
+  const isInsideTvMask = useCallback((vx: number, vy: number) => {
+    const cache = dataRef.current
+    if (!cache) return false
+    const shiftPx = (parseFloat(SHIFT_X_TARGET) / 100) * cache.width
+    const ux = Math.round(vx - shiftPx)
+    const uy = Math.round(vy)
+    if (ux < 0 || ux >= cache.width || uy < 0 || uy >= cache.height) return false
+    const idx = (uy * cache.width + ux) * 4
+    return cache.data[idx] > 128
+  }, [])
+
+  const getTvMaskStyle = useCallback((rockLeft: number, rockTop: number) => {
+    const geo = geoRef.current
+    if (!geo) return null
+    const shiftPx = (parseFloat(SHIFT_X_TARGET) / 100) * window.innerWidth
+    const posX = geo.originX + shiftPx - rockLeft
+    const posY = geo.originY - rockTop
+    return {
+      maskImage: "url(/images/tv-mask.png)",
+      WebkitMaskImage: "url(/images/tv-mask.png)",
+      maskMode: "luminance",
+      WebkitMaskMode: "luminance" as const,
+      maskRepeat: "no-repeat",
+      WebkitMaskRepeat: "no-repeat",
+      maskSize: `${geo.coverW}px ${geo.coverH}px`,
+      WebkitMaskSize: `${geo.coverW}px ${geo.coverH}px`,
+      maskPosition: `${posX}px ${posY}px`,
+      WebkitMaskPosition: `${posX}px ${posY}px`,
+    }
+  }, [])
+
+  return { isInsideTvMask, getTvMaskStyle }
+}
+
 const emptySubscribe = () => () => {}
 // true só depois de montar no cliente — usado pra liberar valores
 // sorteados com Math.random() sem quebrar a hidratação (o servidor e o
@@ -219,6 +333,7 @@ export function Lobby() {
   const prefersReducedMotion = useReducedMotion()
   const containerRef = useRef<HTMLDivElement>(null)
   const screenAnchor = useScreenAnchor()
+  const { isInsideTvMask, getTvMaskStyle } = useTvScreenMask()
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -350,9 +465,13 @@ export function Lobby() {
             {/* fora do box de 110% do parallax (que é ancorado no canto
                 top-left, então descentralizaria o "contain" do vv) — este
                 fica exatamente do tamanho da máscara, centralizado de
-                verdade. */}
+                verdade. pequeno ajuste fino (-16px x, -40px y): mesmo
+                "contain" e centralizado na máscara, o vídeo em si não fica
+                perfeitamente centrado a olho — compensa aqui. */}
             <motion.div
               className="absolute inset-0"
+              // scale 0.9: TESTE, 10% menor.
+              style={{ x: -16, y: -40, scale: 0.9 }}
               animate={{ opacity: insideSection3 ? 1 : 0 }}
               transition={{ duration: 0.8 }}
             >
@@ -399,7 +518,18 @@ export function Lobby() {
             FloatingRock) — sem opacidade: escondidas por saírem da área
             visível (overflow-hidden do container pai). sentido oposto
             entre as duas (reverse), posição vertical sorteada por
-            carregamento de página. */}
+            carregamento de página.
+
+            "entra na tv": a pedra fica visível normalmente enquanto
+            atravessa por cima da tela da tv (isInsideTvMask) — só some no
+            instante em que CRUZA A BORDA PRA FORA da máscara, de volta pro
+            resto da viewport (como se tivesse ido pra dentro da tv ali).
+            É direcional (importa se está entrando ou saindo da máscara),
+            então precisa de estado por frame (useAnimationFrame dentro do
+            FloatingRock), não dá pra fazer só com CSS mask-image estático.
+            Uma vez escondida, só volta a aparecer quando a órbita chega de
+            novo no ponto de entrada (fora da tela inteira) — nunca
+            reaparece flutuando no meio do caminho. */}
         <div className="pointer-events-none absolute inset-0 z-10">
           <div
             style={{ top: `${rockOrbit.topPct1}%` }}
@@ -409,9 +539,11 @@ export function Lobby() {
               src="/images/rock1-img.svg"
               active={insideSection2}
               entryX={-100}
-              duration={55}
+              duration={110}
               reverse={false}
               className="w-full"
+              isInsideTvMask={isInsideTvMask}
+              getTvMaskStyle={getTvMaskStyle}
             />
           </div>
 
@@ -423,10 +555,12 @@ export function Lobby() {
               src="/images/rock2-img.svg"
               active={insideSection2}
               entryX={100}
-              duration={66}
+              duration={132}
               delay={1.2}
               reverse={true}
               className="w-full"
+              isInsideTvMask={isInsideTvMask}
+              getTvMaskStyle={getTvMaskStyle}
             />
           </div>
         </div>

@@ -1,13 +1,22 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { useAnimate, useReducedMotion } from "motion/react"
+import { motion, useAnimate, useAnimationFrame, useMotionValue, useReducedMotion, useSpring } from "motion/react"
 
 const ORBIT_POINTS = 48
 // duração do trecho final até sair de tela quando a section 2 termina —
 // rápida (fast-forward), mas ainda uma curva, nunca uma linha reta.
 const EXIT_DURATION = 2.2
 const EXIT_POINTS = 20
+
+// raio (px) em volta da pedra onde o cursor passa a "empurrar" ela pra
+// longe — e o deslocamento máximo (px) desse empurrão, bem no centro do
+// raio. Raio generoso de propósito: precisa reagir só de chegar perto, não
+// só quando o cursor está quase em cima. Força continua sutil (pedido:
+// "não muito forte").
+const GRAVITY_RADIUS = 380
+const GRAVITY_STRENGTH = 32
+
 
 // gera os keyframes de um trecho da elipse (de fromT a toT, 0 a 1 = uma
 // volta completa), começando no ângulo 180° em t=0 — o ponto mais à
@@ -53,6 +62,31 @@ function buildArcPath(
 // o mais próximo dos três pontos fora da tela (t=0, t=0.5 ou t=1 — os dois
 // vértices da elipse, um de cada lado), pra nunca precisar atravessar o
 // trecho perto do centro da tela antes de sair.
+//
+// interatividade com o cursor: a órbita em si (acima) não muda — quem
+// controla o wrapper externo (ref={scope}) é sempre ela. por cima, um
+// elemento interno recebe um deslocamento extra (spring) empurrando pra
+// longe do cursor sempre que ele chega perto (sutil, não muito forte) —
+// soma-se à posição orbital, nunca a substitui.
+//
+// "entra na tv": fica visível normalmente enquanto atravessa por cima da
+// tela da tv — ao cruzar a borda PRA FORA da máscara, de volta pro resto
+// da viewport, some só a parte que já saiu, imediatamente (como se
+// estivesse entrando na tv ali), não a pedra inteira de uma vez. Pra isso
+// aplicamos na PRÓPRIA pedra o mesmo tv-mask.png (não invertido), com
+// mask-size/mask-position em px explícitos que compensam a posição atual
+// dela — o navegador faz o recorte pixel a pixel em tempo real, sem
+// nenhum fade calculado (ver getTvMaskStyle em lobby.tsx). A máscara só
+// LIGA na transição de "toda dentro" (os 4 cantos do retângulo da pedra,
+// não só o centro — perto de uma borda curva da tela o centro cruzaria
+// bem antes do resto do corpo, cortando a entrada também) pra "não mais
+// toda dentro" — é aí que ela começou a sair por algum lado. Assim que o
+// centro também sai, desliga a máscara e finaliza escondendo de vez.
+// É direcional (importa se está entrando ou saindo), então precisa de
+// estado por frame (useAnimationFrame) — não dá pra fazer só com CSS
+// mask-image estático e nada mais. Uma vez escondida, só volta a aparecer
+// quando a órbita chega de novo no ponto de entrada (fora da tela) —
+// nunca reaparece flutuando no meio do caminho.
 export function FloatingRock({
   src,
   className,
@@ -62,6 +96,8 @@ export function FloatingRock({
   duration = 16,
   delay = 0,
   reverse = false,
+  isInsideTvMask,
+  getTvMaskStyle,
 }: {
   src: string
   className?: string
@@ -71,6 +107,8 @@ export function FloatingRock({
   duration?: number
   delay?: number
   reverse?: boolean
+  isInsideTvMask?: (x: number, y: number) => boolean
+  getTvMaskStyle?: (rockLeft: number, rockTop: number) => Record<string, string> | null
 }) {
   const prefersReducedMotion = useReducedMotion()
   const [scope, animate] = useAnimate()
@@ -79,6 +117,105 @@ export function FloatingRock({
   // em que ponto da elipse (fração t, 0 a 1) a pedra está quando precisa
   // sair, pra continuar dali em vez de cortar reto.
   const lapStartRef = useRef(0)
+
+  const gravityX = useMotionValue(0)
+  const gravityY = useMotionValue(0)
+  const springX = useSpring(gravityX, { stiffness: 200, damping: 20, mass: 0.6 })
+  const springY = useSpring(gravityY, { stiffness: 200, damping: 20, mass: 0.6 })
+
+  // visibilidade em relação à tela da tv (ver comentário acima da função).
+  // sem spring aqui: uma vez escondida deve ficar escondida (o corte em si
+  // já é feito pixel a pixel pela máscara, em tempo real — não há nada
+  // pra suavizar aqui, só o "interruptor final" quando termina de sair).
+  const tvOpacity = useMotionValue(1)
+  const imgRef = useRef<HTMLImageElement>(null)
+  // "dentro" aqui significa TOTALMENTE dentro (os 4 cantos, não só o
+  // centro) — perto de uma borda curva da tela, o centro pode cruzar pra
+  // dentro bem antes do resto do corpo da pedra, e ligar a máscara nesse
+  // momento cortaria a entrada também (que precisa ficar sempre inteira).
+  const wasFullyInsideRef = useRef(false)
+  // true enquanto o mask-image (recorte pixel a pixel) está aplicado na
+  // pedra — só liga na transição de "toda dentro" pra "não mais toda
+  // dentro" (começou a sair por algum lado) e desliga assim que o centro
+  // também sai, aí sim escondendo de vez.
+  const maskActiveRef = useRef(false)
+  const hiddenByTvRef = useRef(false)
+
+  useAnimationFrame(() => {
+    if (!isInsideTvMask || !getTvMaskStyle || prefersReducedMotion) return
+    const el = imgRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const cx = rect.left + rect.width / 2
+    const cy = rect.top + rect.height / 2
+    const offscreen = cx < -rect.width || cx > window.innerWidth + rect.width
+
+    if (offscreen) {
+      // ponto de entrada: reseta, a pedra volta a poder ficar visível.
+      maskActiveRef.current = false
+      hiddenByTvRef.current = false
+      wasFullyInsideRef.current = false
+    } else {
+      const nowFullyInside =
+        isInsideTvMask(rect.left, rect.top) &&
+        isInsideTvMask(rect.right, rect.top) &&
+        isInsideTvMask(rect.left, rect.bottom) &&
+        isInsideTvMask(rect.right, rect.bottom)
+
+      if (wasFullyInsideRef.current && !nowFullyInside) {
+        // começou a sair por algum lado (não está mais 100% dentro) —
+        // liga a máscara, que a partir daqui recorta em tempo real só a
+        // parte que já cruzou a borda.
+        maskActiveRef.current = true
+      }
+      if (maskActiveRef.current && !isInsideTvMask(cx, cy)) {
+        // o centro também já saiu — a essa altura a máscara já recortou
+        // quase tudo; termina de escondê-la de vez, imediatamente.
+        maskActiveRef.current = false
+        hiddenByTvRef.current = true
+      }
+      wasFullyInsideRef.current = nowFullyInside
+    }
+
+    if (maskActiveRef.current) {
+      const maskStyle = getTvMaskStyle(rect.left, rect.top)
+      if (maskStyle) Object.assign(el.style, maskStyle)
+    } else if (el.style.maskImage || el.style.getPropertyValue("-webkit-mask-image")) {
+      el.style.maskImage = "none"
+      el.style.setProperty("-webkit-mask-image", "none")
+    }
+
+    tvOpacity.set(hiddenByTvRef.current ? 0 : 1)
+  })
+
+  useEffect(() => {
+    if (prefersReducedMotion) return
+
+    function handleMouseMove(e: MouseEvent) {
+      const el = scope.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const centerX = rect.left + rect.width / 2
+      const centerY = rect.top + rect.height / 2
+      const dx = e.clientX - centerX
+      const dy = e.clientY - centerY
+      const dist = Math.hypot(dx, dy)
+
+      if (dist > 0 && dist < GRAVITY_RADIUS) {
+        // sinal invertido (-dx/-dy): empurra pra longe do cursor, não puxa
+        // pra ele.
+        const push = (1 - dist / GRAVITY_RADIUS) * GRAVITY_STRENGTH
+        gravityX.set((-dx / dist) * push)
+        gravityY.set((-dy / dist) * push)
+      } else {
+        gravityX.set(0)
+        gravityY.set(0)
+      }
+    }
+
+    window.addEventListener("mousemove", handleMouseMove)
+    return () => window.removeEventListener("mousemove", handleMouseMove)
+  }, [prefersReducedMotion, scope, gravityX, gravityY])
 
   useEffect(() => {
     if (prefersReducedMotion) {
@@ -153,16 +290,25 @@ export function FloatingRock({
   }, [active, animate, delay, driftY, duration, entryX, prefersReducedMotion, reverse, scope])
 
   return (
-    <img
+    <div
       ref={scope as never}
-      src={src}
-      alt=""
-      aria-hidden="true"
       className={className}
       // posição estática de partida, fora da tela — evita que a pedra
       // apareça no centro por um instante antes do efeito acima rodar
       // (ex.: primeiro paint, ainda na section 1).
       style={{ transform: `translate(${entryX}vw, 0px)` }}
-    />
+    >
+      <motion.img
+        ref={imgRef}
+        src={src}
+        alt=""
+        aria-hidden="true"
+        // w-full + h-auto (não h-full): a div externa não tem altura
+        // própria, ela nasce do conteúdo — precisa ser o inverso, a altura
+        // dela vem da proporção intrínseca da imagem, não o contrário.
+        className="block h-auto w-full"
+        style={{ x: springX, y: springY, opacity: tvOpacity }}
+      />
+    </div>
   )
 }
