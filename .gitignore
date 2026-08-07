@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# componente vv (troca de vídeo da tv na section 3) — fora de uso por
+# enquanto (mantido localmente pra reaproveitar no futuro, se fizer
+# sentido mergear essa direção de volta — ver branch lobby-tv-zoom-experiment).
+src/components/ui/vv.tsx

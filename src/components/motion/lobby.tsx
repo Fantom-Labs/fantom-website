@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from "motion/react"
 import { AsciiArt, AsciiArtFrame } from "@/components/ui/mo-mosaic"
-import { AsciiArtVV } from "@/components/ui/vv"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 import { FloatingRock } from "@/components/motion/floating-rock"
 
@@ -66,9 +65,6 @@ export const LOBBY_SECTIONS = [
   { id: "inicio", label: "Início", progress: 0 },
   // fim do zoom + deslocamento pra esquerda da cena da tv (SHIFT_RANGE[1]).
   { id: "portfolio", label: "Portfólio", progress: SHIFT_RANGE[1] },
-  // troca do vídeo exibido na tela da tv e esconde a logo central — ainda
-  // dentro da pausa final do lobby, antes do sticky soltar.
-  { id: "o-que-fazemos", label: "O que fazemos", progress: 0.75 },
 ] as const
 
 // índice (em LOBBY_SECTIONS) da seção ativa pra um dado scrollYProgress.
@@ -366,11 +362,11 @@ export function Lobby() {
   // página, não no progresso da animação da tv).
   const frameOpacity = useTransform(scrollY, [0, 50], [1, 0])
   // seção ativa (índice em LOBBY_SECTIONS), derivada do progresso do
-  // scroll — única leitura de scrollYProgress pra decidir isso; os efeitos
-  // abaixo (pedras, vídeo da tv, logo) só derivam booleanos dela, nunca
-  // recalculam limiar por conta própria. NÃO usar SHIFT_RANGE[0] direto pra
-  // nada disso: agora que o deslocamento corre junto com o zoom, esse
-  // limiar é 0 — usaria como "ativo" desde o topo da página.
+  // scroll — única leitura de scrollYProgress pra decidir isso; o efeito
+  // abaixo (pedras) só deriva um booleano dela, nunca recalcula limiar por
+  // conta própria. NÃO usar SHIFT_RANGE[0] direto pra isso: agora que o
+  // deslocamento corre junto com o zoom, esse limiar é 0 — usaria como
+  // "ativo" desde o topo da página.
   const [activeSection, setActiveSection] = useState(0)
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     setActiveSection(getActiveLobbySection(v))
@@ -380,9 +376,6 @@ export function Lobby() {
   // scroll voltando pro início. o gatilho é o booleano abaixo (cruza o
   // limiar da section 2 em qualquer direção), não um valor contínuo.
   const insideSection2 = activeSection >= 1
-  // troca do vídeo exibido na tela da tv e esconde a logo central: dispara
-  // um scroll depois da section 2, não junto com ela.
-  const insideSection3 = activeSection >= 2
   const rockOrbit = useRockOrbit()
 
   // fallback estático: sem scroll-zoom, sem parallax, uma tela só (project.md, seção 10).
@@ -449,42 +442,16 @@ export function Lobby() {
           className="absolute inset-0 z-10 overflow-hidden"
         >
           <motion.div style={{ scale: videoCounterScale }} className="absolute inset-0">
-            {/* na section 3 troca o vídeo exibido na tela da tv — os dois
-                ficam montados e só a opacidade cruza, pra não recarregar
-                nem reiniciar nenhum dos dois vídeos a cada troca. */}
             <MouseResponsiveBackground className="absolute left-0 top-0 h-[110%] w-[110%]">
-              <motion.div
-                className="absolute inset-0"
-                animate={{ opacity: insideSection3 ? 0 : 1 }}
-                transition={{ duration: 0.8 }}
-              >
-                <AsciiArt className="h-full w-full" />
-              </motion.div>
+              <AsciiArt className="h-full w-full" />
             </MouseResponsiveBackground>
-
-            {/* fora do box de 110% do parallax (que é ancorado no canto
-                top-left, então descentralizaria o "contain" do vv) — este
-                fica exatamente do tamanho da máscara, centralizado de
-                verdade. pequeno ajuste fino (-2px x, -40px y): mesmo
-                "contain" e centralizado na máscara, o vídeo em si não fica
-                perfeitamente centrado a olho — compensa aqui. */}
-            <motion.div
-              className="absolute inset-0"
-              // scale 0.9: TESTE, 10% menor.
-              style={{ x: -2, y: -40, scale: 0.9 }}
-              animate={{ opacity: insideSection3 ? 1 : 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <AsciiArtVV className="h-full w-full" />
-            </motion.div>
           </motion.div>
         </motion.div>
 
         {/* logo central: não é mascarada (precisa ficar inteira, sem
             recorte). começa no centro da viewport (vídeo em tela cheia) e
             termina no centro real da tela do tv (useScreenAnchor), junto
-            com o scroll — nunca fica numa posição fixa. some na section 3,
-            junto com a troca do vídeo exibido na tela da tv. */}
+            com o scroll — nunca fica numa posição fixa. */}
         <motion.div
           style={{
             scale: logoScale,
@@ -493,8 +460,6 @@ export function Lobby() {
             x: logoX,
             y: "-50%",
           }}
-          animate={{ opacity: insideSection3 ? 0 : 1 }}
-          transition={{ duration: 0.8 }}
           className="pointer-events-none absolute z-20"
         >
           <MouseResponsiveBackground>
