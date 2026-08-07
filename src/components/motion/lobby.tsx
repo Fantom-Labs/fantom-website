@@ -465,13 +465,13 @@ export function Lobby() {
             {/* fora do box de 110% do parallax (que é ancorado no canto
                 top-left, então descentralizaria o "contain" do vv) — este
                 fica exatamente do tamanho da máscara, centralizado de
-                verdade. pequeno ajuste fino (-16px x, -40px y): mesmo
+                verdade. pequeno ajuste fino (-2px x, -40px y): mesmo
                 "contain" e centralizado na máscara, o vídeo em si não fica
                 perfeitamente centrado a olho — compensa aqui. */}
             <motion.div
               className="absolute inset-0"
               // scale 0.9: TESTE, 10% menor.
-              style={{ x: -16, y: -40, scale: 0.9 }}
+              style={{ x: -2, y: -40, scale: 0.9 }}
               animate={{ opacity: insideSection3 ? 1 : 0 }}
               transition={{ duration: 0.8 }}
             >
