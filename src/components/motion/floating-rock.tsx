@@ -17,7 +17,6 @@ const EXIT_POINTS = 20
 const GRAVITY_RADIUS = 380
 const GRAVITY_STRENGTH = 32
 
-
 // gera os keyframes de um trecho da elipse (de fromT a toT, 0 a 1 = uma
 // volta completa), começando no ângulo 180° em t=0 — o ponto mais à
 // esquerda do centro da órbita, onde fica o "ponto de entrada", fora da
@@ -64,29 +63,44 @@ function buildArcPath(
 // trecho perto do centro da tela antes de sair.
 //
 // interatividade com o cursor: a órbita em si (acima) não muda — quem
-// controla o wrapper externo (ref={scope}) é sempre ela. por cima, um
-// elemento interno recebe um deslocamento extra (spring) empurrando pra
-// longe do cursor sempre que ele chega perto (sutil, não muito forte) —
-// soma-se à posição orbital, nunca a substitui.
+// controla a posição (ref={scope}) é sempre ela. por cima, um elemento
+// interno recebe um deslocamento extra (spring) empurrando pra longe do
+// cursor sempre que ele chega perto (sutil, não muito forte) — soma-se à
+// posição orbital, nunca a substitui.
+//
+// três camadas de transform SEPARADAS, de propósito (ver JSX no final):
+// `scope` (posição, x/y da órbita) > wrapper de gravidade (x/y do cursor)
+// > wrapper de rotação (o giro da órbita) > img. A rotação PRECISA estar
+// isolada num wrapper à parte porque a máscara da tv (abaixo) é aplicada
+// no `scope` — se estivesse num elemento que também gira, o RECORTE
+// giraria junto com a pedra (o corte pixel a pixel é feito no espaço
+// local do elemento, antes do transform de rotação ser aplicado), fazendo
+// a borda do corte parecer horizontal, vertical, ou qualquer ângulo
+// dependendo de onde a pedra está no giro — em vez de sempre alinhada com
+// a borda real da tela.
 //
 // "entra na tv": fica visível normalmente enquanto atravessa por cima da
 // tela da tv — ao cruzar a borda PRA FORA da máscara, de volta pro resto
 // da viewport, some só a parte que já saiu, imediatamente (como se
 // estivesse entrando na tv ali), não a pedra inteira de uma vez. Pra isso
-// aplicamos na PRÓPRIA pedra o mesmo tv-mask.png (não invertido), com
-// mask-size/mask-position em px explícitos que compensam a posição atual
-// dela — o navegador faz o recorte pixel a pixel em tempo real, sem
-// nenhum fade calculado (ver getTvMaskStyle em lobby.tsx). A máscara só
-// LIGA na transição de "toda dentro" (os 4 cantos do retângulo da pedra,
+// aplicamos no `scope` (não-rotacionado) o mesmo tv-mask.png (não
+// invertido), com mask-size/mask-position em px explícitos que compensam
+// a posição atual dele — o navegador faz o recorte pixel a pixel em tempo
+// real, sem nenhum fade calculado (ver getTvMaskStyle em lobby.tsx). A
+// máscara LIGA na transição de "toda dentro" (os 4 cantos do retângulo,
 // não só o centro — perto de uma borda curva da tela o centro cruzaria
 // bem antes do resto do corpo, cortando a entrada também) pra "não mais
-// toda dentro" — é aí que ela começou a sair por algum lado. Assim que o
-// centro também sai, desliga a máscara e finaliza escondendo de vez.
-// É direcional (importa se está entrando ou saindo), então precisa de
+// toda dentro" — é aí que ela começou a sair por algum lado — e só
+// DESLIGA (trocando pro opacity:0 final) quando os 4 cantos já saíram por
+// completo — nunca antes: enquanto sobrar qualquer canto dentro, ainda
+// existe um pedacinho visível sendo recortado pela máscara, e cortar pro
+// escondido antes disso faria esse resto sumir de repente, num pulo, em
+// vez de continuar encolhendo suavemente até não sobrar nada. É
+// direcional (importa se está entrando ou saindo), então precisa de
 // estado por frame (useAnimationFrame) — não dá pra fazer só com CSS
-// mask-image estático e nada mais. Uma vez escondida, só volta a aparecer
-// quando a órbita chega de novo no ponto de entrada (fora da tela) —
-// nunca reaparece flutuando no meio do caminho.
+// mask-image estático e nada mais. Uma vez escondida, só volta a
+// aparecer quando a órbita chega de novo no ponto de entrada (fora da
+// tela) — nunca reaparece flutuando no meio do caminho.
 export function FloatingRock({
   src,
   className,
@@ -112,6 +126,9 @@ export function FloatingRock({
 }) {
   const prefersReducedMotion = useReducedMotion()
   const [scope, animate] = useAnimate()
+  // wrapper só da rotação — separado do `scope` (posição) de propósito,
+  // ver comentário acima da função.
+  const rotateRef = useRef<HTMLDivElement>(null)
   const startedRef = useRef(false)
   // timestamp (ms) de quando a volta atual começou — usado só pra saber
   // em que ponto da elipse (fração t, 0 a 1) a pedra está quando precisa
@@ -128,7 +145,6 @@ export function FloatingRock({
   // já é feito pixel a pixel pela máscara, em tempo real — não há nada
   // pra suavizar aqui, só o "interruptor final" quando termina de sair).
   const tvOpacity = useMotionValue(1)
-  const imgRef = useRef<HTMLImageElement>(null)
   // "dentro" aqui significa TOTALMENTE dentro (os 4 cantos, não só o
   // centro) — perto de uma borda curva da tela, o centro pode cruzar pra
   // dentro bem antes do resto do corpo da pedra, e ligar a máscara nesse
@@ -143,11 +159,13 @@ export function FloatingRock({
 
   useAnimationFrame(() => {
     if (!isInsideTvMask || !getTvMaskStyle || prefersReducedMotion) return
-    const el = imgRef.current
+    // usa `scope` (só x/y, nunca rotaciona) — não o wrapper de rotação nem
+    // a img — pra que o cálculo da máscara nunca seja distorcido pelo giro
+    // atual da pedra (ver comentário acima da função).
+    const el = scope.current
     if (!el) return
     const rect = el.getBoundingClientRect()
     const cx = rect.left + rect.width / 2
-    const cy = rect.top + rect.height / 2
     const offscreen = cx < -rect.width || cx > window.innerWidth + rect.width
 
     if (offscreen) {
@@ -161,6 +179,17 @@ export function FloatingRock({
         isInsideTvMask(rect.right, rect.top) &&
         isInsideTvMask(rect.left, rect.bottom) &&
         isInsideTvMask(rect.right, rect.bottom)
+      // simétrico ao "toda dentro": só considera totalmente fora quando os
+      // 4 cantos já cruzaram — enquanto sobrar QUALQUER canto dentro,
+      // ainda existe um pedacinho visível sendo recortado pela máscara em
+      // tempo real. Cortar pro opacity:0 antes disso faz o resto que ainda
+      // estava visível sumir de repente, num pulo — em vez de continuar
+      // encolhendo suavemente até não sobrar nada.
+      const nowFullyOutside =
+        !isInsideTvMask(rect.left, rect.top) &&
+        !isInsideTvMask(rect.right, rect.top) &&
+        !isInsideTvMask(rect.left, rect.bottom) &&
+        !isInsideTvMask(rect.right, rect.bottom)
 
       if (wasFullyInsideRef.current && !nowFullyInside) {
         // começou a sair por algum lado (não está mais 100% dentro) —
@@ -168,9 +197,9 @@ export function FloatingRock({
         // parte que já cruzou a borda.
         maskActiveRef.current = true
       }
-      if (maskActiveRef.current && !isInsideTvMask(cx, cy)) {
-        // o centro também já saiu — a essa altura a máscara já recortou
-        // quase tudo; termina de escondê-la de vez, imediatamente.
+      if (maskActiveRef.current && nowFullyOutside) {
+        // os 4 cantos já saíram — a máscara já recortou tudo (0 pixels
+        // visíveis); só agora desliga e finaliza escondida, sem pulo.
         maskActiveRef.current = false
         hiddenByTvRef.current = true
       }
@@ -180,9 +209,8 @@ export function FloatingRock({
     if (maskActiveRef.current) {
       const maskStyle = getTvMaskStyle(rect.left, rect.top)
       if (maskStyle) Object.assign(el.style, maskStyle)
-    } else if (el.style.maskImage || el.style.getPropertyValue("-webkit-mask-image")) {
-      el.style.maskImage = "none"
-      el.style.setProperty("-webkit-mask-image", "none")
+    } else if (el.style.maskImage !== "none") {
+      Object.assign(el.style, { maskImage: "none", WebkitMaskImage: "none" })
     }
 
     tvOpacity.set(hiddenByTvRef.current ? 0 : 1)
@@ -248,12 +276,17 @@ export function FloatingRock({
         // órbita contínua (repete infinitamente); quando `active` virar
         // false o efeito reroda e essa chamada é interrompida pelo
         // Motion — a próxima animação (abaixo) parte suavemente de onde
-        // ela estiver.
-        await animate(
-          scope.current,
-          { x: path.x, y: path.y, rotate: [0, reverse ? -360 : 360] },
-          { duration, ease: "linear", repeat: Infinity }
-        )
+        // ela estiver. posição (scope) e rotação (rotateRef) animam em
+        // paralelo, em elementos separados (ver comentário acima da
+        // função) — mas sincronizados, já que usam o mesmo path/duration.
+        await Promise.all([
+          animate(scope.current, { x: path.x, y: path.y }, { duration, ease: "linear", repeat: Infinity }),
+          animate(
+            rotateRef.current,
+            { rotate: [0, reverse ? -360 : 360] },
+            { duration, ease: "linear", repeat: Infinity }
+          ),
+        ])
       } else if (startedRef.current) {
         // fração da volta já percorrida (0 a 1). com a elipse cobrindo as
         // duas bordas, existem TRÊS pontos fora da tela por volta: t=0 e
@@ -275,11 +308,18 @@ export function FloatingRock({
         // (a maior distância possível entre dois pontos consecutivos).
         const exitDuration = EXIT_DURATION * (Math.abs(targetT - tNow) / 0.5)
 
-        await animate(
-          scope.current,
-          { x: path.x, y: path.y, rotate: path.rotate },
-          { duration: Math.max(exitDuration, 0.3), ease: "easeOut" }
-        )
+        await Promise.all([
+          animate(
+            scope.current,
+            { x: path.x, y: path.y },
+            { duration: Math.max(exitDuration, 0.3), ease: "easeOut" }
+          ),
+          animate(
+            rotateRef.current,
+            { rotate: path.rotate },
+            { duration: Math.max(exitDuration, 0.3), ease: "easeOut" }
+          ),
+        ])
       }
     }
 
@@ -298,17 +338,21 @@ export function FloatingRock({
       // (ex.: primeiro paint, ainda na section 1).
       style={{ transform: `translate(${entryX}vw, 0px)` }}
     >
-      <motion.img
-        ref={imgRef}
-        src={src}
-        alt=""
-        aria-hidden="true"
-        // w-full + h-auto (não h-full): a div externa não tem altura
-        // própria, ela nasce do conteúdo — precisa ser o inverso, a altura
-        // dela vem da proporção intrínseca da imagem, não o contrário.
-        className="block h-auto w-full"
-        style={{ x: springX, y: springY, opacity: tvOpacity }}
-      />
+      <motion.div style={{ x: springX, y: springY }}>
+        <div ref={rotateRef}>
+          <motion.img
+            src={src}
+            alt=""
+            aria-hidden="true"
+            // w-full + h-auto (não h-full): a div externa não tem altura
+            // própria, ela nasce do conteúdo — precisa ser o inverso, a
+            // altura dela vem da proporção intrínseca da imagem, não o
+            // contrário.
+            className="block h-auto w-full"
+            style={{ opacity: tvOpacity }}
+          />
+        </div>
+      </motion.div>
     </div>
   )
 }
