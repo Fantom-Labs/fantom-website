@@ -20,8 +20,6 @@ O site é a principal peça de prova desse reposicionamento. Como a Fantom se ve
 
 ## 2. Posicionamento e marca
 
-**Arquétipo:** Mago (transformação através de conhecimento que os outros não têm, atuando por trás da cortina), temperado com Sábio (autoridade técnica) no conteúdo.
-
 **Positioning statement:**
 > A Fantom é a sócia estratégica de tecnologia e design por trás de produtos que viram negócios de verdade. Atuamos como parceira, não fornecedora, de founders e empresas que querem construir tecnologia rentável e relevante, com participação societária em parte do que construímos, como a KOMMUchat.
 
