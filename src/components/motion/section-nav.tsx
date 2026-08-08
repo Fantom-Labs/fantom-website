@@ -59,7 +59,7 @@ export function SectionNav() {
     <nav
       aria-label="Navegação de seções"
       // z-[60]: fica acima do lobby (z-50), visível mesmo antes de sair dele.
-      className="fixed right-5 top-1/2 z-[60] flex -translate-y-1/2 flex-col items-end gap-4 sm:right-8"
+      className="fixed right-5 bottom-5 z-[60] flex flex-col items-end gap-4 sm:right-8 sm:bottom-8"
     >
       {SECTIONS.map((section) => (
         <a
