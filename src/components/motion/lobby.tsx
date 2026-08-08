@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
-import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from "motion/react"
+import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type Variants } from "motion/react"
 import { AsciiArt, AsciiArtFrame } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 import { FloatingRock } from "@/components/motion/floating-rock"
@@ -10,6 +10,29 @@ import { FloatingRock } from "@/components/motion/floating-rock"
 // quando o usuário prefere motion reduzido (project.md, seção 10).
 const POSTER_SRC =
   "https://assets.21st.dev/ascii-recipes/thumbnails/user_39AUrstSGWJUKmRU9spgBJgd1hs/95b377f8-e226-434d-be5c-2c7159b3e244.webp"
+
+// copy da hero (project.md, seção 6) — mesmo texto usado nas duas versões
+// do layout (coluna animada da section 2 e o fallback estático de motion
+// reduzido), pra não divergir entre elas.
+const EYEBROW_TEXT = "Websites · SaaS · Sistemas com IA"
+const HEADLINE_TEXT = "Sócia estratégica de tecnologia e design por trás de negócios reais."
+const SUBHEAD_TEXT = "Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto."
+const CTA_LABEL = "Falar com a Fantom"
+
+// entrada em stagger do conteúdo da hero (coluna direita, section 2):
+// eyebrow, H1, subhead e CTA entram na sequência, ~80ms entre cada,
+// deslizando da direita (x positivo) pra sua posição final — mesmo
+// gatilho (insideSection2) que já controla as pedras. Reversível: ao
+// rolar de volta, o stagger desfaz sozinho (Motion anima de volta pro
+// estado "hidden").
+const heroStaggerVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+}
+const heroItemVariants: Variants = {
+  hidden: { opacity: 0, x: 24 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: "easeOut" } },
+}
 
 // EXPERIMENTAL — protótipo da ideia "zoom pra dentro da tela de TV" (ainda
 // não documentado no project.md, é uma direção em avaliação). A saída do
@@ -379,6 +402,9 @@ export function Lobby() {
   const rockOrbit = useRockOrbit()
 
   // fallback estático: sem scroll-zoom, sem parallax, uma tela só (project.md, seção 10).
+  // conteúdo da hero também aparece aqui (sem stagger, só presente) — é
+  // conteúdo real da página (headline, CTA), não decoração, então precisa
+  // estar disponível mesmo com motion reduzido.
   if (prefersReducedMotion) {
     return (
       <div className="relative h-screen bg-black">
@@ -387,13 +413,21 @@ export function Lobby() {
           <img src={POSTER_SRC} alt="" className="h-full w-full object-cover" />
         </div>
 
-        <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-8 px-6 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/logo-centralized.svg"
-            alt="Fantom"
-            className="w-[416px] sm:w-[416px]"
-          />
+          <img src="/images/logo-centralized.svg" alt="Fantom" className="w-[220px] sm:w-[280px]" />
+
+          <div className="max-w-lg">
+            <p className="text-xs tracking-[0.2em] text-white/60 uppercase sm:text-sm">{EYEBROW_TEXT}</p>
+            <h1 className="mt-4 text-2xl leading-tight font-medium text-white sm:text-3xl">{HEADLINE_TEXT}</h1>
+            <p className="mt-4 text-sm leading-relaxed text-white/70 sm:text-base">{SUBHEAD_TEXT}</p>
+            <a
+              href="#contato"
+              className="mt-8 inline-block rounded-full border border-white/40 px-6 py-3 text-sm tracking-wide text-white uppercase transition-colors hover:bg-white hover:text-black"
+            >
+              {CTA_LABEL}
+            </a>
+          </div>
         </div>
 
         <AsciiArtFrame />
@@ -529,6 +563,47 @@ export function Lobby() {
             />
           </div>
         </div>
+
+        {/* conteúdo da hero (project.md, seção 6): coluna à direita,
+            liberada pelo deslocamento da tv. Entra em stagger assim que
+            chega na section 2 (mesmo gatilho das pedras) — ver
+            heroStaggerVariants/heroItemVariants. */}
+        <motion.div
+          className="pointer-events-none absolute right-[6%] top-1/2 z-20 max-w-[420px] -translate-y-1/2 text-left sm:right-[8%]"
+          initial="hidden"
+          animate={insideSection2 ? "visible" : "hidden"}
+          variants={heroStaggerVariants}
+        >
+          <motion.p
+            variants={heroItemVariants}
+            className="text-xs tracking-[0.2em] text-white/60 uppercase sm:text-sm"
+          >
+            {EYEBROW_TEXT}
+          </motion.p>
+
+          <motion.h1
+            variants={heroItemVariants}
+            className="mt-4 text-2xl leading-tight font-medium text-white sm:text-3xl lg:text-4xl"
+          >
+            {HEADLINE_TEXT}
+          </motion.h1>
+
+          <motion.p
+            variants={heroItemVariants}
+            className="mt-4 text-sm leading-relaxed text-white/70 sm:text-base"
+          >
+            {SUBHEAD_TEXT}
+          </motion.p>
+
+          <motion.div variants={heroItemVariants} className="pointer-events-auto mt-8">
+            <a
+              href="#contato"
+              className="inline-block rounded-full border border-white/40 px-6 py-3 text-sm tracking-wide text-white uppercase transition-colors hover:bg-white hover:text-black"
+            >
+              {CTA_LABEL}
+            </a>
+          </motion.div>
+        </motion.div>
 
         {/* moldura decorativa: some conforme a cena encolhe, volta se rolar de volta */}
         <AsciiArtFrame opacity={frameOpacity} />
