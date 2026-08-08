@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type Variants } from "motion/react"
-import { AsciiArt, AsciiArtFrame } from "@/components/ui/mo-mosaic"
+import { AsciiArt } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 import { FloatingRock } from "@/components/motion/floating-rock"
 
@@ -330,7 +330,7 @@ function useRockOrbit() {
 function LobbyChrome() {
   return (
     <>
-      <div className="fixed left-10px top-5 z-30 flex h-11 items-center sm:left-8 sm:top-8">
+      <div className="fixed left-10px top-0 z-30 flex h-11 items-center sm:left-8 sm:top-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-left.svg" alt="Fantom" className="max-w-[80px]" />
       </div>
@@ -339,7 +339,7 @@ function LobbyChrome() {
       <button
         type="button"
         aria-label="Abrir menu"
-        className="fixed right-5 top-5 z-30 flex h-11 w-11 items-center justify-center sm:right-8 sm:top-8"
+        className="fixed right-5 top-0 z-30 flex h-11 w-11 items-center justify-center sm:right-8 sm:top-3"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icon-menu.svg" alt="" className="h-6 w-6" />
@@ -358,9 +358,6 @@ export function Lobby() {
     target: containerRef,
     offset: ["start start", "end end"],
   })
-  // scroll bruto da página (px), não o progresso relativo ao container —
-  // usado só pra moldura, que precisa reagir ao topo absoluto do site.
-  const { scrollY } = useScroll()
 
   const maskScale = useTransform(scrollYProgress, ZOOM_RANGE, [ZOOM_START, 1])
   // cancela o zoom do wrapper no conteúdo do vídeo: a "janela" da máscara
@@ -380,10 +377,6 @@ export function Lobby() {
   const shiftX = useTransform(scrollYProgress, SHIFT_RANGE, ["0vw", SHIFT_X_TARGET])
   // combina o deslocamento com a centralização própria da logo (-50%).
   const logoX = useTransform(shiftX, (v) => `calc(-50% + ${v})`)
-  // só aparece no topo absoluto do site: some nos primeiros 50px de scroll
-  // e volta assim que a página retorna ao topo (baseado no scroll real da
-  // página, não no progresso da animação da tv).
-  const frameOpacity = useTransform(scrollY, [0, 50], [1, 0])
   // seção ativa (índice em LOBBY_SECTIONS), derivada do progresso do
   // scroll — única leitura de scrollYProgress pra decidir isso; o efeito
   // abaixo (pedras) só deriva um booleano dela, nunca recalcula limiar por
@@ -429,8 +422,6 @@ export function Lobby() {
             </a>
           </div>
         </div>
-
-        <AsciiArtFrame />
 
         <LobbyChrome />
       </div>
@@ -604,9 +595,6 @@ export function Lobby() {
             </a>
           </motion.div>
         </motion.div>
-
-        {/* moldura decorativa: some conforme a cena encolhe, volta se rolar de volta */}
-        <AsciiArtFrame opacity={frameOpacity} />
 
         <LobbyChrome />
       </div>
