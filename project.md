@@ -105,6 +105,7 @@ O site é a principal peça de prova desse reposicionamento. Como a Fantom se ve
 Copy completa versionada em `fantom-website-home.md`.
 
 **Hero (versão atual):**
+> `Websites · SaaS · Sistemas com IA`
 > **Sócia estratégica de tecnologia e design por trás de negócios reais.**
 > Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto.
 > `[ Falar com a Fantom ]`
@@ -116,7 +117,7 @@ Copy completa versionada em `fantom-website-home.md`.
 Objetivo: qualidade e imersão de sites Framer, construídas em código próprio, sem Framer. Uso estratégico e sóbrio de tecnologias modernas, mantendo seriedade de autoridade.
 
 - **Loader de entrada:** arte ASCII animada (componente `mo-mosaic`, vídeo em loop) em tela cheia.
-- **Transição loader → hero:** o elemento do loader se converte num frame posicionado na hero (shared layout animation). Layout da hero a definir: texto em coluna à esquerda do frame, ou composição mais criativa.
+- **Transição loader → hero:** o elemento do loader se converte num frame posicionado na hero (shared layout animation). Layout definido: o frame (tv) desloca pra esquerda ao fim do zoom, liberando uma coluna à direita — eyebrow, H1, subhead e CTA entram ali em stagger (~80ms entre cada), da direita pra esquerda.
 - **Seções institucionais:** parallax responsivo ao mouse (`mouse-responsive-background`), gradientes animados em WebGL (`animated-gradient`) como fundo de seções, reveals por scroll.
 - **Cases:** apresentação imersiva; páginas dedicadas por case em fase posterior (conteúdo via Sanity).
 - **Imagens:** foco em alta qualidade, pipeline de otimização via Sanity + next/image.
