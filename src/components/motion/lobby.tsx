@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type Variants } from "motion/react"
 import { AsciiArt } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
+import { TextScramble } from "@/components/ui/text-scramble"
 import { FloatingRock } from "@/components/motion/floating-rock"
 
 // mesmo poster usado pelo <AsciiArt>, servido como fallback estático
@@ -377,6 +378,10 @@ export function Lobby() {
   const shiftX = useTransform(scrollYProgress, SHIFT_RANGE, ["0vw", SHIFT_X_TARGET])
   // combina o deslocamento com a centralização própria da logo (-50%).
   const logoX = useTransform(shiftX, (v) => `calc(-50% + ${v})`)
+  // "EXPLORE": some GRADUALMENTE conforme o scroll acontece (não num
+  // pulo quase instantâneo) — por isso uma janela bem maior que a de
+  // outros elementos que só precisavam sumir rápido no início.
+  const exploreOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0])
   // seção ativa (índice em LOBBY_SECTIONS), derivada do progresso do
   // scroll — única leitura de scrollYProgress pra decidir isso; o efeito
   // abaixo (pedras) só deriva um booleano dela, nunca recalcula limiar por
@@ -488,12 +493,21 @@ export function Lobby() {
           className="pointer-events-none absolute z-20"
         >
           <MouseResponsiveBackground>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/logo-centralized.svg"
-              alt="Fantom"
-              className="w-[416px] sm:w-[416px]"
-            />
+            <div className="flex flex-col items-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/logo-centralized.svg"
+                alt="Fantom"
+                className="w-[416px] sm:w-[416px]"
+              />
+
+              {/* "EXPLORE": só existe na tela inicial — some assim que o
+                  scroll começa (exploreOpacity), bem antes do resto do
+                  zoom ficar perceptível. */}
+              <motion.div style={{ opacity: exploreOpacity }} className="pointer-events-auto -mt-6">
+                <TextScramble text="EXPLORE" />
+              </motion.div>
+            </div>
           </MouseResponsiveBackground>
         </motion.div>
 
