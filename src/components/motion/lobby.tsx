@@ -523,7 +523,7 @@ export function Lobby() {
           style={{ opacity: exploreOpacity, pointerEvents: explorePointerEvents }}
           className="absolute top-[calc(50%+150px)] left-1/2 z-20 -translate-x-1/2"
         >
-          <TextScramble text="EXPLORE" onClick={scrollToSection2} />
+          <TextScramble text="EXPLORAR" onClick={scrollToSection2} />
         </motion.div>
 
         {/* pedras flutuantes: órbita elíptica contínua (tipo elétron ao
