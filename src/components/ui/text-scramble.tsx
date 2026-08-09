@@ -1,18 +1,20 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect } from "react"
+import { ChevronDown } from "lucide-react"
 
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*"
 
 interface TextScrambleProps {
   text: string
   className?: string
+  onClick?: () => void
 }
 
 // cores diretas (branco/preto), não os tokens semânticos do shadcn
 // (text-foreground, bg-primary, bg-border) — esses assumem um tema claro
 // e ficariam quase invisíveis contra o fundo preto do lobby.
-export function TextScramble({ text, className = "" }: TextScrambleProps) {
+export function TextScramble({ text, className = "", onClick }: TextScrambleProps) {
   const [displayText, setDisplayText] = useState(text)
   const [isHovering, setIsHovering] = useState(false)
   const [isScrambling, setIsScrambling] = useState(false)
@@ -67,12 +69,14 @@ export function TextScramble({ text, className = "" }: TextScrambleProps) {
   }, [])
 
   return (
-    <div
-      className={`group relative inline-flex flex-col cursor-pointer select-none ${className}`}
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group relative inline-flex cursor-pointer flex-col appearance-none border-0 bg-transparent p-0 text-left select-none ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <span className="relative font-mono text-lg tracking-widest uppercase">
+      <span className="relative flex items-center gap-2 font-mono text-lg tracking-widest uppercase">
         {displayText.split("").map((char, i) => (
           <span
             key={i}
@@ -86,6 +90,12 @@ export function TextScramble({ text, className = "" }: TextScrambleProps) {
             {char}
           </span>
         ))}
+        <ChevronDown
+          aria-hidden="true"
+          className={`h-4 w-4 shrink-0 text-white/80 transition-transform duration-300 ${
+            isHovering ? "translate-y-0.5" : ""
+          }`}
+        />
       </span>
 
       {/* linha animada */}
@@ -104,6 +114,6 @@ export function TextScramble({ text, className = "" }: TextScrambleProps) {
           isHovering ? "opacity-100" : ""
         }`}
       />
-    </div>
+    </button>
   )
 }

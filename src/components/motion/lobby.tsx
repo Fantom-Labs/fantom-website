@@ -70,6 +70,8 @@ const SCROLL_HEIGHT = `${LOBBY_SCROLL_HEIGHT_VH}vh`
 const ZOOM_RANGE: [number, number] = [0, 0.5]
 const SHIFT_RANGE: [number, number] = ZOOM_RANGE
 const SHIFT_X_TARGET = "-18vw"
+// duração (em fração de scrollYProgress) do fade do "EXPLORE".
+const EXPLORE_FADE_END = 0.15
 // --- seções da home simuladas pelo scroll do lobby -------------------------
 // Enquanto não existem seções reais no DOM pra observar (o lobby ocupa o
 // topo da página sozinho — ver EXPERIMENTAL acima), simulamos "em que
@@ -380,8 +382,18 @@ export function Lobby() {
   const logoX = useTransform(shiftX, (v) => `calc(-50% + ${v})`)
   // "EXPLORE": some GRADUALMENTE conforme o scroll acontece (não num
   // pulo quase instantâneo) — por isso uma janela bem maior que a de
-  // outros elementos que só precisavam sumir rápido no início.
-  const exploreOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0])
+  // outros elementos que só precisavam sumir rápido no início. Existe só
+  // na tela inicial: pointer-events some ANTES da opacidade terminar de
+  // cair, pra não ficar clicável "fantasma" por cima do conteúdo depois
+  // que o usuário já rolou a página.
+  const exploreOpacity = useTransform(scrollYProgress, (v) => 1 - Math.min(Math.max(v / EXPLORE_FADE_END, 0), 1))
+  const explorePointerEvents = useTransform(scrollYProgress, (v) => (v > 0.05 ? "none" : "auto"))
+  // clique no "EXPLORE": rola suavemente até o início da section 2 (mesmo
+  // limiar que já ativa insideSection2/getActiveLobbySection).
+  const scrollToSection2 = useCallback(() => {
+    const maxScroll = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
+    window.scrollTo({ top: LOBBY_SECTIONS[1].progress * maxScroll, behavior: "smooth" })
+  }, [])
   // seção ativa (índice em LOBBY_SECTIONS), derivada do progresso do
   // scroll — única leitura de scrollYProgress pra decidir isso; o efeito
   // abaixo (pedras) só deriva um booleano dela, nunca recalcula limiar por
@@ -493,22 +505,27 @@ export function Lobby() {
           className="pointer-events-none absolute z-20"
         >
           <MouseResponsiveBackground>
-            <div className="flex flex-col items-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/logo-centralized.svg"
-                alt="Fantom"
-                className="w-[416px] sm:w-[416px]"
-              />
-
-              {/* "EXPLORE": só existe na tela inicial — some assim que o
-                  scroll começa (exploreOpacity), bem antes do resto do
-                  zoom ficar perceptível. */}
-              <motion.div style={{ opacity: exploreOpacity }} className="pointer-events-auto -mt-6">
-                <TextScramble text="EXPLORE" />
-              </motion.div>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/logo-centralized.svg"
+              alt="Fantom"
+              className="w-[416px] sm:w-[416px]"
+            />
           </MouseResponsiveBackground>
+        </motion.div>
+
+        {/* "EXPLORE": FORA do wrapper da logo de propósito — aquele já
+            escala e se move sozinho desde o início do scroll (logoScale/
+            logoLeft/logoTop), o que faria o texto encolher e viajar junto
+            pra dentro da tv em vez de simplesmente sumir no lugar. Fica
+            parado, só a opacidade muda — só existe na tela inicial
+            (posição fixa em relação à viewport, não à logo). Clique rola
+            suavemente até a section 2. */}
+        <motion.div
+          style={{ opacity: exploreOpacity, pointerEvents: explorePointerEvents }}
+          className="absolute top-[calc(50%+150px)] left-1/2 z-20 -translate-x-1/2"
+        >
+          <TextScramble text="EXPLORE" onClick={scrollToSection2} />
         </motion.div>
 
         {/* pedras flutuantes: órbita elíptica contínua (tipo elétron ao
