@@ -5,6 +5,7 @@ import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform,
 import { AsciiArt } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 import { TextScramble } from "@/components/ui/text-scramble"
+import { Button } from "@/components/ui/neon-button"
 import { FloatingRock } from "@/components/motion/floating-rock"
 
 // mesmo poster usado pelo <AsciiArt>, servido como fallback estático
@@ -431,12 +432,9 @@ export function Lobby() {
             <p className="text-xs tracking-[0.2em] text-white/60 uppercase sm:text-sm">{EYEBROW_TEXT}</p>
             <h1 className="mt-4 text-2xl leading-tight font-medium text-white sm:text-3xl">{HEADLINE_TEXT}</h1>
             <p className="mt-4 text-sm leading-relaxed text-white/70 sm:text-base">{SUBHEAD_TEXT}</p>
-            <a
-              href="#contato"
-              className="mt-8 inline-block rounded-full border border-white/40 px-6 py-3 text-sm tracking-wide text-white uppercase transition-colors hover:bg-white hover:text-black"
-            >
+            <Button size="lg" className="mt-8 uppercase tracking-wide">
               {CTA_LABEL}
-            </a>
+            </Button>
           </div>
         </div>
 
@@ -618,12 +616,9 @@ export function Lobby() {
           </motion.p>
 
           <motion.div variants={heroItemVariants} className="pointer-events-auto mt-8">
-            <a
-              href="#contato"
-              className="inline-block rounded-full border border-white/40 px-6 py-3 text-sm tracking-wide text-white uppercase transition-colors hover:bg-white hover:text-black"
-            >
+            <Button size="lg" className="uppercase tracking-wide">
               {CTA_LABEL}
-            </a>
+            </Button>
           </motion.div>
         </motion.div>
 
