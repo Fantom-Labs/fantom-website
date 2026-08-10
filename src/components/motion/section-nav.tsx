@@ -68,8 +68,15 @@ export function SectionNav() {
           href={`#${section.id}`}
           aria-label={section.label}
           aria-current={activeId === section.id ? "true" : undefined}
-          className={`h-0.5 w-8 rounded-full transition-colors duration-300 hover:bg-white ${
-            activeId === section.id ? "bg-white" : "bg-gray-300"
+          // inativo: bem apagado (opacidade baixa, sem brilho) — ativo:
+          // mais alto, opacidade cheia e um glow, pra contrastar de
+          // verdade contra o fundo escuro (bg-gray-300 antigo quase não se
+          // diferenciava do bg-white do ativo). largura fixa nos dois
+          // estados — só altura, opacidade e brilho mudam.
+          className={`w-8 rounded-full transition-all duration-300 ${
+            activeId === section.id
+              ? "h-1 bg-white shadow-[0_0_10px_2px_rgba(255,255,255,0.7)]"
+              : "h-0.5 bg-white/25 hover:bg-white/60"
           }`}
         />
       ))}
