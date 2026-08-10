@@ -5,12 +5,13 @@ import { useMotionValueEvent, useScroll } from "motion/react"
 import { LOBBY_SCROLL_HEIGHT_VH, LOBBY_SECTIONS, getActiveLobbySection } from "@/components/motion/lobby"
 
 // seções da home (project.md, seção 6: Início · Portfólio · O que
-// fazemos · Método · FAQ · Contato). As 3 primeiras vêm de LOBBY_SECTIONS
+// fazemos · Método · FAQ · Contato). As 2 primeiras vêm de LOBBY_SECTIONS
 // — fonte única de verdade compartilhada com o Lobby, que já define onde
-// (no scroll) cada uma começa. As demais ainda não têm gatilho: aguardam
-// virar seções reais no DOM (ver IntersectionObserver abaixo).
+// (no scroll) cada uma começa. As demais já são (ou serão) seções reais
+// no DOM: o IntersectionObserver abaixo assume pra elas.
 const SECTIONS = [
   ...LOBBY_SECTIONS.map(({ id, label }) => ({ id, label })),
+  { id: "o-que-fazemos", label: "O que fazemos" },
   { id: "metodo", label: "Método" },
   { id: "faq", label: "FAQ" },
   { id: "contato", label: "Contato" },
