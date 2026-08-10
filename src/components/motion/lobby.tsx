@@ -118,9 +118,9 @@ const TV_POSITION_X = 58
 const TV_POSITION_Y = 52
 const TV_POSITION = `${TV_POSITION_X}% ${TV_POSITION_Y}%`
 
-// escala final da logo — menor o suficiente pra caber dentro da tela do
-// tv sem estourar (ajustado a olho).
-const LOGO_ZOOM_END = 0.4
+// escala final da logo na section 2 — 1.5x maior que o valor original
+// (0.4) que cabia justo dentro da tela do tv sem estourar.
+const LOGO_ZOOM_END = 0.6
 
 // calcula, em tempo real, onde o centro da máscara (tv-mask.png) cai na
 // viewport atual — replicando o mesmo algoritmo de object-fit: cover +
