@@ -76,7 +76,7 @@ export function TextScramble({ text, className = "", onClick }: TextScrambleProp
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <span className="relative flex items-center gap-2 font-mono text-lg tracking-widest uppercase">
+      <span className="relative flex items-center gap-2 font-mono text-sm tracking-widest uppercase">
         {displayText.split("").map((char, i) => (
           <span
             key={i}
@@ -92,7 +92,7 @@ export function TextScramble({ text, className = "", onClick }: TextScrambleProp
         ))}
         <ChevronDown
           aria-hidden="true"
-          className={`h-4 w-4 shrink-0 text-white/80 transition-transform duration-300 ${
+          className={`h-3.5 w-3.5 shrink-0 text-white/80 transition-transform duration-300 ${
             isHovering ? "translate-y-0.5" : ""
           }`}
         />
