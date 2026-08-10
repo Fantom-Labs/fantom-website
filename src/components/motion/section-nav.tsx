@@ -7,8 +7,9 @@ import { LOBBY_SCROLL_HEIGHT_VH, LOBBY_SECTIONS, getActiveLobbySection } from "@
 // seções da home (project.md, seção 6: Início · Portfólio · O que
 // fazemos · Método · FAQ · Contato). As 2 primeiras vêm de LOBBY_SECTIONS
 // — fonte única de verdade compartilhada com o Lobby, que já define onde
-// (no scroll) cada uma começa. As demais já são (ou serão) seções reais
-// no DOM: o IntersectionObserver abaixo assume pra elas.
+// (no scroll) cada uma começa, já que ainda não existem como elementos
+// reais no DOM (o lobby ocupa o topo da página sozinho). As demais já são
+// seções reais no DOM: o IntersectionObserver abaixo assume pra elas.
 const SECTIONS = [
   ...LOBBY_SECTIONS.map(({ id, label }) => ({ id, label })),
   { id: "o-que-fazemos", label: "O que fazemos" },
@@ -22,15 +23,21 @@ const SECTIONS = [
 export function SectionNav() {
   const [activeId, setActiveId] = useState(SECTIONS[0].id)
 
-  // TEMPORÁRIO: ainda não existem seções reais no DOM pra observar (o
-  // lobby ocupa o topo da página sozinho), então usamos o progresso do
-  // próprio scroll do lobby (mesma tabela LOBBY_SECTIONS que o Lobby usa)
-  // pra saber em qual das 3 primeiras seções estamos. Quando as seções
-  // reais existirem, o IntersectionObserver abaixo assume — pras 6.
+  // TEMPORÁRIO: as 2 primeiras seções (início/portfólio) ainda não existem
+  // como elementos reais no DOM (o lobby ocupa o topo da página sozinho),
+  // então usamos o progresso do próprio scroll do lobby (mesma tabela
+  // LOBBY_SECTIONS que o Lobby usa) enquanto o scroll ainda está dentro do
+  // lobby. A PARTIR DAÍ (y > lobbyMaxScroll, já saiu do lobby), este efeito
+  // para de mexer no activeId — o IntersectionObserver abaixo assume
+  // sozinho pra qualquer seção real no DOM (o-que-fazemos e as próximas).
+  // Sem esse guard, este handler dispara em TODO scroll da página inteira
+  // (não só dentro do lobby) e ficava sobrescrevendo o que o observer
+  // acabou de setar, sempre de volta pra "portfolio" (último índice de
+  // LOBBY_SECTIONS) — por isso o nav não acompanhava a seção 3 em diante.
   const { scrollY } = useScroll()
   useMotionValueEvent(scrollY, "change", (y) => {
     const lobbyMaxScroll = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
-    if (lobbyMaxScroll <= 0) return
+    if (lobbyMaxScroll <= 0 || y > lobbyMaxScroll) return
     const progress = y / lobbyMaxScroll
     setActiveId(LOBBY_SECTIONS[getActiveLobbySection(progress)].id)
   })
