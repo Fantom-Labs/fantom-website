@@ -332,7 +332,13 @@ function useRockOrbit() {
 }
 
 // elementos fixos que não participam do zoom: logo-left e ícone de menu.
-function LobbyChrome() {
+// Exportado e renderizado uma vez em page.tsx (fora do Lobby): nested
+// dentro do container "overflow-hidden" do lobby, um `position: fixed`
+// ainda fica CLIPADO quando esse ancestral sai da tela pelo scroll normal
+// da página (overflow:hidden recorta o conteúdo do descendente mesmo ele
+// sendo fixed) — sumia ao entrar na section 3. Fora do lobby, sempre
+// acima do conteúdo, em qualquer seção.
+export function LobbyChrome() {
   return (
     <>
       <div className="fixed left-10px top-0 z-30 flex h-11 items-center sm:left-8 sm:top-3">
@@ -447,8 +453,6 @@ export function Lobby() {
             </Button>
           </div>
         </div>
-
-        <LobbyChrome />
       </div>
     )
   }
@@ -631,8 +635,6 @@ export function Lobby() {
             </Button>
           </motion.div>
         </motion.div>
-
-        <LobbyChrome />
       </div>
     </div>
   )
