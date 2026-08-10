@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react"
 import { useMotionValueEvent, useReducedMotion, useScroll } from "motion/react"
 import { useLenis } from "lenis/react"
+import { FallingPattern } from "@/components/ui/falling-pattern"
 
 type ServiceItem = {
   title: string
@@ -57,7 +58,7 @@ function ServiceCard({
   const activeService = SERVICES[activeIndex]
 
   return (
-    <div className="flex h-[80vh] w-[80vw] flex-col rounded-[20px] border border-white/15 bg-white/[0.03] p-6 backdrop-blur-sm sm:p-8 lg:p-10">
+    <div className="relative z-10 flex h-[80vh] w-[80vw] flex-col rounded-[20px] border border-white/15 bg-white/[0.03] p-6 backdrop-blur-sm sm:p-8 lg:p-10">
       <div className="mb-3 flex items-center gap-3 sm:mb-4">
         <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
         <span className="text-sm tracking-[0.2em] text-white/70 uppercase">
@@ -188,6 +189,17 @@ export function OQueFazemos() {
       style={{ height: `${SERVICES.length * ITEM_SCROLL_VH}vh` }}
     >
       <div className="sticky top-0 flex h-screen items-center justify-center">
+        {/* cor/fundo explícitos (não os defaults var(--primary)/
+            var(--background) do componente): o tema ativo do projeto é
+            claro (sem .dark em globals.css), então os tokens semânticos
+            renderizariam quase invisíveis contra o preto da section —
+            mesmo ajuste já feito nos outros componentes colados
+            (neon-button, text-scramble). */}
+        <FallingPattern
+          color="rgba(255,255,255,0.18)"
+          backgroundColor="#000000"
+          className="absolute inset-0 z-0 [mask-image:radial-gradient(ellipse_at_center,transparent,black)]"
+        />
         <ServiceCard activeIndex={activeIndex} onSelect={handleSelect} />
       </div>
     </section>
