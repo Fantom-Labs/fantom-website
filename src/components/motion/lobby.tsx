@@ -428,6 +428,52 @@ export function Lobby() {
   const insideSection2 = activeSection >= 1
   const rockOrbit = useRockOrbit()
 
+  // transição section 2 -> section 3 automática: assim que o movimento de
+  // scroll que trouxe o usuário pra section 2 (portfolio) ACOMODA (para
+  // de vez, mesmo que só por causa da própria inércia/easing do Lenis),
+  // completa sozinho o resto do trecho do lobby até o início da section 3
+  // (#o-que-fazemos) — não precisa rolar manualmente até sair do lobby
+  // inteiro. Chegar na section 2 já implica ter rolado pra baixo até
+  // aqui, então não precisa checar direção de novo — só esperar acomodar.
+  //
+  // Por que esperar "acomodar" (isScrolling voltar a false) em vez de
+  // disparar direto ao cruzar o limiar da section 2: o Lenis global tem
+  // duration:1.2s (LenisProvider), então o PRÓPRIO scroll de entrada
+  // ainda está em andamento no exato frame em que cruza o limiar —
+  // disparar ali saltava pra section 3 na mesma rolada, sem o conteúdo da
+  // section 2 (hero, pedras) chegar a aparecer (bug reportado). Esperar o
+  // acomodar de verdade garante que a section 2 apareceu primeiro.
+  //
+  // Dispara uma vez por "visita" à section 2: o ref rearma quando o
+  // usuário volta pra section 1 (scroll de volta pra cima), então
+  // funciona de novo se ele descer outra vez depois.
+  const autoAdvancedRef = useRef(false)
+  useLenis(
+    (lenisInstance) => {
+      if (prefersReducedMotion) return
+      if (activeSection < 1) {
+        autoAdvancedRef.current = false
+        return
+      }
+      if (autoAdvancedRef.current || lenisInstance.isScrolling !== false) return
+      // altura TOTAL do bloco do lobby (não o "lobbyMaxScroll" usado em
+      // scrollToSection2/section-nav, que é só onde o sticky SOLTA — a
+      // partir dali o conteúdo do lobby ainda ocupa a tela inteira,
+      // rolando normalmente, até completar os 300vh). #o-que-fazemos só
+      // começa de fato depois desse bloco inteiro.
+      const sectionThreeStart = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight
+      if (lenisInstance.scroll >= sectionThreeStart) return
+      autoAdvancedRef.current = true
+      // lock: true — sem isso, o momentum residual do próprio wheel que
+      // disparou o gatilho continuava sendo processado pelo Lenis no(s)
+      // frame(s) seguinte(s) e brigava com o alvo do scrollTo, fazendo o
+      // scroll "acomodar" bem antes do destino. Travado, nenhum input
+      // durante a animação consegue desviar do destino.
+      lenisInstance.scrollTo(sectionThreeStart, { duration: 1.2, lock: true })
+    },
+    [activeSection, prefersReducedMotion]
+  )
+
   // fallback estático: sem scroll-zoom, sem parallax, uma tela só (project.md, seção 10).
   // conteúdo da hero também aparece aqui (sem stagger, só presente) — é
   // conteúdo real da página (headline, CTA), não decoração, então precisa
