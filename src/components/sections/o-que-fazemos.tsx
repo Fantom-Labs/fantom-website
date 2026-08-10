@@ -196,9 +196,9 @@ export function OQueFazemos() {
             mesmo ajuste já feito nos outros componentes colados
             (neon-button, text-scramble). */}
         <FallingPattern
-          color="rgba(255,255,255,0.18)"
+          color="rgba(255,255,255,0.4)"
           backgroundColor="#000000"
-          className="absolute inset-0 z-0 [mask-image:radial-gradient(ellipse_at_center,transparent,black)]"
+          className="absolute inset-0 z-0"
         />
         <ServiceCard activeIndex={activeIndex} onSelect={handleSelect} />
       </div>
