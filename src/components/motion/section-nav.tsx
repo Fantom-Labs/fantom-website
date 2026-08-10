@@ -56,7 +56,13 @@ export function SectionNav() {
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
         if (mostVisible) setActiveId(mostVisible.target.id)
       },
-      { rootMargin: "-40% 0px -40% 0px", threshold: [0.1, 0.25, 0.5, 0.75, 1] }
+      // threshold inclui 0: seções mais altas que a viewport (ex.
+      // o-que-fazemos, com scroll-jacking, 400vh) nunca atingem uma
+      // intersecção de 10% da própria área com essa rootMargin (a faixa
+      // central "enxergada" é só 20% da viewport) — sem o 0 na lista, o
+      // browser nunca cruza nenhum threshold configurado pra elas e o
+      // callback simplesmente para de disparar depois da chamada inicial.
+      { rootMargin: "-40% 0px -40% 0px", threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] }
     )
 
     elements.forEach((el) => observer.observe(el))
