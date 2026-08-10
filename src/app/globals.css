@@ -140,5 +140,15 @@
     body {
       cursor: url("/cursor.svg") 16 16, auto;
     }
+
+    /* sem isso, o cursor nativo do navegador (seta) volta em qualquer
+       elemento de formulário (button, a, input...) — eles têm um
+       cursor "default"/"pointer" no próprio UA stylesheet, que NÃO
+       herda do body (cursor é herdável, mas esse valor direto no
+       elemento vence a herança). Forçando herdar aqui, o cursor
+       customizado nunca muda em lugar nenhum do site. */
+    * {
+      cursor: inherit;
+    }
   }
 }

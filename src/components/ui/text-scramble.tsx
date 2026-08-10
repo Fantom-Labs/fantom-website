@@ -72,7 +72,7 @@ export function TextScramble({ text, className = "", onClick }: TextScrambleProp
     <button
       type="button"
       onClick={onClick}
-      className={`group relative inline-flex cursor-pointer flex-col appearance-none border-0 bg-transparent p-0 text-left select-none ${className}`}
+      className={`group relative inline-flex flex-col appearance-none border-0 bg-transparent p-0 text-left select-none ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

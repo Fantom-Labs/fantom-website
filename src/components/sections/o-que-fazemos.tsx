@@ -82,7 +82,7 @@ function ServiceCard({
                   type="button"
                   onClick={() => onSelect(index)}
                   aria-expanded={isActive}
-                  className="w-full cursor-[inherit] py-3 text-left lg:py-4"
+                  className="w-full py-3 text-left lg:py-4"
                 >
                   <span
                     className={`block text-lg font-medium tracking-[0.01em] transition-colors duration-300 sm:text-xl ${
