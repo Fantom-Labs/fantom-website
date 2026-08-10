@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type Variants } from "motion/react"
+import { useLenis } from "lenis/react"
 import { AsciiArt } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 import { TextScramble } from "@/components/ui/text-scramble"
@@ -357,6 +358,7 @@ export function Lobby() {
   const containerRef = useRef<HTMLDivElement>(null)
   const screenAnchor = useScreenAnchor()
   const { isInsideTvMask, getTvMaskStyle } = useTvScreenMask()
+  const lenis = useLenis()
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -390,11 +392,19 @@ export function Lobby() {
   const exploreOpacity = useTransform(scrollYProgress, (v) => 1 - Math.min(Math.max(v / EXPLORE_FADE_END, 0), 1))
   const explorePointerEvents = useTransform(scrollYProgress, (v) => (v > 0.05 ? "none" : "auto"))
   // clique no "EXPLORE": rola suavemente até o início da section 2 (mesmo
-  // limiar que já ativa insideSection2/getActiveLobbySection).
+  // limiar que já ativa insideSection2/getActiveLobbySection). Usa
+  // lenis.scrollTo (não window.scrollTo) — com o Lenis ativo, os dois
+  // mecanismos de scroll suave competem entre si, e o nativo às vezes
+  // parava um pouco ANTES do alvo exato (então insideSection2 não
+  // ativava, precisando de mais um scroll manual pra passar do limiar).
+  // +0.002 de margem: garante que passa do limiar mesmo com qualquer
+  // arredondamento residual.
   const scrollToSection2 = useCallback(() => {
     const maxScroll = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
-    window.scrollTo({ top: LOBBY_SECTIONS[1].progress * maxScroll, behavior: "smooth" })
-  }, [])
+    const target = (LOBBY_SECTIONS[1].progress + 0.002) * maxScroll
+    if (lenis) lenis.scrollTo(target, { duration: 1.2 })
+    else window.scrollTo({ top: target, behavior: "smooth" })
+  }, [lenis])
   // seção ativa (índice em LOBBY_SECTIONS), derivada do progresso do
   // scroll — única leitura de scrollYProgress pra decidir isso; o efeito
   // abaixo (pedras) só deriva um booleano dela, nunca recalcula limiar por
