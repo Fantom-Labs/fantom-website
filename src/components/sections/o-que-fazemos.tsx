@@ -6,7 +6,7 @@ type ServiceItem = {
   title: string
   description: string
   // imagem de exemplo do serviço: anexada depois, case a caso (por ora,
-  // undefined em todos — o painel à direita cai no placeholder).
+  // undefined em alguns — o painel à direita cai no placeholder).
   image?: string
 }
 
@@ -23,6 +23,7 @@ const SERVICES: ServiceItem[] = [
   {
     title: "SaaS",
     description: "Produtos digitais completos, do zero ao produto rodando.",
+    image: "/images/section-3/saas-s3.png",
   },
   {
     title: "Sistemas powered by AI",
@@ -30,9 +31,9 @@ const SERVICES: ServiceItem[] = [
       "Automações e ferramentas com IA que resolvem um problema real de negócio.",
   },
   {
-    title: "Criação de imagens",
+    title: "Design",
     description:
-      "Direção e produção de imagem de alta qualidade (caso Trattoria Alesa).",
+      "Interfaces e identidade visual sob medida, alinhadas ao produto e à marca.",
   },
 ]
 
