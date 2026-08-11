@@ -126,7 +126,7 @@ function ServiceCard({
   const activeService = SERVICES[activeIndex]
 
   return (
-    <div className="relative z-10 flex h-[80vh] w-[80vw] flex-col rounded-[20px] border border-white/15 bg-white/[0.03] p-6 backdrop-blur-lg sm:p-8 lg:p-16">
+    <div className="relative z-10 flex h-[85vh] w-[80vw] flex-col rounded-[20px] border border-white/15 bg-white/[0.03] p-6 backdrop-blur-lg sm:p-8 lg:p-16">
       <div className="mb-3 flex items-center gap-3 sm:mb-4">
         <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
         <span className="text-sm tracking-[0.2em] text-white/70 uppercase">
@@ -138,7 +138,12 @@ function ServiceCard({
         Tecnologia e Design
       </h2>
 
-      <div className="grid min-h-0 flex-1 gap-8 lg:grid-cols-2 lg:gap-16">
+      {/* coluna da imagem mais larga que a do texto (0.85fr/1.15fr, não
+          1fr/1fr): a imagem estava limitada pela LARGURA da própria
+          coluna, não pela altura da linha (sobrava ~9px de altura livre
+          antes desse ajuste) — pedido do usuário pra aumentar o tamanho
+          das imagens da section. */}
+      <div className="grid min-h-0 flex-1 gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-10">
         <ul className="flex min-h-0 flex-col justify-center overflow-y-auto pr-2">
           {SERVICES.map((service, index) => {
             const isActive = index === activeIndex
