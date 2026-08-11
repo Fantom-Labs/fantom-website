@@ -10,8 +10,8 @@ type ServiceItem = {
   description: string
   // imagens de exemplo do serviço: anexadas depois, case a caso (por ora,
   // undefined em alguns — o painel à direita cai no placeholder). Mais de
-  // uma imagem avança uma vez a cada entrada do cursor (crossfade) — ver
-  // ImageFrame.
+  // uma imagem: o primeiro hover dispara um ciclo automático (crossfade)
+  // que continua mesmo depois que o cursor sai — ver ImageFrame.
   images?: string[]
 }
 
@@ -56,6 +56,12 @@ const SERVICES: ServiceItem[] = [
 // simples como este.
 const ITEM_SCROLL_VH = 100
 
+// intervalo (ms) do ciclo automático disparado pelo primeiro hover — 1s
+// ficava mecânico demais ("passando muito rápido"); mais lento junto com
+// um crossfade mais longo (ver transition abaixo) dá o ar suave/elegante
+// pedido.
+const HOVER_ROTATE_MS = 2800
+
 // dono do próprio frame (não só do conteúdo): o mouseenter precisa ficar
 // num elemento ESTÁVEL que nunca desmonta enquanto o mouse permanece em
 // cima dele — se ficasse na imagem que troca via AnimatePresence, cada
@@ -63,18 +69,34 @@ const ITEM_SCROLL_VH = 100
 function ImageFrame({ service }: { service: ServiceItem }) {
   const images = service.images ?? []
   const [frame, setFrame] = useState(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     setFrame(0)
+    // troca de item: para o ciclo do item ANTERIOR — senão ele continuaria
+    // avançando com o `images.length` de quem já não está mais ativo
+    // (capturado no closure do interval antigo), dessincronizando do
+    // `images` do item atual.
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
   }, [service])
 
-  // avança só UMA imagem por entrada do cursor — não fica ciclando
-  // sozinho enquanto o mouse permanece parado em cima. Pra ver a próxima
-  // é preciso sair da imagem e voltar (pedido explícito, corrigindo a
-  // versão anterior que ficava trocando a cada 1s continuamente).
+  // primeiro hover no item dispara o ciclo (HOVER_ROTATE_MS entre trocas,
+  // a primeira já na hora) — depois de iniciado, continua rodando
+  // sozinho mesmo com o cursor fora da imagem (pedido explícito: "devem
+  // ficar passando, mesmo depois que o cursor passar por cima"). Só para
+  // ao trocar de item (useEffect acima) ou desmontar.
   const handleMouseEnter = useCallback(() => {
-    if (images.length < 2) return
+    if (images.length < 2 || intervalRef.current) return
     setFrame((f) => (f + 1) % images.length)
+    intervalRef.current = setInterval(() => {
+      setFrame((f) => (f + 1) % images.length)
+    }, HOVER_ROTATE_MS)
   }, [images.length])
 
   const current = images[frame]
@@ -112,7 +134,7 @@ function ImageFrame({ service }: { service: ServiceItem }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              transition={{ duration: 1, ease: "easeInOut" }}
               className="absolute inset-0 h-full w-full object-contain"
             />
           </AnimatePresence>
