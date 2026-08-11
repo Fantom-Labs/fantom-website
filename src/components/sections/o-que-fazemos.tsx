@@ -1,16 +1,18 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
-import { useMotionValueEvent, useReducedMotion, useScroll } from "motion/react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll } from "motion/react"
 import { useLenis } from "lenis/react"
 import { FallingPattern } from "@/components/ui/falling-pattern"
 
 type ServiceItem = {
   title: string
   description: string
-  // imagem de exemplo do serviço: anexada depois, case a caso (por ora,
-  // undefined em alguns — o painel à direita cai no placeholder).
-  image?: string
+  // imagens de exemplo do serviço: anexadas depois, case a caso (por ora,
+  // undefined em alguns — o painel à direita cai no placeholder). Mais de
+  // uma imagem alterna automaticamente (crossfade) enquanto o item está
+  // ativo — ver ImagePanel.
+  images?: string[]
 }
 
 // project.md, seção 4 ("O que entregamos") — mesmo texto usado no
@@ -21,12 +23,12 @@ const SERVICES: ServiceItem[] = [
     title: "Websites",
     description:
       "Sites institucionais e plataformas com identidade própria, focados em conversão.",
-    image: "/images/section-3/websites-s3.png",
+    images: ["/images/section-3/websites-s3.png", "/images/section-3/websites2-s3.png"],
   },
   {
     title: "SaaS",
     description: "Produtos digitais completos, do zero ao produto rodando.",
-    image: "/images/section-3/saas-s3.png",
+    images: ["/images/section-3/saas-s3.png"],
   },
   {
     title: "Sistemas powered by AI",
@@ -47,6 +49,53 @@ const SERVICES: ServiceItem[] = [
 // start", "end end"]), sem precisar de GSAP ScrollTrigger pra um stepper
 // simples como este.
 const ITEM_SCROLL_VH = 100
+
+// intervalo (ms) entre trocas quando um item tem mais de uma imagem
+// (ex.: Websites) — crossfade automático, sem precisar de ação do
+// usuário (mesma preferência por comportamento automático já aplicada no
+// avanço da section 2 pra 3 e no scroll-jacking desta section).
+const IMAGE_ROTATE_MS = 4000
+
+function ImagePanel({ service }: { service: ServiceItem }) {
+  const prefersReducedMotion = useReducedMotion()
+  const images = service.images ?? []
+  const [frame, setFrame] = useState(0)
+
+  useEffect(() => {
+    setFrame(0)
+    if (prefersReducedMotion || images.length < 2) return
+    const id = setInterval(() => {
+      setFrame((f) => (f + 1) % images.length)
+    }, IMAGE_ROTATE_MS)
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [service, prefersReducedMotion])
+
+  const current = images[frame]
+
+  if (!current) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center text-sm text-white/30">
+        Imagem em breve
+      </div>
+    )
+  }
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.img
+        key={current}
+        src={current}
+        alt={service.title}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
+        className="h-full w-full object-contain"
+      />
+    </AnimatePresence>
+  )
+}
 
 function ServiceCard({
   activeIndex,
@@ -115,18 +164,7 @@ function ServiceCard({
               caber no espaço disponível (largura e altura), como um
               object-fit: contain aplicado ao frame inteiro. */}
           <div className="relative aspect-[577/580] max-h-full max-w-full overflow-hidden rounded-[20px] border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02]">
-            {activeService.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={activeService.image}
-                alt={activeService.title}
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-sm text-white/30">
-                Imagem em breve
-              </div>
-            )}
+            <ImagePanel service={activeService} />
           </div>
         </div>
       </div>
