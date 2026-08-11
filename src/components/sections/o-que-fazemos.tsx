@@ -82,18 +82,35 @@ function ImagePanel({ service }: { service: ServiceItem }) {
   }
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.img
-        key={current}
-        src={current}
-        alt={service.title}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.25, ease: "easeInOut" }}
-        className="h-full w-full object-contain"
-      />
-    </AnimatePresence>
+    <>
+      {/* sizer invisível, em fluxo normal (visibility, não display/opacity
+          — continua ocupando espaço): é o que dá ao frame um tamanho
+          intrínseco real pro aspect-ratio + max-h/max-w funcionarem (esse
+          cálculo depende de conteúdo em fluxo normal contribuindo pro
+          tamanho — as imagens do crossfade abaixo são `absolute`, então
+          não contam pra isso sozinhas; sem o sizer, o frame colapsava pra
+          0x0). Troca de tamanho junto com `current`, mas como as imagens
+          são todas ~quadradas (mesma convenção de export), não pula. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={current} alt="" aria-hidden="true" className="invisible h-full w-full object-contain" />
+
+      {/* crossfade de verdade: as duas ficam empilhadas (absolute) e
+          animam AO MESMO TEMPO (sem mode="wait") — quando uma some a
+          outra já está completa, sem instante nenhum sem imagem nenhuma
+          nem as duas piscando em sequência. */}
+      <AnimatePresence>
+        <motion.img
+          key={current}
+          src={current}
+          alt={service.title}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4, ease: "easeInOut" }}
+          className="absolute inset-0 h-full w-full object-contain"
+        />
+      </AnimatePresence>
+    </>
   )
 }
 
