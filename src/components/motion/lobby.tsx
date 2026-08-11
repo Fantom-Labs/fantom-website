@@ -7,6 +7,7 @@ import { AsciiArt } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 import { TextScramble } from "@/components/ui/text-scramble"
 import { Button } from "@/components/ui/neon-button"
+import { LogoMarquee } from "@/components/ui/logo-marquee"
 import { FloatingRock } from "@/components/motion/floating-rock"
 
 // mesmo poster usado pelo <AsciiArt>, servido como fallback estático
@@ -21,6 +22,7 @@ const EYEBROW_TEXT = "Websites · SaaS · Sistemas com IA"
 const HEADLINE_TEXT = "Sócia estratégica de tecnologia e design por trás de negócios reais."
 const SUBHEAD_TEXT = "Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto."
 const CTA_LABEL = "Falar com a Fantom"
+const CLIENTS_STAT_TEXT = "+ 50 negócios acelerados"
 
 // entrada em stagger do conteúdo da hero (coluna direita, section 2):
 // eyebrow, H1, subhead e CTA entram na sequência, ~80ms entre cada,
@@ -497,6 +499,9 @@ export function Lobby() {
             <Button size="lg" className="mt-8 uppercase tracking-wide">
               {CTA_LABEL}
             </Button>
+
+            <p className="mt-10 text-xs text-white/50 uppercase tracking-[0.15em]">{CLIENTS_STAT_TEXT}</p>
+            <LogoMarquee className="mt-4 text-left" />
           </div>
         </div>
       </div>
@@ -679,6 +684,11 @@ export function Lobby() {
             <Button size="lg" className="uppercase tracking-wide">
               {CTA_LABEL}
             </Button>
+          </motion.div>
+
+          <motion.div variants={heroItemVariants} className="mt-10">
+            <p className="text-xs text-white/50 uppercase tracking-[0.15em]">{CLIENTS_STAT_TEXT}</p>
+            <LogoMarquee className="mt-4" />
           </motion.div>
         </motion.div>
       </div>
