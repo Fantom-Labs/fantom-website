@@ -10,8 +10,8 @@ type ServiceItem = {
   description: string
   // imagens de exemplo do serviço: anexadas depois, case a caso (por ora,
   // undefined em alguns — o painel à direita cai no placeholder). Mais de
-  // uma imagem passa a ciclar (crossfade) só enquanto o cursor está em
-  // cima da imagem — ver ImageFrame.
+  // uma imagem avança uma vez a cada entrada do cursor (crossfade) — ver
+  // ImageFrame.
   images?: string[]
 }
 
@@ -50,47 +50,32 @@ const SERVICES: ServiceItem[] = [
 // simples como este.
 const ITEM_SCROLL_VH = 100
 
-// hover na imagem: passa pra próxima a cada 1s, começando IMEDIATAMENTE
-// ao entrar (não espera o primeiro segundo) — pedido explícito. Sem
-// hover, fica parada no frame atual (nada de auto-rotate ambiente).
-const HOVER_ROTATE_MS = 1000
-
-// dono do próprio frame (não só do conteúdo): o mouseenter/mouseleave
-// precisa ficar num elemento ESTÁVEL que nunca desmonta enquanto o mouse
-// permanece em cima dele — se ficasse na imagem que troca via
-// AnimatePresence, cada troca desmonta/remonta o alvo do listener.
+// dono do próprio frame (não só do conteúdo): o mouseenter precisa ficar
+// num elemento ESTÁVEL que nunca desmonta enquanto o mouse permanece em
+// cima dele — se ficasse na imagem que troca via AnimatePresence, cada
+// troca desmonta/remonta o alvo do listener.
 function ImageFrame({ service }: { service: ServiceItem }) {
   const images = service.images ?? []
   const [frame, setFrame] = useState(0)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const stopCycle = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
-  }, [])
 
   useEffect(() => {
     setFrame(0)
-    return stopCycle
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [service])
 
-  const startCycle = useCallback(() => {
-    if (images.length < 2 || intervalRef.current) return
+  // avança só UMA imagem por entrada do cursor — não fica ciclando
+  // sozinho enquanto o mouse permanece parado em cima. Pra ver a próxima
+  // é preciso sair da imagem e voltar (pedido explícito, corrigindo a
+  // versão anterior que ficava trocando a cada 1s continuamente).
+  const handleMouseEnter = useCallback(() => {
+    if (images.length < 2) return
     setFrame((f) => (f + 1) % images.length)
-    intervalRef.current = setInterval(() => {
-      setFrame((f) => (f + 1) % images.length)
-    }, HOVER_ROTATE_MS)
   }, [images.length])
 
   const current = images[frame]
 
   return (
     <div
-      onMouseEnter={startCycle}
-      onMouseLeave={stopCycle}
+      onMouseEnter={handleMouseEnter}
       className="relative aspect-[577/580] max-h-full max-w-full overflow-hidden rounded-[20px] border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02]"
     >
       {!current ? (
