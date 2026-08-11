@@ -38,7 +38,7 @@ export function LogoMarquee({ className = "" }: { className?: string }) {
             src={logo.src}
             alt={logo.alt}
             aria-hidden={i >= CLIENT_LOGOS.length}
-            className="h-6 w-auto shrink-0 opacity-60 sm:h-7"
+            className="h-8 w-auto min-w-[40px] shrink-0 opacity-60 sm:h-9"
           />
         ))}
       </motion.div>
