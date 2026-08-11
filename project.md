@@ -109,6 +109,7 @@ Copy completa versionada em `fantom-website-home.md`.
 > **Sócia estratégica de tecnologia e design por trás de negócios reais.**
 > Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto.
 > `[ Falar com a Fantom ]`
+> `+ 50 negócios acelerados` — carrossel de logos de clientes (rolagem automática, componente `logo-marquee`)
 
 ---
 
