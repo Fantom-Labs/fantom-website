@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll } from "motion/react"
 import { useLenis } from "lenis/react"
-import { FallingPattern } from "@/components/ui/falling-pattern"
+import { GradientBars } from "@/components/ui/gradient-bars-background"
 
 type ServiceItem = {
   title: string
@@ -124,7 +124,7 @@ function ServiceCard({
   const activeService = SERVICES[activeIndex]
 
   return (
-    <div className="relative z-10 flex h-[80vh] w-[80vw] flex-col rounded-[20px] border border-white/15 bg-white/[0.03] p-6 backdrop-blur-sm sm:p-8 lg:p-10">
+    <div className="relative z-10 flex h-[80vh] w-[80vw] flex-col rounded-[20px] border border-white/15 bg-white/[0.03] p-6 backdrop-blur-lg sm:p-8 lg:p-16">
       <div className="mb-3 flex items-center gap-3 sm:mb-4">
         <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
         <span className="text-sm tracking-[0.2em] text-white/70 uppercase">
@@ -262,24 +262,7 @@ export function OQueFazemos() {
       style={{ height: `${SERVICES.length * ITEM_SCROLL_VH}vh` }}
     >
       <div className="sticky top-0 flex h-screen items-center justify-center">
-        {/* cor/fundo explícitos (não os defaults var(--primary)/
-            var(--background) do componente): o tema ativo do projeto é
-            claro (sem .dark em globals.css), então os tokens semânticos
-            renderizariam quase invisíveis contra o preto da section —
-            mesmo ajuste já feito nos outros componentes colados
-            (neon-button, text-scramble). */}
-        {/* density baixa (padrão é 1): o overlay do componente é uma
-            grade de furos de 2px fixos a cada 8px*density — com density=1
-            só ~20% da área fica visível (o resto é ocultado pelo próprio
-            overlay), o que deixava o efeito quase imperceptível mesmo com
-            a cor mais forte. Em ~0.4, os furos (ainda 2px, mas numa
-            grade de ~3.2px) praticamente preenchem cada célula. */}
-        <FallingPattern
-          color="rgba(255,255,255,0.6)"
-          backgroundColor="#000000"
-          density={0.4}
-          className="absolute inset-0 z-0"
-        />
+        <GradientBars numBars={15} animationDuration={2} className="z-0" />
         <ServiceCard activeIndex={activeIndex} onSelect={handleSelect} />
       </div>
     </section>
