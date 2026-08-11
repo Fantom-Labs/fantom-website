@@ -10,8 +10,8 @@ type ServiceItem = {
   description: string
   // imagens de exemplo do serviço: anexadas depois, case a caso (por ora,
   // undefined em alguns — o painel à direita cai no placeholder). Mais de
-  // uma imagem alterna automaticamente (crossfade) enquanto o item está
-  // ativo — ver ImagePanel.
+  // uma imagem passa a ciclar (crossfade) só enquanto o cursor está em
+  // cima da imagem — ver ImageFrame.
   images?: string[]
 }
 
@@ -50,67 +50,84 @@ const SERVICES: ServiceItem[] = [
 // simples como este.
 const ITEM_SCROLL_VH = 100
 
-// intervalo (ms) entre trocas quando um item tem mais de uma imagem
-// (ex.: Websites) — crossfade automático, sem precisar de ação do
-// usuário (mesma preferência por comportamento automático já aplicada no
-// avanço da section 2 pra 3 e no scroll-jacking desta section).
-const IMAGE_ROTATE_MS = 4000
+// hover na imagem: passa pra próxima a cada 1s, começando IMEDIATAMENTE
+// ao entrar (não espera o primeiro segundo) — pedido explícito. Sem
+// hover, fica parada no frame atual (nada de auto-rotate ambiente).
+const HOVER_ROTATE_MS = 1000
 
-function ImagePanel({ service }: { service: ServiceItem }) {
-  const prefersReducedMotion = useReducedMotion()
+// dono do próprio frame (não só do conteúdo): o mouseenter/mouseleave
+// precisa ficar num elemento ESTÁVEL que nunca desmonta enquanto o mouse
+// permanece em cima dele — se ficasse na imagem que troca via
+// AnimatePresence, cada troca desmonta/remonta o alvo do listener.
+function ImageFrame({ service }: { service: ServiceItem }) {
   const images = service.images ?? []
   const [frame, setFrame] = useState(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const stopCycle = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
     setFrame(0)
-    if (prefersReducedMotion || images.length < 2) return
-    const id = setInterval(() => {
-      setFrame((f) => (f + 1) % images.length)
-    }, IMAGE_ROTATE_MS)
-    return () => clearInterval(id)
+    return stopCycle
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [service, prefersReducedMotion])
+  }, [service])
+
+  const startCycle = useCallback(() => {
+    if (images.length < 2 || intervalRef.current) return
+    setFrame((f) => (f + 1) % images.length)
+    intervalRef.current = setInterval(() => {
+      setFrame((f) => (f + 1) % images.length)
+    }, HOVER_ROTATE_MS)
+  }, [images.length])
 
   const current = images[frame]
 
-  if (!current) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center text-sm text-white/30">
-        Imagem em breve
-      </div>
-    )
-  }
-
   return (
-    <>
-      {/* sizer invisível, em fluxo normal (visibility, não display/opacity
-          — continua ocupando espaço): é o que dá ao frame um tamanho
-          intrínseco real pro aspect-ratio + max-h/max-w funcionarem (esse
-          cálculo depende de conteúdo em fluxo normal contribuindo pro
-          tamanho — as imagens do crossfade abaixo são `absolute`, então
-          não contam pra isso sozinhas; sem o sizer, o frame colapsava pra
-          0x0). Troca de tamanho junto com `current`, mas como as imagens
-          são todas ~quadradas (mesma convenção de export), não pula. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={current} alt="" aria-hidden="true" className="invisible h-full w-full object-contain" />
+    <div
+      onMouseEnter={startCycle}
+      onMouseLeave={stopCycle}
+      className="relative aspect-[577/580] max-h-full max-w-full overflow-hidden rounded-[20px] border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02]"
+    >
+      {!current ? (
+        <div className="absolute inset-0 flex items-center justify-center text-sm text-white/30">
+          Imagem em breve
+        </div>
+      ) : (
+        <>
+          {/* sizer invisível, em fluxo normal (visibility, não
+              display/opacity — continua ocupando espaço): é o que dá ao
+              frame um tamanho intrínseco real pro aspect-ratio +
+              max-h/max-w funcionarem (esse cálculo depende de conteúdo
+              em fluxo normal contribuindo pro tamanho — as imagens do
+              crossfade abaixo são `absolute`, então não contam pra isso
+              sozinhas; sem o sizer, o frame colapsava pra 0x0). */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={current} alt="" aria-hidden="true" className="invisible h-full w-full object-contain" />
 
-      {/* crossfade de verdade: as duas ficam empilhadas (absolute) e
-          animam AO MESMO TEMPO (sem mode="wait") — quando uma some a
-          outra já está completa, sem instante nenhum sem imagem nenhuma
-          nem as duas piscando em sequência. */}
-      <AnimatePresence>
-        <motion.img
-          key={current}
-          src={current}
-          alt={service.title}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4, ease: "easeInOut" }}
-          className="absolute inset-0 h-full w-full object-contain"
-        />
-      </AnimatePresence>
-    </>
+          {/* crossfade de verdade: as duas ficam empilhadas (absolute) e
+              animam AO MESMO TEMPO (sem mode="wait") — quando uma some a
+              outra já está completa, sem instante nenhum sem imagem
+              nenhuma nem as duas piscando em sequência. */}
+          <AnimatePresence>
+            <motion.img
+              key={current}
+              src={current}
+              alt={service.title}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+          </AnimatePresence>
+        </>
+      )}
+    </div>
   )
 }
 
@@ -180,9 +197,7 @@ function ServiceCard({
               estica pra fora da proporção da imagem, só encolhe pra
               caber no espaço disponível (largura e altura), como um
               object-fit: contain aplicado ao frame inteiro. */}
-          <div className="relative aspect-[577/580] max-h-full max-w-full overflow-hidden rounded-[20px] border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02]">
-            <ImagePanel service={activeService} />
-          </div>
+          <ImageFrame service={activeService} />
         </div>
       </div>
     </div>
