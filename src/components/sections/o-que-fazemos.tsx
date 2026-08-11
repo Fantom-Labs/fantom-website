@@ -31,7 +31,7 @@ const SERVICES: ServiceItem[] = [
     images: ["/images/section-3/saas-s3.png"],
   },
   {
-    title: "Sistemas powered by AI",
+    title: "Sistemas de IA",
     description:
       "Automações e ferramentas com IA que resolvem um problema real de negócio.",
   },
