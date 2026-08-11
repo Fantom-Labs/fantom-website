@@ -268,9 +268,16 @@ export function OQueFazemos() {
             renderizariam quase invisíveis contra o preto da section —
             mesmo ajuste já feito nos outros componentes colados
             (neon-button, text-scramble). */}
+        {/* density baixa (padrão é 1): o overlay do componente é uma
+            grade de furos de 2px fixos a cada 8px*density — com density=1
+            só ~20% da área fica visível (o resto é ocultado pelo próprio
+            overlay), o que deixava o efeito quase imperceptível mesmo com
+            a cor mais forte. Em ~0.4, os furos (ainda 2px, mas numa
+            grade de ~3.2px) praticamente preenchem cada célula. */}
         <FallingPattern
-          color="rgba(255,255,255,0.4)"
+          color="rgba(255,255,255,0.6)"
           backgroundColor="#000000"
+          density={0.4}
           className="absolute inset-0 z-0"
         />
         <ServiceCard activeIndex={activeIndex} onSelect={handleSelect} />
