@@ -145,25 +145,43 @@ export function OQueFazemos() {
     offset: ["start start", "end end"],
   })
 
+  // trava o índice controlado pelo scroll enquanto um clique (handleSelect)
+  // está rolando a página programaticamente até a posição do item clicado
+  // — sem isso, ESTE listener reagia a cada posição intermediária que o
+  // scrollTo atravessa no caminho (ex.: clicar no item 4 vindo do item 1
+  // passa pelas faixas de scroll dos itens 2 e 3), fazendo o texto
+  // "piscar" por eles antes de acomodar no item certo (o engasgo
+  // reportado). Só o listener respeita a trava; o clique sempre escreve
+  // direto no estado.
+  const manualSelectRef = useRef(false)
   useMotionValueEvent(scrollYProgress, "change", (v) => {
+    if (manualSelectRef.current) return
     const index = Math.min(SERVICES.length - 1, Math.floor(v * SERVICES.length))
     setActiveIndex(index)
   })
 
   // clique num item: além de trocar o texto na hora (feedback imediato),
-  // rola suavemente até o trecho do scroll "dono" daquele item — senão o
-  // próximo tick de scroll (o listener acima) puxaria o índice de volta
-  // pra posição real da página, brigando com o clique.
+  // rola suavemente até o trecho do scroll "dono" daquele item — assim o
+  // scroll da página fica consistente com o item exibido mesmo se o
+  // usuário rolar manualmente depois. A trava acima segura o índice
+  // clicado até a rolagem terminar de acomodar.
   const handleSelect = useCallback(
     (index: number) => {
       setActiveIndex(index)
       const container = containerRef.current
       if (!container) return
+      manualSelectRef.current = true
       const containerTop = container.getBoundingClientRect().top + window.scrollY
       const scrollable = container.offsetHeight - window.innerHeight
       const target = containerTop + ((index + 0.5) / SERVICES.length) * scrollable
-      if (lenis) lenis.scrollTo(target, { duration: 1 })
-      else window.scrollTo({ top: target, behavior: "smooth" })
+      const release = () => {
+        manualSelectRef.current = false
+      }
+      if (lenis) lenis.scrollTo(target, { duration: 1, onComplete: release })
+      else {
+        window.scrollTo({ top: target, behavior: "smooth" })
+        setTimeout(release, 1000)
+      }
     },
     [lenis]
   )
