@@ -9,6 +9,10 @@ interface LiquidMetalButtonProps {
   label?: string
   onClick?: () => void
   viewMode?: "text" | "icon"
+  // quando passado, renderiza um <a> (não <button>) — certo pra links de
+  // verdade (abre em aba nova, funciona sem JS, "abrir em nova aba" do
+  // botão direito, indexável) em vez de simular navegação via onClick.
+  href?: string
 }
 
 // padding horizontal interno (cada lado) do modo "text" — o conteúdo
@@ -28,13 +32,18 @@ const TEXT_MIN_WIDTH = 142
 const SHADER_REFERENCE_WIDTH = 142
 const SHADER_REFERENCE_U_SCALE = 8
 
-export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "text" }: LiquidMetalButtonProps) {
+export function LiquidMetalButton({
+  label = "Get Started",
+  onClick,
+  viewMode = "text",
+  href,
+}: LiquidMetalButtonProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
   const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([])
   const shaderRef = useRef<HTMLDivElement>(null)
   const shaderMount = useRef<ShaderMount | null>(null)
-  const buttonRef = useRef<HTMLButtonElement>(null)
+  const buttonRef = useRef<HTMLButtonElement & HTMLAnchorElement>(null)
   const contentRef = useRef<HTMLSpanElement>(null)
   const rippleId = useRef(0)
 
@@ -165,7 +174,7 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
     shaderMount.current?.setSpeed?.(0.6)
   }
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     if (shaderMount.current?.setSpeed) {
       shaderMount.current.setSpeed(2.4)
       setTimeout(() => {
@@ -191,6 +200,8 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
 
     onClick?.()
   }
+
+  const InteractiveTag = href ? "a" : "button"
 
   return (
     <div className="relative inline-block">
@@ -344,8 +355,13 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
             </div>
           </div>
 
-          <button
+          {/* <a> quando href é passado (link de verdade — whatsapp etc.),
+              <button> caso contrário. target/rel só entram com href: nova
+              aba + noopener/noreferrer (não expõe window.opener pro site
+              de destino, prática padrão pra link externo). */}
+          <InteractiveTag
             ref={buttonRef}
+            {...(href ? { href, target: "_blank", rel: "noopener noreferrer" } : {})}
             onClick={handleClick}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -367,6 +383,7 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
               transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease",
               overflow: "hidden",
               borderRadius: "100px",
+              display: "block",
             }}
             aria-label={label}
           >
@@ -386,7 +403,7 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
                 }}
               />
             ))}
-          </button>
+          </InteractiveTag>
         </div>
       </div>
     </div>

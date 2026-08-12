@@ -24,6 +24,9 @@ const HEADLINE_TEXT = "Somos um time de tecnologia e design para negócios e sta
 const SUBHEAD_TEXT = "Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto em todos os estágios."
 const CTA_LABEL = "Falar com a Fantom"
 const CLIENTS_STAT_TEXT = "+ 50 negócios acelerados"
+// wa.me: número sem "+"/espaços + texto pré-preenchido (url-encoded) — abre
+// o WhatsApp já com a mensagem digitada, só falta o usuário mandar.
+const WHATSAPP_CTA_HREF = `https://wa.me/5583991377388?text=${encodeURIComponent("Olá, quero começar meu projeto!")}`
 
 // entrada em stagger do conteúdo da hero (coluna direita, section 2):
 // eyebrow, H1, subhead e CTA entram na sequência, ~80ms entre cada,
@@ -833,7 +836,7 @@ export function Lobby() {
             </div>
             <p className="mt-4 text-sm leading-relaxed text-white/70 sm:text-base">{SUBHEAD_TEXT}</p>
             <div className="mt-8">
-              <LiquidMetalButton label={CTA_LABEL} />
+              <LiquidMetalButton label={CTA_LABEL} href={WHATSAPP_CTA_HREF} />
             </div>
 
             <p className="mt-10 text-xs text-white/50 uppercase tracking-[0.15em]">{CLIENTS_STAT_TEXT}</p>
@@ -1137,7 +1140,7 @@ export function Lobby() {
             variants={heroItemVariants}
             className="pointer-events-auto mt-5 sm:mt-8 sm:origin-left sm:scale-100 2xl:scale-110"
           >
-            <LiquidMetalButton label={CTA_LABEL} />
+            <LiquidMetalButton label={CTA_LABEL} href={WHATSAPP_CTA_HREF} />
           </motion.div>
 
           <motion.div variants={heroItemVariants} className="mt-6 sm:mt-10">
