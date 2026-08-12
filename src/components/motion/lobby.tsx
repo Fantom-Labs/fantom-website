@@ -19,8 +19,8 @@ const POSTER_SRC = "/images/mo-mosaic-poster.webp"
 // do layout (coluna animada da section 2 e o fallback estático de motion
 // reduzido), pra não divergir entre elas.
 const EYEBROW_TEXT = "Websites · SaaS · Sistemas com IA"
-const HEADLINE_TEXT = "Sócia estratégica de tecnologia e design por trás de negócios reais."
-const SUBHEAD_TEXT = "Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto."
+const HEADLINE_TEXT = "Somos o seu time estratégico de tecnologia e design"
+const SUBHEAD_TEXT = "Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto em todos os estágios."
 const CTA_LABEL = "Falar com a Fantom"
 const CLIENTS_STAT_TEXT = "+ 50 negócios acelerados"
 
@@ -106,7 +106,7 @@ const SHIFT_X_TARGET = "-18vw"
 // topo da tv acaba rente à borda do viewport, parecendo cortado (pedido:
 // "fica cortando em cima a imagem da tv"). 0.9 encolhe 10% na posição
 // final, revelando margem preta ao redor (ver desktopFitScale).
-const DESKTOP_FIT_SCALE_END = 0.9
+const DESKTOP_FIT_SCALE_END = 1.0
 // duração (em fração de scrollYProgress) do fade do "EXPLORE".
 const EXPLORE_FADE_END = 0.15
 // --- seções da home simuladas pelo scroll do lobby -------------------------
@@ -938,30 +938,38 @@ export function Lobby() {
             das pedras) — ver heroStaggerVariants/heroItemVariants.
             ref: mede a altura real deste bloco pra useMobileTvFit (só
             importa no mobile — sem custo/efeito no desktop). */}
+        {/* max-w progressivo (sm -> xl -> 2xl -> min-[1920px]): em telas
+            ultrawide, right-[8%] sozinho já dá bastante margem absoluta
+            (8% de 3440px = ~275px), mas o max-w-[420px] fixo continuava
+            travando a coluna no mesmo tamanho de um notebook comum —
+            ficava pequena e desproporcional num monitor muito largo
+            (pedido: "mais largo"). Tamanho de fonte do headline/subhead
+            também sobe nos mesmos saltos, senão o texto boia perdido
+            dentro de uma coluna maior sem preencher visualmente. */}
         <motion.div
           ref={heroContentRef}
-          className="lobby-hero-content pointer-events-none absolute top-[8%] left-1/2 z-20 w-[86%] -translate-x-1/2 text-center sm:top-1/2 sm:right-[8%] sm:left-auto sm:w-auto sm:max-w-[420px] sm:-translate-x-0 sm:-translate-y-1/2 sm:text-left"
+          className="lobby-hero-content pointer-events-none absolute top-[8%] left-1/2 z-20 w-[86%] -translate-x-1/2 text-center sm:top-1/2 sm:right-[8%] sm:left-auto sm:w-auto sm:max-w-[420px] sm:-translate-x-0 sm:-translate-y-1/2 sm:text-left xl:max-w-[480px] 2xl:max-w-[560px] min-[1920px]:max-w-[640px]"
           initial="hidden"
           animate={insideSection2 ? "visible" : "hidden"}
           variants={heroStaggerVariants}
         >
           <motion.p
             variants={heroItemVariants}
-            className="text-xs tracking-[0.2em] text-white/60 uppercase sm:text-sm"
+            className="text-xs tracking-[0.2em] text-white/60 uppercase sm:text-sm 2xl:text-base"
           >
             {EYEBROW_TEXT}
           </motion.p>
 
           <motion.h1
             variants={heroItemVariants}
-            className="mt-4 text-2xl leading-tight font-medium text-white sm:text-3xl lg:text-4xl"
+            className="mt-4 text-2xl leading-tight font-medium text-white sm:text-3xl lg:text-4xl 2xl:text-5xl"
           >
             {HEADLINE_TEXT}
           </motion.h1>
 
           <motion.p
             variants={heroItemVariants}
-            className="mt-4 text-sm leading-relaxed text-white/70 sm:text-base"
+            className="mt-4 text-sm leading-relaxed text-white/70 sm:text-base 2xl:text-lg"
           >
             {SUBHEAD_TEXT}
           </motion.p>
