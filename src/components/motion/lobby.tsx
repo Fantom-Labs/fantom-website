@@ -1052,9 +1052,19 @@ export function Lobby() {
             entre tamanhos fixos — 1920px fica num meio-termo real, só as
             telas MUITO largas (~2200px+) chegam no teto. Mobile (sem sm:)
             continua com os tamanhos fixos de sempre, sem clamp nenhum. */}
+        {/* mobile: top-14 (56px) fixo, não mais um top-[8%] deslocado por
+            calc() — na prática caía a só ~3px do fim do logo-header fixo
+            (44px de altura), quase colado (bug reportado: "conteúdo muito
+            pra cima"). Espaçamento entre os itens (mt-*) também mais
+            apertado só no mobile (sm: volta pro valor original) — o
+            headline agora quebra em 3 linhas com o texto atual, então o
+            bloco inteiro ficou mais alto, sobrando bem menos espaço pra
+            tv embaixo (useMobileTvFit mede o fim REAL deste bloco — bug
+            reportado: "imagem muito pequena"). Aliviar o espaçamento
+            devolve altura pra tv sem cortar nenhum elemento. */}
         <motion.div
           ref={heroContentRef}
-          className="lobby-hero-content pointer-events-none absolute top-[calc(8%-20px)] left-1/2 z-20 w-[86%] -translate-x-1/2 text-center sm:top-1/2 sm:right-[8%] sm:left-auto sm:w-auto sm:max-w-[clamp(420px,32vw,640px)] sm:-translate-x-0 sm:-translate-y-[calc(50%+20px)] sm:text-left"
+          className="lobby-hero-content pointer-events-none absolute top-14 left-1/2 z-20 w-[86%] -translate-x-1/2 text-center sm:top-1/2 sm:right-[8%] sm:left-auto sm:w-auto sm:max-w-[clamp(420px,32vw,640px)] sm:-translate-x-0 sm:-translate-y-[calc(50%+20px)] sm:text-left"
           initial="hidden"
           animate={insideSection2 ? "visible" : "hidden"}
           variants={heroStaggerVariants}
@@ -1066,7 +1076,7 @@ export function Lobby() {
             {EYEBROW_TEXT}
           </motion.p>
 
-          <motion.div variants={heroItemVariants} className="mt-4">
+          <motion.div variants={heroItemVariants} className="mt-2 sm:mt-4">
             <NeonRGBText
               text={HEADLINE_TEXT}
               className="text-2xl leading-tight font-medium text-white sm:text-[clamp(1.875rem,1.4rem+1.15vw,3rem)]"
@@ -1075,7 +1085,7 @@ export function Lobby() {
 
           <motion.p
             variants={heroItemVariants}
-            className="mt-4 text-sm leading-relaxed text-white/70 sm:text-[clamp(1rem,0.95rem+0.13vw,1.125rem)]"
+            className="mt-3 text-sm leading-relaxed text-white/70 sm:mt-4 sm:text-[clamp(1rem,0.95rem+0.13vw,1.125rem)]"
           >
             {SUBHEAD_TEXT}
           </motion.p>
@@ -1090,16 +1100,16 @@ export function Lobby() {
               alinhado à esquerda no desktop), não do centro. */}
           <motion.div
             variants={heroItemVariants}
-            className="pointer-events-auto mt-8 sm:origin-left sm:scale-100 2xl:scale-110"
+            className="pointer-events-auto mt-5 sm:mt-8 sm:origin-left sm:scale-100 2xl:scale-110"
           >
             <LiquidMetalButton label={CTA_LABEL} />
           </motion.div>
 
-          <motion.div variants={heroItemVariants} className="mt-10">
+          <motion.div variants={heroItemVariants} className="mt-6 sm:mt-10">
             <p className="text-xs text-white/50 uppercase tracking-[0.15em] sm:text-[clamp(0.75rem,0.7rem+0.1vw,0.875rem)]">
               {CLIENTS_STAT_TEXT}
             </p>
-            <LogoMarquee className="mt-4" />
+            <LogoMarquee className="mt-3 sm:mt-4" />
           </motion.div>
         </motion.div>
       </div>
