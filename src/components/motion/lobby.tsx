@@ -6,7 +6,7 @@ import { useLenis } from "lenis/react"
 import { AsciiArt } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 import { TextScramble } from "@/components/ui/text-scramble"
-import { Button } from "@/components/ui/neon-button"
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button"
 import { LogoMarquee } from "@/components/ui/logo-marquee"
 import { FloatingRock } from "@/components/motion/floating-rock"
 
@@ -708,9 +708,9 @@ export function Lobby() {
             <p className="text-xs tracking-[0.2em] text-white/60 uppercase sm:text-sm">{EYEBROW_TEXT}</p>
             <h1 className="mt-4 text-2xl leading-tight font-medium text-white sm:text-3xl">{HEADLINE_TEXT}</h1>
             <p className="mt-4 text-sm leading-relaxed text-white/70 sm:text-base">{SUBHEAD_TEXT}</p>
-            <Button size="lg" className="mt-8 uppercase tracking-wide">
-              {CTA_LABEL}
-            </Button>
+            <div className="mt-8">
+              <LiquidMetalButton label={CTA_LABEL} />
+            </div>
 
             <p className="mt-10 text-xs text-white/50 uppercase tracking-[0.15em]">{CLIENTS_STAT_TEXT}</p>
             <LogoMarquee className="mt-4 text-left" />
@@ -940,9 +940,7 @@ export function Lobby() {
           </motion.p>
 
           <motion.div variants={heroItemVariants} className="pointer-events-auto mt-8">
-            <Button size="lg" className="uppercase tracking-wide">
-              {CTA_LABEL}
-            </Button>
+            <LiquidMetalButton label={CTA_LABEL} />
           </motion.div>
 
           <motion.div variants={heroItemVariants} className="mt-10">
