@@ -74,6 +74,11 @@ const SCROLL_HEIGHT = `${LOBBY_SCROLL_HEIGHT_VH}vh`
 const ZOOM_RANGE: [number, number] = [0, 0.5]
 const SHIFT_RANGE: [number, number] = ZOOM_RANGE
 const SHIFT_X_TARGET = "-18vw"
+// mobile: em vez de deslocar a cena da tv pra ESQUERDA (liberando uma
+// coluna à direita, que não existe numa tela estreita), desloca pra
+// BAIXO — o conteúdo da hero fica fixo no topo (ver className responsivo
+// da coluna de conteúdo) e a tv assentada ocupa a metade de baixo.
+const SHIFT_Y_TARGET_MOBILE = "39vh"
 // duração (em fração de scrollYProgress) do fade do "EXPLORE".
 const EXPLORE_FADE_END = 0.15
 // --- seções da home simuladas pelo scroll do lobby -------------------------
@@ -307,6 +312,24 @@ function useTvScreenMask() {
   return { isInsideTvMask, getTvMaskStyle }
 }
 
+// breakpoint "sm" do Tailwind (640px) — abaixo disso, section 2 troca pra
+// composição empilhada (conteúdo em cima, tv embaixo, ambos centralizados)
+// em vez do deslocamento lateral usado no desktop.
+const MOBILE_BREAKPOINT_QUERY = "(max-width: 639px)"
+function useIsMobileLayout() {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const mql = window.matchMedia(MOBILE_BREAKPOINT_QUERY)
+    const update = () => setIsMobile(mql.matches)
+    update()
+    mql.addEventListener("change", update)
+    return () => mql.removeEventListener("change", update)
+  }, [])
+
+  return isMobile
+}
+
 const emptySubscribe = () => () => {}
 // true só depois de montar no cliente — usado pra liberar valores
 // sorteados com Math.random() sem quebrar a hidratação (o servidor e o
@@ -363,6 +386,7 @@ export function LobbyChrome() {
 
 export function Lobby() {
   const prefersReducedMotion = useReducedMotion()
+  const isMobileLayout = useIsMobileLayout()
   const containerRef = useRef<HTMLDivElement>(null)
   const screenAnchor = useScreenAnchor()
   const { isInsideTvMask, getTvMaskStyle } = useTvScreenMask()
@@ -385,12 +409,17 @@ export function Lobby() {
   const logoLeft = useTransform(scrollYProgress, ZOOM_RANGE, ["50%", `${screenAnchor.xPct}%`])
   const logoTop = useTransform(scrollYProgress, ZOOM_RANGE, ["50%", `${screenAnchor.yPct}%`])
   // depois do zoom completo (com uma pausa), desloca o conjunto inteiro
-  // (fundo + vídeo mascarado + logo) suavemente pra esquerda, liberando a
-  // coluna direita pra conteúdo. mesmo valor aplicado aos três, então se
-  // movem colados.
-  const shiftX = useTransform(scrollYProgress, SHIFT_RANGE, ["0vw", SHIFT_X_TARGET])
+  // (fundo + vídeo mascarado + logo) suavemente — no desktop, pra
+  // esquerda (shiftX), liberando a coluna direita pro conteúdo; no
+  // mobile, pra BAIXO (shiftY), já que o conteúdo fica fixo no topo (ver
+  // className responsivo da coluna de conteúdo mais abaixo) e não há
+  // coluna lateral numa tela estreita. Mesmo valor aplicado aos três
+  // (fundo + vídeo + logo), então se movem colados.
+  const shiftX = useTransform(scrollYProgress, SHIFT_RANGE, ["0vw", isMobileLayout ? "0vw" : SHIFT_X_TARGET])
+  const shiftY = useTransform(scrollYProgress, SHIFT_RANGE, ["0vh", isMobileLayout ? SHIFT_Y_TARGET_MOBILE : "0vh"])
   // combina o deslocamento com a centralização própria da logo (-50%).
   const logoX = useTransform(shiftX, (v) => `calc(-50% + ${v})`)
+  const logoY = useTransform(shiftY, (v) => `calc(-50% + ${v})`)
   // "EXPLORE": some GRADUALMENTE conforme o scroll acontece (não num
   // pulo quase instantâneo) — por isso uma janela bem maior que a de
   // outros elementos que só precisavam sumir rápido no início. Existe só
@@ -518,7 +547,7 @@ export function Lobby() {
           src="/images/tv-img.jpeg"
           alt=""
           aria-hidden="true"
-          style={{ scale: maskScale, x: shiftX, objectPosition: TV_POSITION }}
+          style={{ scale: maskScale, x: shiftX, y: shiftY, objectPosition: TV_POSITION }}
           className="absolute inset-0 h-full w-full object-cover"
         />
 
@@ -530,6 +559,7 @@ export function Lobby() {
           style={{
             scale: maskScale,
             x: shiftX,
+            y: shiftY,
             maskImage: "url(/images/tv-mask.png)",
             WebkitMaskImage: "url(/images/tv-mask.png)",
             // máscara dedicada (preto e branco, gerada por limiar de
@@ -563,7 +593,7 @@ export function Lobby() {
             left: logoLeft,
             top: logoTop,
             x: logoX,
-            y: "-50%",
+            y: logoY,
           }}
           className="pointer-events-none absolute z-20"
         >
@@ -572,7 +602,7 @@ export function Lobby() {
             <img
               src="/images/logo-centralized.svg"
               alt="Fantom"
-              className="w-[416px] sm:w-[416px]"
+              className="w-[240px] sm:w-[416px]"
             />
           </MouseResponsiveBackground>
         </motion.div>
@@ -613,48 +643,60 @@ export function Lobby() {
             FloatingRock), não dá pra fazer só com CSS mask-image estático.
             Uma vez escondida, só volta a aparecer quando a órbita chega de
             novo no ponto de entrada (fora da tela inteira) — nunca
-            reaparece flutuando no meio do caminho. */}
-        <div className="pointer-events-none absolute inset-0 z-10">
-          <div
-            style={{ top: `${rockOrbit.topPct1}%` }}
-            className="absolute left-1/2 w-32 -translate-x-1/2 -translate-y-1/2 sm:w-[179.2px]"
-          >
-            <FloatingRock
-              src="/images/rock1-img.svg"
-              active={insideSection2}
-              entryX={-100}
-              duration={110}
-              reverse={false}
-              className="w-full"
-              isInsideTvMask={isInsideTvMask}
-              getTvMaskStyle={getTvMaskStyle}
-            />
-          </div>
+            reaparece flutuando no meio do caminho.
 
-          <div
-            style={{ top: `${rockOrbit.topPct2}%` }}
-            className="absolute left-1/2 w-[89.6px] -translate-x-1/2 -translate-y-1/2 sm:w-32"
-          >
-            <FloatingRock
-              src="/images/rock2-img.svg"
-              active={insideSection2}
-              entryX={100}
-              duration={132}
-              delay={1.2}
-              reverse={true}
-              className="w-full"
-              isInsideTvMask={isInsideTvMask}
-              getTvMaskStyle={getTvMaskStyle}
-            />
-          </div>
-        </div>
+            Desativadas no mobile: a órbita e a máscara "entra na tv" das
+            pedras dependem de SHIFT_X_TARGET (deslocamento horizontal),
+            que no mobile vira 0 (o deslocamento agora é vertical, ver
+            shiftY) — tornar as pedras responsivas fica pra uma próxima
+            passada; por ora, é um floreio de desktop que não muda o
+            conteúdo, então desligar é seguro. */}
+        {!isMobileLayout && (
+          <div className="pointer-events-none absolute inset-0 z-10">
+            <div
+              style={{ top: `${rockOrbit.topPct1}%` }}
+              className="absolute left-1/2 w-32 -translate-x-1/2 -translate-y-1/2 sm:w-[179.2px]"
+            >
+              <FloatingRock
+                src="/images/rock1-img.svg"
+                active={insideSection2}
+                entryX={-100}
+                duration={110}
+                reverse={false}
+                className="w-full"
+                isInsideTvMask={isInsideTvMask}
+                getTvMaskStyle={getTvMaskStyle}
+              />
+            </div>
 
-        {/* conteúdo da hero (project.md, seção 6): coluna à direita,
-            liberada pelo deslocamento da tv. Entra em stagger assim que
-            chega na section 2 (mesmo gatilho das pedras) — ver
-            heroStaggerVariants/heroItemVariants. */}
+            <div
+              style={{ top: `${rockOrbit.topPct2}%` }}
+              className="absolute left-1/2 w-[89.6px] -translate-x-1/2 -translate-y-1/2 sm:w-32"
+            >
+              <FloatingRock
+                src="/images/rock2-img.svg"
+                active={insideSection2}
+                entryX={100}
+                duration={132}
+                delay={1.2}
+                reverse={true}
+                className="w-full"
+                isInsideTvMask={isInsideTvMask}
+                getTvMaskStyle={getTvMaskStyle}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* conteúdo da hero (project.md, seção 6). Desktop (sm+): coluna à
+            direita, liberada pelo deslocamento lateral da tv (shiftX).
+            Mobile: fixo no TOPO, centralizado — a tv desce (shiftY) pra
+            metade de baixo em vez de ir pro lado, então não sobra uma
+            "coluna direita" pra ancorar o conteúdo numa tela estreita.
+            Entra em stagger assim que chega na section 2 (mesmo gatilho
+            das pedras) — ver heroStaggerVariants/heroItemVariants. */}
         <motion.div
-          className="pointer-events-none absolute right-[6%] top-1/2 z-20 max-w-[420px] -translate-y-1/2 text-left sm:right-[8%]"
+          className="pointer-events-none absolute top-[8%] left-1/2 z-20 w-[86%] -translate-x-1/2 text-center sm:top-1/2 sm:right-[8%] sm:left-auto sm:w-auto sm:max-w-[420px] sm:-translate-x-0 sm:-translate-y-1/2 sm:text-left"
           initial="hidden"
           animate={insideSection2 ? "visible" : "hidden"}
           variants={heroStaggerVariants}
