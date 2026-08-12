@@ -141,7 +141,14 @@ function ServiceCard({
   const activeService = SERVICES[activeIndex]
 
   return (
-    <div className="relative z-10 flex h-[85vh] w-[80vw] flex-col rounded-[20px] border border-white/15 bg-white/[0.03] p-6 backdrop-blur-lg sm:p-8 lg:p-16">
+    // largura no mobile: calc(100vw-40px), não 80vw — 80vw deixava a margem
+    // (~39px numa tela de 390px) maior que a do logo/menu-icon (left-5/
+    // right-5, 20px, ver LobbyChrome), o frame ficava "flutuando" fora do
+    // alinhamento do resto do chrome fixo da página (pedido explícito:
+    // "aumentar a largura do frame deixando a margem igual à do
+    // menu-icon"). Volta a 80vw a partir do sm: (desktop mantém como já
+    // estava, só o mobile mudou).
+    <div className="relative z-10 flex h-[85vh] w-[calc(100vw-40px)] flex-col rounded-[20px] border border-white/15 bg-white/[0.03] p-6 backdrop-blur-lg sm:w-[80vw] sm:p-8 lg:p-16">
       <div className="mb-3 flex items-center gap-3 sm:mb-4">
         <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
         <span className="text-sm tracking-[0.2em] text-white/70 uppercase">
