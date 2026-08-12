@@ -109,6 +109,14 @@ const SHIFT_X_TARGET = "-18vw"
 const DESKTOP_FIT_SCALE_END = 1.0
 // duração (em fração de scrollYProgress) do fade do "EXPLORE".
 const EXPLORE_FADE_END = 0.15
+// loader de entrada (desktop): mesma composição visual da section 1 (zoom
+// cheio na tela do tv), só que com "CARREGANDO" + uma barra de progresso no
+// lugar do "EXPLORAR" clicável — e sem poder rolar manualmente enquanto
+// carrega (ver lenis.stop()/start() no efeito abaixo). Ao terminar, rola
+// sozinho pra section 2 (mesmo destino de scrollToSection2) e a partir daí
+// o site funciona exatamente como antes: subir pra section 1 e descer nunca
+// mais mostra o loader de novo (loaderActive só desliga, nunca religa).
+const LOADER_DURATION_S = 2.6
 // --- seções da home simuladas pelo scroll do lobby -------------------------
 // Enquanto não existem seções reais no DOM pra observar (o lobby ocupa o
 // topo da página sozinho — ver EXPERIMENTAL acima), simulamos "em que
@@ -602,6 +610,44 @@ export function Lobby() {
     if (lenis) lenis.scrollTo(target, { duration: 1.2 })
     else window.scrollTo({ top: target, behavior: "smooth" })
   }, [lenis])
+  // loader de entrada (desktop, ver LOADER_DURATION_S acima). true por
+  // padrão (mesmo valor no servidor e no primeiro render do cliente — sem
+  // mismatch de hidratação) e só desliga uma vez, quando a barra termina;
+  // nunca mais liga de novo depois disso, mesmo subindo/descendo entre
+  // section 1 e 2 (não é um estado derivado do scroll, é "já aconteceu?").
+  const [loaderActive, setLoaderActive] = useState(true)
+  const loaderCompletedRef = useRef(false)
+  // trava o scroll (roda/toque/trackpad) enquanto o loader roda — sem isso
+  // o usuário podia pular a section 2 manualmente antes da barra terminar.
+  // No mobile isMobileLayout vira true e este efeito nunca chega a rodar
+  // (o loader não existe lá, ver JSX abaixo), então nunca trava o scroll
+  // do mobile por engano. prefersReducedMotion também exclui: esses
+  // usuários caem no fallback estático (return antecipado mais abaixo, SEM
+  // a barra de progresso) — sem o onAnimationComplete que chama
+  // handleLoaderComplete, o stop() nunca seria desfeito, travando o scroll
+  // pra sempre.
+  useEffect(() => {
+    if (isMobileLayout || !loaderActive || !lenis || prefersReducedMotion) return
+    lenis.stop()
+    return () => {
+      lenis.start()
+    }
+  }, [isMobileLayout, loaderActive, lenis, prefersReducedMotion])
+  // chamado quando a barra de progresso termina de encher: desliga o
+  // loader (de vez, ver loaderCompletedRef) e rola sozinho pra section 2 —
+  // mesmo destino de clicar em "EXPLORAR" hoje. lenis.start() EXPLÍCITO
+  // aqui (não só via cleanup do efeito acima): scrollToSection2 chama
+  // scrollTo sem { force: true }, que a lib ignora enquanto stop() ainda
+  // está em vigor — e o cleanup do efeito (disparado por setLoaderActive)
+  // só roda depois de um novo ciclo de render, tarde demais pro scrollTo
+  // síncrono logo abaixo.
+  const handleLoaderComplete = useCallback(() => {
+    if (loaderCompletedRef.current) return
+    loaderCompletedRef.current = true
+    setLoaderActive(false)
+    lenis?.start()
+    scrollToSection2()
+  }, [scrollToSection2, lenis])
   // seção ativa (índice em LOBBY_SECTIONS), derivada do progresso do
   // scroll — única leitura de scrollYProgress pra decidir isso; o efeito
   // abaixo (pedras) só deriva um booleano dela, nunca recalcula limiar por
@@ -838,24 +884,43 @@ export function Lobby() {
           </motion.div>
         </motion.div>
 
-        {/* "EXPLORE": FORA do wrapper da logo de propósito — aquele já
-            escala e se move sozinho desde o início do scroll (logoScale/
+        {/* "EXPLORE"/loader: FORA do wrapper da logo de propósito — aquele
+            já escala e se move sozinho desde o início do scroll (logoScale/
             logoLeft/logoTop), o que faria o texto encolher e viajar junto
             pra dentro da tv em vez de simplesmente sumir no lugar. Fica
             parado, só a opacidade muda — só existe na tela inicial
-            (posição fixa em relação à viewport, não à logo). Clique rola
-            suavemente até a section 2.
+            (posição fixa em relação à viewport, não à logo).
             Ausente no mobile: o site já começa na section 2 lá, não existe
-            a tela cheia inicial (zoom-in) que esse convite faz sentido pra
-            sair. */}
-        {!isMobileLayout && (
-          <motion.div
-            style={{ opacity: exploreOpacity, pointerEvents: explorePointerEvents }}
-            className="lobby-explore absolute top-[calc(50%+150px)] left-1/2 z-20 -translate-x-1/2"
-          >
-            <TextScramble text="EXPLORAR" onClick={scrollToSection2} />
-          </motion.div>
-        )}
+            a tela cheia inicial (zoom-in/loader) que esse convite faz
+            sentido pra sair.
+            loaderActive: primeira entrada no site mostra "CARREGANDO" +
+            barra de progresso (não clicável, scroll travado — ver efeito
+            lenis.stop() acima) em vez do "EXPLORAR" de sempre. Ao terminar
+            a barra, rola sozinho pra section 2 e desliga o loader de vez —
+            daí em diante volta a ser o "EXPLORAR" clicável de sempre, subir
+            e descer entre as sections não traz o loader de volta. */}
+        {!isMobileLayout &&
+          (loaderActive ? (
+            <div className="lobby-explore absolute top-[calc(50%+150px)] left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-3">
+              <TextScramble text="CARREGANDO" autoScramble />
+              <div className="h-px w-48 overflow-hidden bg-white/20">
+                <motion.div
+                  className="h-full origin-left bg-white"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: LOADER_DURATION_S, ease: "linear" }}
+                  onAnimationComplete={handleLoaderComplete}
+                />
+              </div>
+            </div>
+          ) : (
+            <motion.div
+              style={{ opacity: exploreOpacity, pointerEvents: explorePointerEvents }}
+              className="lobby-explore absolute top-[calc(50%+150px)] left-1/2 z-20 -translate-x-1/2"
+            >
+              <TextScramble text="EXPLORAR" onClick={scrollToSection2} />
+            </motion.div>
+          ))}
 
         {/* pedras flutuantes: órbita elíptica contínua (tipo elétron ao
             redor do núcleo — a própria tela cheia do dispositivo, não a
