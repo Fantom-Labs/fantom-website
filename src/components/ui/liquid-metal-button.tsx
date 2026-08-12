@@ -17,6 +17,16 @@ interface LiquidMetalButtonProps {
 // pra caber qualquer label com respiro nas laterais.
 const TEXT_PADDING_X = 24
 const TEXT_MIN_WIDTH = 142
+// u_scale de referência (ver loadShader) foi calibrado pro widget original
+// (label "Get Started", ~142px de largura) — nesse tamanho o brilho
+// metálico envolve o botão inteiro. Como agora a largura muda com o texto
+// (até 600px+ em telas largas, ver CTA_LABEL/max-w em lobby.tsx), o mesmo
+// u_scale fixo faz o padrão "esticar": o brilho concentra de um lado e
+// esvai antes de chegar no outro (bug reportado: "cortando o stroke na
+// direita"). u_scale escala proporcional à largura real, então a
+// densidade do padrão fica visualmente igual em qualquer tamanho de botão.
+const SHADER_REFERENCE_WIDTH = 142
+const SHADER_REFERENCE_U_SCALE = 8
 
 export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "text" }: LiquidMetalButtonProps) {
   const [isHovered, setIsHovered] = useState(false)
@@ -92,7 +102,14 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
       `
       document.head.appendChild(style)
     }
+  }, [])
 
+  // recria o shader sempre que a largura muda (medição inicial do texto
+  // chega depois do primeiro mount, ver contentWidth acima) — u_scale
+  // proporcional à largura real (ver SHADER_REFERENCE_*), senão o padrão
+  // metálico fica calibrado só pro primeiro valor de largura e nunca
+  // acompanha o texto real do botão.
+  useEffect(() => {
     const loadShader = async () => {
       try {
         if (shaderRef.current) {
@@ -101,6 +118,8 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
           // cleanup nunca rodava, vazando o contexto WebGL antigo a cada
           // remount.
           shaderMount.current?.dispose()
+
+          const uScale = (dimensions.width / SHADER_REFERENCE_WIDTH) * SHADER_REFERENCE_U_SCALE
 
           shaderMount.current = new ShaderMount(
             shaderRef.current,
@@ -113,7 +132,7 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
               u_distortion: 0,
               u_contour: 0,
               u_angle: 45,
-              u_scale: 8,
+              u_scale: uScale,
               u_shape: 1,
               u_offsetX: 0.1,
               u_offsetY: -0.1,
@@ -133,7 +152,7 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
       shaderMount.current?.dispose()
       shaderMount.current = null
     }
-  }, [])
+  }, [dimensions.width])
 
   const handleMouseEnter = () => {
     setIsHovered(true)
