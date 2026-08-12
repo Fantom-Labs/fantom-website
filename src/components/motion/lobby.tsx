@@ -60,6 +60,12 @@ const SECTION2_HOLD_MS = 1200
 // auto-advance pra section 3 disparar.
 const SECTION2_AUTO_ADVANCE_DELAY_MS = HERO_CONTENT_APPEAR_MS + SECTION2_HOLD_MS
 
+// interruptor pra desligar as pedras flutuantes (ver bloco "pedras
+// flutuantes" mais abaixo) sem remover o código — pedido explícito: "depois
+// podemos adicionar de novo, então apenas desative". Reativar é só virar
+// pra true de novo.
+const FLOATING_ROCKS_ENABLED = false
+
 // EXPERIMENTAL — protótipo da ideia "zoom pra dentro da tela de TV" (ainda
 // não documentado no project.md, é uma direção em avaliação). A saída do
 // lobby agora é o próprio scroll.
@@ -881,8 +887,11 @@ export function Lobby() {
             dois vale no mobile (caixa da tv é só o espaço medido por
             useMobileTvFit) — tornar as pedras responsivas fica pra uma
             próxima passada; por ora, é um floreio de desktop que não muda
-            o conteúdo, então desligar é seguro. */}
-        {!isMobileLayout && (
+            o conteúdo, então desligar é seguro.
+
+            FLOATING_ROCKS_ENABLED: interruptor temporário (ver constante no
+            topo do arquivo) — desligado a pedido, sem remover o código. */}
+        {FLOATING_ROCKS_ENABLED && !isMobileLayout && (
           <div className="lobby-rocks pointer-events-none absolute inset-0 z-10">
             <div
               style={{ top: `${rockOrbit.topPct1}%` }}
