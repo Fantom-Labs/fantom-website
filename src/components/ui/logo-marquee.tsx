@@ -24,7 +24,15 @@ export function LogoMarquee({ className = "" }: { className?: string }) {
 
   return (
     <div
-      className={`overflow-hidden [mask-image:linear-gradient(to_right,black_0%,black_75%,transparent_100%)] ${className}`}
+      // w-full + max-w-full: a trilha interna usa w-max (largura de
+      // conteúdo, todas as logos numa linha só, de propósito, pra
+      // rolagem contínua) — sem travar a LARGURA DESTE wrapper
+      // explicitamente, esse max-content "vazava" pro cálculo de
+      // shrink-to-fit do ancestral (a coluna da hero), estourando a
+      // largura real dela bem além do que o layout previa. Invisível no
+      // desktop (sobra espaço), quebrava o texto no mobile (a coluna
+      // ficava mais larga que a própria tela).
+      className={`w-full max-w-full overflow-hidden [mask-image:linear-gradient(to_right,black_0%,black_75%,transparent_100%)] ${className}`}
     >
       <motion.div
         className="flex w-max items-center gap-10"

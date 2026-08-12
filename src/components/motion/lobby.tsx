@@ -521,7 +521,13 @@ export function Lobby() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/logo-centralized.svg" alt="Fantom" className="w-[220px] sm:w-[280px]" />
 
-          <div className="max-w-lg">
+          {/* w-full, não só max-w-lg: eixo cruzado (largura) de um item
+              flex NÃO esticado (items-center, flex-col) não faz
+              shrink-to-fit — sem largura explícita, ele ignora o espaço
+              disponível no container e vira do tamanho do próprio
+              conteúdo (texto sem quebra) até o teto do max-width,
+              estourando a tela em vez de respeitar o px-6 do pai. */}
+          <div className="w-full max-w-lg">
             <p className="text-xs tracking-[0.2em] text-white/60 uppercase sm:text-sm">{EYEBROW_TEXT}</p>
             <h1 className="mt-4 text-2xl leading-tight font-medium text-white sm:text-3xl">{HEADLINE_TEXT}</h1>
             <p className="mt-4 text-sm leading-relaxed text-white/70 sm:text-base">{SUBHEAD_TEXT}</p>
