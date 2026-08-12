@@ -193,8 +193,13 @@ const LOGO_ZOOM_END = 0.75
 // wrapper (top+height em px, left:0/w-full sempre), deixando o
 // object-fit/mask-size: cover de cada camada recalcular o recorte contra
 // essa caixa nova, do jeito nativo do browser.
-const MOBILE_TV_TOP_MARGIN_PX = 24 // respiro entre o fim do conteúdo e o topo da tv
-const MOBILE_TV_BOTTOM_MARGIN_PX = 32 // respiro entre a base da tv e a borda da viewport
+// margens reduzidas (eram 24/32): pedido pra aumentar mais um pouco a tv
+// no mobile — como a logo por cima dela (LOGO_ZOOM_END) tem escala
+// própria, independente do tamanho da caixa da tv, aumentar a tv aqui não
+// aumenta a logo junto (pedido explícito: "sem aumentar logo-centralized
+// pois já está muito grande").
+const MOBILE_TV_TOP_MARGIN_PX = 16 // respiro entre o fim do conteúdo e o topo da tv
+const MOBILE_TV_BOTTOM_MARGIN_PX = 20 // respiro entre a base da tv e a borda da viewport
 const MOBILE_TV_MIN_HEIGHT_PX = 140 // piso de segurança em telas muito baixas
 // fallback ANTES da primeira medição real — só usado no primeiro frame
 // client-side, até o efeito medir a altura de verdade do conteúdo da hero.
