@@ -133,17 +133,32 @@ const LOADER_DURATION_S = 2.6
 // cada `progress` é o limiar MÍNIMO de scrollYProgress pra essa seção
 // contar como "a atual" — a seção ativa é sempre a de maior limiar que a
 // posição do scroll já ultrapassou (ver getActiveLobbySection abaixo).
-export const LOBBY_SECTIONS = [
-  { id: "inicio", label: "Início", progress: 0 },
-  // fim do zoom + deslocamento pra esquerda da cena da tv (SHIFT_RANGE[1]).
-  { id: "portfolio", label: "Portfólio", progress: SHIFT_RANGE[1] },
-] as const
+//
+// mobile: "início" (o zoom de tela cheia) não existe visualmente — o site
+// já começa direto na composição assentada (ver useMobileTvFit e o resto
+// da lógica isMobileLayout mais abaixo). Com o limiar de "portfólio" igual
+// ao do desktop (SHIFT_RANGE[1] = 0.5 de scrollYProgress), o usuário
+// precisava rolar uma viewport inteira "no escuro" (nada muda na tela) só
+// pra sair de "início" e entrar em "portfólio" no section-nav — e só
+// DEPOIS disso a section 3 ficava alcançável, criando a fricção reportada
+// ("pra sair da tela inicial tem fricção pra ir pra section 3", "no
+// mobile a section 1 deve ser a section 2 também"). Limiar 0 no mobile:
+// "início" e "portfólio" mostram a mesma tela desde sempre, então já
+// nasce em "portfólio" — sem distância de rolagem extra pra percorrer.
+export function getLobbySections(isMobileLayout: boolean) {
+  return [
+    { id: "inicio", label: "Início", progress: 0 },
+    { id: "portfolio", label: "Portfólio", progress: isMobileLayout ? 0 : SHIFT_RANGE[1] },
+  ] as const
+}
 
-// índice (em LOBBY_SECTIONS) da seção ativa pra um dado scrollYProgress.
-export function getActiveLobbySection(progress: number) {
+// índice (em getLobbySections(isMobileLayout)) da seção ativa pra um dado
+// scrollYProgress.
+export function getActiveLobbySection(progress: number, isMobileLayout: boolean) {
+  const sections = getLobbySections(isMobileLayout)
   let index = 0
-  for (let i = 0; i < LOBBY_SECTIONS.length; i++) {
-    if (progress >= LOBBY_SECTIONS[i].progress) index = i
+  for (let i = 0; i < sections.length; i++) {
+    if (progress >= sections[i].progress) index = i
   }
   return index
 }
@@ -444,7 +459,7 @@ const MOBILE_BREAKPOINT_QUERY = "(max-width: 639px)"
 // (SSR) useLayoutEffect não roda (só client), então o fallback SSR
 // continua sendo isMobile=false — sem mismatch de hidratação, só o timing
 // no cliente muda.
-function useIsMobileLayout() {
+export function useIsMobileLayout() {
   const [isMobile, setIsMobile] = useState(false)
 
   useLayoutEffect(() => {
@@ -609,10 +624,13 @@ export function Lobby() {
   // parava um pouco ANTES do alvo exato (então insideSection2 não
   // ativava, precisando de mais um scroll manual pra passar do limiar).
   // +0.002 de margem: garante que passa do limiar mesmo com qualquer
-  // arredondamento residual.
+  // arredondamento residual. SHIFT_RANGE[1] direto (não
+  // getLobbySections(isMobileLayout)[1].progress): o "EXPLORAR" só existe
+  // no desktop (ver JSX mais abaixo, escondido no mobile), então o limiar
+  // aqui é sempre o do desktop.
   const scrollToSection2 = useCallback(() => {
     const maxScroll = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
-    const target = (LOBBY_SECTIONS[1].progress + 0.002) * maxScroll
+    const target = (SHIFT_RANGE[1] + 0.002) * maxScroll
     if (lenis) lenis.scrollTo(target, { duration: 1.2 })
     else window.scrollTo({ top: target, behavior: "smooth" })
   }, [lenis])
@@ -680,8 +698,20 @@ export function Lobby() {
   // "ativo" desde o topo da página.
   const [activeSection, setActiveSection] = useState(0)
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    setActiveSection(getActiveLobbySection(v))
+    setActiveSection(getActiveLobbySection(v, isMobileLayout))
   })
+  // mobile: sem isso, activeSection só atualiza no PRIMEIRO evento de
+  // scroll (useMotionValueEvent só dispara em mudança) — se o usuário
+  // ainda não rolou nada, ficava preso no valor inicial (0, "início")
+  // mesmo isMobileLayout já sabendo que é mobile, onde "início" nem
+  // deveria existir como estado distinto (ver getLobbySections). Sincroniza
+  // assim que isMobileLayout é confirmado, sem esperar scroll nenhum.
+  useEffect(() => {
+    const syncMobileActiveSection = () => {
+      if (isMobileLayout) setActiveSection(1)
+    }
+    syncMobileActiveSection()
+  }, [isMobileLayout])
   // pedras flutuantes: a entrada NÃO é scrubada continuamente pelo scroll —
   // é autônoma (anima sozinha assim que dispara), só a saída reage ao
   // scroll voltando pro início. o gatilho é o booleano abaixo (cruza o
