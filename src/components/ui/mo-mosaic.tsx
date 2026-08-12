@@ -6,7 +6,7 @@
 // Remix the source recipe (styles, animation, palette) in the editor:
 // https://21st.dev/community/ascii/editor?from=11c565ed-8034-4db8-a4ef-d50690c915b6
 
-import { useSyncExternalStore } from "react"
+import { useEffect, useRef, useSyncExternalStore } from "react"
 import { createPortal } from "react-dom"
 import { motion, type MotionValue } from "motion/react"
 
@@ -24,8 +24,29 @@ function useMounted() {
 }
 
 export function AsciiArt({ className }: { className?: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // iOS Safari real (não o engine WebKit do Playwright) às vezes ignora o
+  // autoplay HTML mesmo com muted+playsInline presentes — mostra o botão
+  // de play nativo por cima do vídeo em vez de tocar sozinho (bug
+  // reportado, print do celular). muted como ATRIBUTO HTML nem sempre
+  // vira a PROPRIEDADE do elemento a tempo do autoplay ser avaliado
+  // (mismatch conhecido do React com elementos de mídia) — setar a
+  // propriedade explicitamente + chamar play() na mão é o reforço
+  // recomendado. .catch() silencioso: se MESMO ASSIM for bloqueado (ex.:
+  // modo de baixa energia do iOS, que restringe autoplay de vídeo), o
+  // poster fica como fallback estático em vez de estourar um erro no
+  // console — não tem como forçar autoplay contra uma restrição do SO.
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    video.muted = true
+    video.play().catch(() => {})
+  }, [])
+
   return (
     <video
+      ref={videoRef}
       className={className}
       // servido localmente (era o CDN assets.21st.dev): a section 2 no
       // lobby mostra esse vídeo recortado pela máscara da tv assim que o
