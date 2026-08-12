@@ -106,10 +106,12 @@ Copy completa versionada em `fantom-website-home.md`.
 
 **Hero (versão atual):**
 > `Websites · SaaS · Sistemas com IA`
-> **Sócia estratégica de tecnologia e design por trás de negócios reais.**
-> Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto.
-> `[ Falar com a Fantom ]`
+> **Somos um time de tecnologia e design para negócios e startups**
+> Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto em todos os estágios.
+> `[ Falar com a Fantom ]` — componente `liquid-metal-button` (shader de metal líquido + ícone de WhatsApp)
 > `+ 50 negócios acelerados` — carrossel de logos de clientes (rolagem automática, componente `logo-marquee`)
+
+Copy é a única fonte de verdade em `src/components/motion/lobby.tsx` (`EYEBROW_TEXT`/`HEADLINE_TEXT`/`SUBHEAD_TEXT`/`CTA_LABEL`) — reajustar aqui sempre que o texto mudar lá.
 
 ---
 
@@ -117,8 +119,10 @@ Copy completa versionada em `fantom-website-home.md`.
 
 Objetivo: qualidade e imersão de sites Framer, construídas em código próprio, sem Framer. Uso estratégico e sóbrio de tecnologias modernas, mantendo seriedade de autoridade.
 
-- **Loader de entrada:** arte ASCII animada (componente `mo-mosaic`, vídeo em loop) em tela cheia.
-- **Transição loader → hero:** o elemento do loader se converte num frame posicionado na hero (shared layout animation). Layout definido: o frame (tv) desloca pra esquerda ao fim do zoom, liberando uma coluna à direita — eyebrow, H1, subhead e CTA entram ali em stagger (~80ms entre cada), da direita pra esquerda.
+- **Loader de entrada (desktop):** a própria composição da tv (arte ASCII em loop, componente `mo-mosaic`) em zoom de tela cheia, com "CARREGANDO" + barra de progresso (~2.6s) no lugar do "EXPLORAR" clicável — não dá pra rolar manualmente enquanto carrega. Ao terminar, rola sozinho pra section 2 (hero) e nunca mais aparece de novo na mesma sessão (subir pra section 1 e descer não religa o loader).
+- **Mobile:** sem o loader/zoom de tela cheia — o site já começa direto na composição assentada da section 2 (tv + hero), a fase de zoom-in não existe nessa largura.
+- **Transição loader → hero (desktop):** o frame (tv) desloca pra esquerda ao fim do zoom, liberando uma coluna à direita — eyebrow, H1, subhead e CTA entram ali em stagger (~80ms entre cada), da direita pra esquerda.
+- **H1 da hero:** efeito sutil de separação de canais RGB (aberração cromática, ~1.5px de franja) via WebGL, componente `neon-rgbtext-effect` — mede a fonte/posição reais do heading por trás (herda o tamanho responsivo já resolvido) e substitui o texto visualmente só depois do primeiro desenho confirmado com sucesso; sem suporte a WebGL, o texto normal (branco, sólido) continua visível (progressive enhancement).
 - **Seções institucionais:** parallax responsivo ao mouse (`mouse-responsive-background`), gradientes animados em WebGL (`animated-gradient`) como fundo de seções, reveals por scroll.
 - **Cases:** apresentação imersiva; páginas dedicadas por case em fase posterior (conteúdo via Sanity).
 - **Imagens:** foco em alta qualidade, pipeline de otimização via Sanity + next/image.
