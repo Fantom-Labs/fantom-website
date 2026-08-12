@@ -592,10 +592,14 @@ export function LobbyChrome() {
 
   return (
     <>
-      {/* left-10px (sem colchetes) não é uma classe Tailwind válida —
-          silenciosamente não aplicava NENHUM offset esquerdo no mobile,
-          grudando a logo na borda da tela sem margem. */}
-      <div className="fixed left-5 top-0 z-30 flex h-11 items-center sm:left-8 sm:top-3">
+      {/* left-[30px]/sm:left-[42px] (não left-5/sm:left-8, 20px/32px): o
+          botão do menu (w-11 centralizando um ícone h-6, ver abaixo) tem
+          10px de padding invisível entre a borda do botão e o ícone
+          visível — a logo (sem esse padding, a imagem já encosta na borda
+          do wrapper) precisava dos mesmos +10px pra alinhar com a margem
+          VISÍVEL do ícone, não só com a margem do container (pedido
+          explícito: "margem de logo-left igual a do menu icon"). */}
+      <div className="fixed left-[30px] top-0 z-30 flex h-11 items-center sm:left-[42px] sm:top-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-left.svg" alt="Fantom" className="max-w-[80px]" />
       </div>
