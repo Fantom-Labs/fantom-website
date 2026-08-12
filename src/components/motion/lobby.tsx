@@ -95,6 +95,12 @@ const SCROLL_HEIGHT = `${LOBBY_SCROLL_HEIGHT_VH}vh`
 const ZOOM_RANGE: [number, number] = [0, 0.5]
 const SHIFT_RANGE: [number, number] = ZOOM_RANGE
 const SHIFT_X_TARGET = "-18vw"
+// desktop: em telas MUITO largas (ultrawide), a tv (cover-fit contra a
+// viewport inteira) cobre uma faixa vertical menor da foto original — o
+// topo da tv acaba rente à borda do viewport, parecendo cortado (pedido:
+// "fica cortando em cima a imagem da tv"). 0.9 encolhe 10% na posição
+// final, revelando margem preta ao redor (ver desktopFitScale).
+const DESKTOP_FIT_SCALE_END = 0.9
 // duração (em fração de scrollYProgress) do fade do "EXPLORE".
 const EXPLORE_FADE_END = 0.15
 // --- seções da home simuladas pelo scroll do lobby -------------------------
@@ -558,6 +564,13 @@ export function Lobby() {
   // transform — por isso "0vh" sempre no mobile.
   const shiftX = useTransform(scrollYProgress, SHIFT_RANGE, ["0vw", isMobileLayout ? "0vw" : SHIFT_X_TARGET])
   const shiftY = useTransform(scrollYProgress, SHIFT_RANGE, ["0vh", "0vh"])
+  // desktop: na posição final, o grupo inteiro (tv + vídeo + logo) encolhe
+  // mais um pouco a partir do centro do viewport — ver DESKTOP_FIT_SCALE_END.
+  // Aplicado no MESMO wrapper que já envolve os três juntos, então encolhem
+  // coesos sem precisar recalcular a âncora da logo pra esse fator extra
+  // (mesma lógica que já era usada pro mobile, ver useMobileTvFit). 1 (sem
+  // efeito) no mobile, que tem seu próprio mecanismo de tamanho.
+  const desktopFitScale = useTransform(scrollYProgress, SHIFT_RANGE, [1, isMobileLayout ? 1 : DESKTOP_FIT_SCALE_END])
   // combina o deslocamento com a centralização própria da logo (-50%).
   const logoX = useTransform(shiftX, (v) => `calc(-50% + ${v})`)
   const logoY = useTransform(shiftY, (v) => `calc(-50% + ${v})`)
@@ -732,9 +745,10 @@ export function Lobby() {
           rodapé da composição da tv. dvh acompanha a viewport visível de
           verdade. Sem efeito no desktop (as duas coincidem). */}
       <div className="sticky top-0 h-dvh overflow-hidden bg-black">
-        {/* wrapper da cena da tv. Desktop: inset-0 (viewport inteira),
-            igual sempre foi. Mobile: left:0 + w-full (largura INTEIRA,
-            sem encolher dos lados) e top/height em px vindos de
+        {/* wrapper da cena da tv. Desktop: inset-0 (viewport inteira) +
+            desktopFitScale (encolhe 10% na posição final, ver
+            DESKTOP_FIT_SCALE_END). Mobile: left:0 + w-full (largura
+            INTEIRA, sem encolher dos lados) e top/height em px vindos de
             useMobileTvFit (espaço medido abaixo do conteúdo da hero) — os
             filhos (tv, vídeo mascarado, logo) continuam "absolute inset-0"
             entre si, então herdam essa caixa e o object-fit/mask-size:
@@ -744,7 +758,11 @@ export function Lobby() {
             ramos do ternário, já que no SSR isMobileLayout é sempre false. */}
         <motion.div
           className={`lobby-tv-wrapper ${isMobileLayout ? "absolute left-0 w-full" : "absolute inset-0"}`}
-          style={isMobileLayout ? { top: mobileTvFit.topPx, height: mobileTvFit.heightPx } : undefined}
+          style={
+            isMobileLayout
+              ? { top: mobileTvFit.topPx, height: mobileTvFit.heightPx }
+              : { scale: desktopFitScale }
+          }
         >
           {/* cena da tv: escala junto com a máscara (mesmo valor, mesma
               origem no centro), então as duas sempre se movem coladas uma
