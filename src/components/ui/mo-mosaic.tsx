@@ -27,8 +27,15 @@ export function AsciiArt({ className }: { className?: string }) {
   return (
     <video
       className={className}
-      src={"https://assets.21st.dev/ascii-recipes/videos/user_39AUrstSGWJUKmRU9spgBJgd1hs/44b1c886-0736-4224-bfcc-9905b4415d91.mp4"}
-      poster={"https://assets.21st.dev/ascii-recipes/thumbnails/user_39AUrstSGWJUKmRU9spgBJgd1hs/95b377f8-e226-434d-be5c-2c7159b3e244.webp"}
+      // servido localmente (era o CDN assets.21st.dev): a section 2 no
+      // lobby mostra esse vídeo recortado pela máscara da tv assim que o
+      // scroll começa — buscar de outra origem (DNS+TLS próprios) atrasava
+      // o primeiro frame o suficiente pra aparecer a máscara "vazia" (sem
+      // o mosaico ainda) no início da rolagem no mobile. preload="auto"
+      // pede pro browser priorizar o carregamento desde o mount.
+      src={"/images/mo-mosaic.mp4"}
+      poster={"/images/mo-mosaic-poster.webp"}
+      preload="auto"
       autoPlay
       loop
       muted
