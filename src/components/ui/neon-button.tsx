@@ -12,7 +12,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-blue-500/5 hover:bg-blue-500/0 border-blue-500/20",
+        // padrão = o antigo estado de hover (sem fill de fundo, só a borda
+        // azul); hover/active (mobile via toque) acrescenta um fill
+        // branco/5 por cima, em vez de tirar o fill azul que já não existe.
+        default: "bg-blue-500/0 border-blue-500/20 transition-colors duration-200 hover:bg-white/5 active:bg-white/5",
         solid:
           "bg-blue-500 hover:bg-blue-600 text-white border-transparent hover:border-white/50 transition-all duration-200",
         ghost: "border-transparent bg-transparent hover:border-white/30 hover:bg-white/10",
@@ -40,16 +43,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, neon = true, size, variant, children, ...props }, ref) => {
     return (
       <button className={cn(buttonVariants({ variant, size }), className)} ref={ref} {...props}>
+        {/* linhas neon: eram só do hover (opacity-0 -> group-hover:opacity-100/30)
+            — agora sempre visíveis (o pedido era usar o antigo estado de
+            hover como padrão, pra ficar mais chamativo de cara). */}
         <span
           className={cn(
-            "absolute inset-x-0 inset-y-0 mx-auto h-px w-3/4 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100 hidden",
+            "absolute inset-x-0 inset-y-0 mx-auto h-px w-3/4 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-100 hidden",
             neon && "block"
           )}
         />
         {children}
         <span
           className={cn(
-            "absolute inset-x-0 -bottom-px mx-auto h-px w-3/4 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-30 hidden",
+            "absolute inset-x-0 -bottom-px mx-auto h-px w-3/4 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-30 hidden",
             neon && "block"
           )}
         />
