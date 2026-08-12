@@ -36,14 +36,19 @@ interface NeonRGBTextProps {
 // função retorna cedo SEM esconder o <h1> — o texto normal (branco,
 // sólido) fica como está, sem quebrar layout nem legibilidade.
 //
-// CHANNEL_OFFSET_PX pequeno (não uma opacidade translúcida) é o que dá o
-// "efeito suave estético" pedido: uma franja de 1-2px lê como um leve
-// brilho neon nas bordas, mantendo o corpo do texto sólido e legível —
-// bem mais sutil que o offset generoso usado no componente original
-// (pensado pra um texto grande em tela cheia, não pra um heading de
-// hero). Sem loop de animação (redesenha só quando o tamanho muda): é um
-// estilo estático, não conflita com prefers-reduced-motion.
-const CHANNEL_OFFSET_PX = 1.5
+// franja PROPORCIONAL ao tamanho da fonte (não um px fixo) é o que dá o
+// "efeito suave estético" pedido de forma consistente em qualquer tela —
+// um deslocamento fixo em px (ex.: 1.5px) fica quase imperceptível num
+// H1 grande de desktop, mas relativamente ENORME contra o H1 bem menor do
+// mobile (text-2xl, ~24px) — mesma quantidade de px, proporção bem maior
+// em relação ao traço da letra, lendo como um glitch forte em vez de sutil
+// (bug reportado: "muito forte no mobile"). CHANNEL_OFFSET_RATIO*fontSize
+// mantém a MESMA proporção franja/traço em qualquer tamanho de texto.
+// Sem loop de animação (redesenha só quando o tamanho muda): é um estilo
+// estático, não conflita com prefers-reduced-motion.
+const CHANNEL_OFFSET_RATIO = 0.035
+const CHANNEL_OFFSET_MIN_PX = 0.75
+const CHANNEL_OFFSET_MAX_PX = 2.5
 
 export function NeonRGBText({ text, as: Tag = "h1", className }: NeonRGBTextProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -198,9 +203,14 @@ export function NeonRGBText({ text, as: Tag = "h1", className }: NeonRGBTextProp
         gl.bindTexture(gl.TEXTURE_2D, texture)
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textCanvas)
 
-        // offset em fração de UV equivalente a CHANNEL_OFFSET_PX, recalculado
-        // aqui porque depende da largura real do canvas neste desenho.
-        const offsetUv = CHANNEL_OFFSET_PX / width
+        // offset em px proporcional ao tamanho REAL da fonte neste desenho
+        // (não um valor fixo — ver comentário em CHANNEL_OFFSET_RATIO),
+        // depois convertido pra fração de UV (relativo à largura do canvas).
+        const channelOffsetPx = Math.min(
+          Math.max(fontSize * CHANNEL_OFFSET_RATIO, CHANNEL_OFFSET_MIN_PX),
+          CHANNEL_OFFSET_MAX_PX
+        )
+        const offsetUv = channelOffsetPx / width
         const channels: Array<{ color: [number, number, number]; offset: [number, number] }> = [
           { color: [1, 0, 0], offset: [offsetUv, 0] },
           { color: [0, 1, 0], offset: [0, 0] },
