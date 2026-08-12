@@ -23,11 +23,7 @@ const SERVICES: ServiceItem[] = [
     title: "Websites",
     description:
       "Sites institucionais e plataformas com identidade própria, focados em conversão.",
-    images: [
-      "/images/section-3/websites2-s3.png",
-      "/images/section-3/websites4-s3.png",
-      "/images/section-3/websites5-s3.png",
-    ],
+    images: ["/images/section-3/websites2-s3.png", "/images/section-3/websites4-s3.png"],
   },
   {
     title: "SaaS",
