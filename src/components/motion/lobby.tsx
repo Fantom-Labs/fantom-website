@@ -78,7 +78,7 @@ const SHIFT_X_TARGET = "-18vw"
 // coluna à direita, que não existe numa tela estreita), desloca pra
 // BAIXO — o conteúdo da hero fica fixo no topo (ver className responsivo
 // da coluna de conteúdo) e a tv assentada ocupa a metade de baixo.
-const SHIFT_Y_TARGET_MOBILE = "39vh"
+const SHIFT_Y_TARGET_MOBILE = "60vh"
 // duração (em fração de scrollYProgress) do fade do "EXPLORE".
 const EXPLORE_FADE_END = 0.15
 // --- seções da home simuladas pelo scroll do lobby -------------------------
@@ -123,18 +123,34 @@ const ZOOM_START = Math.max(1 / SCREEN_FRAC_W, 1 / SCREEN_FRAC_H)
 // pouco mais pra esquerda"). Ajustar visualmente se necessário.
 const TV_POSITION_X = 58
 const TV_POSITION_Y = 52
-const TV_POSITION = `${TV_POSITION_X}% ${TV_POSITION_Y}%`
+// mobile: 58% foi calibrado pro deslocamento lateral do desktop (empurra
+// o foco pra compensar o shiftX) — sem esse deslocamento (shiftX=0 no
+// mobile), o mesmo valor deixa a tela/máscara visivelmente fora do
+// centro. Centralizado (50%) no mobile.
+const TV_POSITION_X_MOBILE = 50
 
 // escala final da logo na section 2 — 1.5x maior que o valor original
 // (0.4) que cabia justo dentro da tela do tv sem estourar.
 const LOGO_ZOOM_END = 0.6
 
+// mobile: depois do zoom completo, o conjunto inteiro (tv + vídeo + logo
+// — já posicionados/deslocados corretamente entre si) encolhe mais um
+// pouco a partir do centro da viewport, revelando fundo preto ao redor —
+// sem isso, object-cover sempre preenche 100% da tela, então a "tv" nunca
+// parece "caber" dentro do celular, só sangra pelas bordas. Aplicado como
+// wrapper por fora dos três elementos: como eles já se movem/escalam
+// certo entre si, escalar o grupo inteiro junto encolhe tudo mantendo a
+// logo grudada na tela da tv, sem precisar recalcular a âncora (screenAnchor)
+// pra um fator de escala extra.
+const MOBILE_FIT_SCALE = 0.62
+
 // calcula, em tempo real, onde o centro da máscara (tv-mask.png) cai na
 // viewport atual — replicando o mesmo algoritmo de object-fit: cover +
 // object-position usado pelo fundo/máscara. Evita depender de uma
 // porcentagem fixa (que quebra em proporções de tela diferentes, o mesmo
-// problema que o chroma key já resolveu pro vídeo). Recalcula no resize.
-function useScreenAnchor() {
+// problema que o chroma key já resolveu pro vídeo). Recalcula no resize
+// e quando o TV_POSITION_X efetivo muda (troca de layout mobile/desktop).
+function useScreenAnchor(tvPositionX: number, tvPositionY: number) {
   const [anchor, setAnchor] = useState({ xPct: 50, yPct: 50 })
 
   useEffect(() => {
@@ -158,8 +174,8 @@ function useScreenAnchor() {
         sw = naturalW
         sh = sw / boxRatio
       }
-      const sx = (naturalW - sw) * (TV_POSITION_X / 100)
-      const sy = (naturalH - sh) * (TV_POSITION_Y / 100)
+      const sx = (naturalW - sw) * (tvPositionX / 100)
+      const sy = (naturalH - sh) * (tvPositionY / 100)
 
       const canvas = document.createElement("canvas")
       canvas.width = boxW
@@ -193,7 +209,7 @@ function useScreenAnchor() {
 
     window.addEventListener("resize", compute)
     return () => window.removeEventListener("resize", compute)
-  }, [])
+  }, [tvPositionX, tvPositionY])
 
   return anchor
 }
@@ -366,7 +382,10 @@ function useRockOrbit() {
 export function LobbyChrome() {
   return (
     <>
-      <div className="fixed left-10px top-0 z-30 flex h-11 items-center sm:left-8 sm:top-3">
+      {/* left-10px (sem colchetes) não é uma classe Tailwind válida —
+          silenciosamente não aplicava NENHUM offset esquerdo no mobile,
+          grudando a logo na borda da tela sem margem. */}
+      <div className="fixed left-5 top-0 z-30 flex h-11 items-center sm:left-8 sm:top-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-left.svg" alt="Fantom" className="max-w-[80px]" />
       </div>
@@ -388,7 +407,9 @@ export function Lobby() {
   const prefersReducedMotion = useReducedMotion()
   const isMobileLayout = useIsMobileLayout()
   const containerRef = useRef<HTMLDivElement>(null)
-  const screenAnchor = useScreenAnchor()
+  const tvPositionX = isMobileLayout ? TV_POSITION_X_MOBILE : TV_POSITION_X
+  const tvPosition = `${tvPositionX}% ${TV_POSITION_Y}%`
+  const screenAnchor = useScreenAnchor(tvPositionX, TV_POSITION_Y)
   const { isInsideTvMask, getTvMaskStyle } = useTvScreenMask()
   const lenis = useLenis()
 
@@ -398,6 +419,10 @@ export function Lobby() {
   })
 
   const maskScale = useTransform(scrollYProgress, ZOOM_RANGE, [ZOOM_START, 1])
+  // mobile: encolhe o grupo inteiro (tv+vídeo+logo) um pouco mais depois
+  // do zoom, revelando fundo preto ao redor — ver comentário em
+  // MOBILE_FIT_SCALE. 1 (sem efeito) no desktop.
+  const mobileFitScale = useTransform(scrollYProgress, SHIFT_RANGE, [1, isMobileLayout ? MOBILE_FIT_SCALE : 1])
   // cancela o zoom do wrapper no conteúdo do vídeo: a "janela" da máscara
   // precisa encolher, mas o enquadramento do vídeo em si não deveria
   // começar ampliado — ele só devia diminuir de tamanho, não de zoom.
@@ -546,71 +571,78 @@ export function Lobby() {
   return (
     <div ref={containerRef} className="relative" style={{ height: SCROLL_HEIGHT }}>
       <div className="sticky top-0 h-screen overflow-hidden bg-black">
-        {/* cena da tv: escala junto com a máscara (mesmo valor, mesma
-            origem no centro), então as duas sempre se movem coladas uma
-            na outra, começando ampliada e desamplia até o tamanho normal. */}
-        <motion.img
-          src="/images/tv-img.jpeg"
-          alt=""
-          aria-hidden="true"
-          style={{ scale: maskScale, x: shiftX, y: shiftY, objectPosition: TV_POSITION }}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        {/* wrapper do encolhimento extra do mobile (MOBILE_FIT_SCALE) —
+            os três filhos (tv, vídeo mascarado, logo) já se posicionam
+            certo entre si; escalar o grupo INTEIRO a partir do centro da
+            viewport encolhe tudo junto sem precisar recalcular a âncora
+            da logo pra um fator extra. scale:1 (sem efeito) no desktop. */}
+        <motion.div style={{ scale: mobileFitScale }} className="absolute inset-0">
+          {/* cena da tv: escala junto com a máscara (mesmo valor, mesma
+              origem no centro), então as duas sempre se movem coladas uma
+              na outra, começando ampliada e desamplia até o tamanho normal. */}
+          <motion.img
+            src="/images/tv-img.jpeg"
+            alt=""
+            aria-hidden="true"
+            style={{ scale: maskScale, x: shiftX, y: shiftY, objectPosition: tvPosition }}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
 
-        {/* vídeo recortado pela própria foto do tv (chroma/luma key): só
-            aparece onde a imagem é clara (a tela). escala a partir do
-            centro, de "tela cheia" (ZOOM_START) até o tamanho exato da
-            tela do tv na foto (1). */}
-        <motion.div
-          style={{
-            scale: maskScale,
-            x: shiftX,
-            y: shiftY,
-            maskImage: "url(/images/tv-mask.png)",
-            WebkitMaskImage: "url(/images/tv-mask.png)",
-            // máscara dedicada (preto e branco, gerada por limiar de
-            // brilho): foca só no núcleo claro da tela, sem o bezel branco
-            // do tv vazando vídeo junto. mask-mode: luminance porque a
-            // imagem não tem canal alpha.
-            maskMode: "luminance",
-            maskSize: "cover",
-            WebkitMaskSize: "cover",
-            maskPosition: TV_POSITION,
-            WebkitMaskPosition: TV_POSITION,
-            maskRepeat: "no-repeat",
-            WebkitMaskRepeat: "no-repeat",
-          }}
-          className="absolute inset-0 z-10 overflow-hidden"
-        >
-          <motion.div style={{ scale: videoCounterScale }} className="absolute inset-0">
-            <MouseResponsiveBackground className="absolute left-0 top-0 h-[110%] w-[110%]">
-              <AsciiArt className="h-full w-full" />
+          {/* vídeo recortado pela própria foto do tv (chroma/luma key): só
+              aparece onde a imagem é clara (a tela). escala a partir do
+              centro, de "tela cheia" (ZOOM_START) até o tamanho exato da
+              tela do tv na foto (1). */}
+          <motion.div
+            style={{
+              scale: maskScale,
+              x: shiftX,
+              y: shiftY,
+              maskImage: "url(/images/tv-mask.png)",
+              WebkitMaskImage: "url(/images/tv-mask.png)",
+              // máscara dedicada (preto e branco, gerada por limiar de
+              // brilho): foca só no núcleo claro da tela, sem o bezel branco
+              // do tv vazando vídeo junto. mask-mode: luminance porque a
+              // imagem não tem canal alpha.
+              maskMode: "luminance",
+              maskSize: "cover",
+              WebkitMaskSize: "cover",
+              maskPosition: tvPosition,
+              WebkitMaskPosition: tvPosition,
+              maskRepeat: "no-repeat",
+              WebkitMaskRepeat: "no-repeat",
+            }}
+            className="absolute inset-0 z-10 overflow-hidden"
+          >
+            <motion.div style={{ scale: videoCounterScale }} className="absolute inset-0">
+              <MouseResponsiveBackground className="absolute left-0 top-0 h-[110%] w-[110%]">
+                <AsciiArt className="h-full w-full" />
+              </MouseResponsiveBackground>
+            </motion.div>
+          </motion.div>
+
+          {/* logo central: não é mascarada (precisa ficar inteira, sem
+              recorte). começa no centro da viewport (vídeo em tela cheia) e
+              termina no centro real da tela do tv (useScreenAnchor), junto
+              com o scroll — nunca fica numa posição fixa. */}
+          <motion.div
+            style={{
+              scale: logoScale,
+              left: logoLeft,
+              top: logoTop,
+              x: logoX,
+              y: logoY,
+            }}
+            className="pointer-events-none absolute z-20"
+          >
+            <MouseResponsiveBackground>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/logo-centralized.svg"
+                alt="Fantom"
+                className="w-[240px] sm:w-[416px]"
+              />
             </MouseResponsiveBackground>
           </motion.div>
-        </motion.div>
-
-        {/* logo central: não é mascarada (precisa ficar inteira, sem
-            recorte). começa no centro da viewport (vídeo em tela cheia) e
-            termina no centro real da tela do tv (useScreenAnchor), junto
-            com o scroll — nunca fica numa posição fixa. */}
-        <motion.div
-          style={{
-            scale: logoScale,
-            left: logoLeft,
-            top: logoTop,
-            x: logoX,
-            y: logoY,
-          }}
-          className="pointer-events-none absolute z-20"
-        >
-          <MouseResponsiveBackground>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/logo-centralized.svg"
-              alt="Fantom"
-              className="w-[240px] sm:w-[416px]"
-            />
-          </MouseResponsiveBackground>
         </motion.div>
 
         {/* "EXPLORE": FORA do wrapper da logo de propósito — aquele já
