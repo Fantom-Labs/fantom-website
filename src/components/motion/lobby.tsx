@@ -44,26 +44,6 @@ const heroItemVariants: Variants = {
   hidden: { opacity: 0, x: 24 },
   visible: { opacity: 1, x: 0, transition: { duration: HERO_ITEM_DURATION_S, ease: "easeOut" } },
 }
-// quantos <motion.* variants={heroItemVariants}> existem dentro da coluna da
-// hero (eyebrow, H1, subhead, CTA, stat de clientes) — usado só pra calcular
-// HERO_CONTENT_APPEAR_MS abaixo. Se um item for adicionado/removido na coluna,
-// atualizar aqui também.
-const HERO_ITEM_COUNT = 5
-// tempo total (ms), a partir do instante em que insideSection2 vira true, até
-// o ÚLTIMO item do stagger (eyebrow/H1/subhead/CTA/stat) terminar de aparecer
-// — usado pelo auto-advance section2 -> section3 abaixo, pra não completar a
-// transição antes do conteúdo da section 2 ter realmente aparecido na tela.
-const HERO_CONTENT_APPEAR_MS = ((HERO_ITEM_COUNT - 1) * HERO_STAGGER_CHILDREN_S + HERO_ITEM_DURATION_S) * 1000
-// pausa deliberada (ms) DEPOIS do conteúdo já ter aparecido inteiro, antes do
-// auto-advance pra section 3 — sem isso, o avanço acontece no instante exato
-// em que o último item termina de entrar, o que ainda parece abrupto (dá pra
-// notar que o texto apareceu, mas não pra realmente ler nada). Ajustar aqui
-// se o "feel" da pausa não convencer.
-const SECTION2_HOLD_MS = 1200
-// atraso total, a partir do instante em que a section 2 é alcançada, até o
-// auto-advance pra section 3 disparar.
-const SECTION2_AUTO_ADVANCE_DELAY_MS = HERO_CONTENT_APPEAR_MS + SECTION2_HOLD_MS
-
 // interruptor pra desligar as pedras flutuantes (ver bloco "pedras
 // flutuantes" mais abaixo) sem remover o código — pedido explícito: "depois
 // podemos adicionar de novo, então apenas desative". Reativar é só virar
@@ -105,6 +85,51 @@ const SCROLL_HEIGHT = `${LOBBY_SCROLL_HEIGHT_VH}vh`
 const ZOOM_RANGE: [number, number] = [0, 0.5]
 const SHIFT_RANGE: [number, number] = ZOOM_RANGE
 const SHIFT_X_TARGET = "-18vw"
+// alvo (px de scroll) do "resting point" da section 2, já com zoom/shift
+// completos — mesmo destino usado pelo clique em "EXPLORAR" e pelo loader
+// de entrada (scrollToSection2 abaixo), e também pelo auto-scroll reverso
+// da section 3 de volta pra section 2 (useLenis em o-que-fazemos.tsx) —
+// exportado como fonte única pra não desalinhar os dois lugares.
+export function getSection2ScrollTarget(): number {
+  const maxScroll = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
+  return (SHIFT_RANGE[1] + 0.002) * maxScroll
+}
+// posição (px de scroll) onde a section 3 (#o-que-fazemos) começa de fato —
+// ver comentário maior sobre "sectionThreeStart" no useLenis do auto-advance
+// abaixo. Exportado pro mesmo motivo de getSection2ScrollTarget: usado pelos
+// DOIS lados do salto (aqui e em o-que-fazemos.tsx).
+export function getSectionThreeStart(): number {
+  return (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight
+}
+// duração (s) dos saltos automáticos entre section 2 e 3 — usada pros DOIS
+// lados (section2->3 aqui embaixo, section3->2 em o-que-fazemos.tsx). FIXA
+// (não recalculada a partir da distância de CADA salto): a descida sempre
+// parte de ONDE o usuário parou de rolar dentro da section 2 (varia — pode
+// parar logo no início do trecho ou bem mais adiante), enquanto a subida
+// sempre parte do mesmo ponto fixo (a borda de cima da section 3, a
+// distância cheia). Calcular a duração a partir da distância REAL de cada
+// salto (tentativa anterior) até igualava a velocidade média (px/s) dos
+// dois — mas uma descida mais curta então TERMINAVA MAIS RÁPIDO (menos
+// tempo total) que a subida (sempre a distância cheia, sempre mais tempo),
+// e isso ainda "lia" como a subida sendo mais rápida/dramática (bug
+// reportado, persistente mesmo depois da 1a correção: "a subida continua
+// visivelmente mais acelerada que a descida"). Duração FIXA (baseada na
+// distância de REFERÊNCIA — o trecho todo, section2Target até
+// sectionThreeStart — não na distância real de cada salto) garante o MESMO
+// tempo total nos dois sentidos sempre, eliminando a diferença de verdade.
+const AUTO_JUMP_SPEED_PX_PER_S = 950
+// clamp só pra nunca ficar LITERALMENTE instantâneo nem arrastado demais em
+// telas muito baixas/altas (a distância de referência muda com
+// window.innerHeight).
+const AUTO_JUMP_MIN_DURATION_S = 0.6
+const AUTO_JUMP_MAX_DURATION_S = 2.2
+export function getAutoJumpDuration(): number {
+  const referenceDistance = Math.abs(getSectionThreeStart() - getSection2ScrollTarget())
+  return Math.min(
+    Math.max(referenceDistance / AUTO_JUMP_SPEED_PX_PER_S, AUTO_JUMP_MIN_DURATION_S),
+    AUTO_JUMP_MAX_DURATION_S
+  )
+}
 // desktop: em telas MUITO largas (ultrawide), a tv (cover-fit contra a
 // viewport inteira) cobre uma faixa vertical menor da foto original — o
 // topo da tv acaba rente à borda do viewport, parecendo cortado (pedido:
@@ -632,8 +657,7 @@ export function Lobby() {
   // no desktop (ver JSX mais abaixo, escondido no mobile), então o limiar
   // aqui é sempre o do desktop.
   const scrollToSection2 = useCallback(() => {
-    const maxScroll = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
-    const target = (SHIFT_RANGE[1] + 0.002) * maxScroll
+    const target = getSection2ScrollTarget()
     if (lenis) lenis.scrollTo(target, { duration: 1.2 })
     else window.scrollTo({ top: target, behavior: "smooth" })
   }, [lenis])
@@ -743,40 +767,51 @@ export function Lobby() {
   //      cruza o limiar (Lenis global tem duration:1.2s, LenisProvider),
   //      então dar o salto aqui saltaria pra section 3 na mesma rolada, sem
   //      o conteúdo da section 2 (hero, pedras) chegar a aparecer.
-  //   2. Depois de acomodar, contar SECTION2_AUTO_ADVANCE_DELAY_MS
-  //      (conteúdo aparecer + SECTION2_HOLD_MS de pausa de leitura) e então
-  //      "armar" o gatilho — ainda sem mexer no scroll.
+  //   2. Assim que acomodar, "armar" o gatilho na hora — sem pausa artificial
+  //      (removida a pedido explícito: "remova o delay que tem definido
+  //      para ser possível descer a sessão, já que o scroll é semi
+  //      automático" — o scroll já é assistido/suave por natureza, esperar
+  //      alguns segundos parado só pra poder continuar descendo virou
+  //      fricção, não proteção).
   //   3. Só then, na PRÓXIMA vez que isScrolling virar true de novo (o
   //      usuário rolou) EM DIREÇÃO A BAIXO (direction > 0 — rolar pra cima
   //      não conta como pedido de avançar), dar o salto.
   const autoAdvancedRef = useRef(false)
   const armedRef = useRef(false)
-  const armTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => {
-    return () => {
-      if (armTimeoutRef.current) clearTimeout(armTimeoutRef.current)
-    }
-  }, [])
+  // rastreia se o scroll já passou do início da section 3 nesta "visita" —
+  // sem isso, voltar da section 3 pra section 2 e descer de novo não
+  // disparava o auto-advance uma segunda vez (bug reportado: "só ocorre uma
+  // vez"). O reset por `activeSection < 1` abaixo cobre voltar até a
+  // section 1 no DESKTOP, mas no MOBILE a section 1 nem existe separada
+  // (activeSection fica travado em 1 o tempo todo — ver useIsMobileLayout/
+  // getActiveLobbySection), então aquele reset nunca disparava lá. Este ref
+  // cobre os dois casos: qualquer volta de além do limiar da section 3 pra
+  // aquém dele conta como nova visita e rearma o gatilho.
+  const wasBeyondSectionThreeRef = useRef(false)
   useLenis(
     (lenisInstance) => {
       if (prefersReducedMotion) return
-      if (activeSection < 1) {
-        autoAdvancedRef.current = false
-        armedRef.current = false
-        if (armTimeoutRef.current) {
-          clearTimeout(armTimeoutRef.current)
-          armTimeoutRef.current = null
-        }
-        return
-      }
-      if (autoAdvancedRef.current) return
       // altura TOTAL do bloco do lobby (não o "lobbyMaxScroll" usado em
       // scrollToSection2/section-nav, que é só onde o sticky SOLTA — a
       // partir dali o conteúdo do lobby ainda ocupa a tela inteira,
       // rolando normalmente, até completar os 300vh). #o-que-fazemos só
       // começa de fato depois desse bloco inteiro.
       const sectionThreeStart = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight
-      if (lenisInstance.scroll >= sectionThreeStart) return
+      if (lenisInstance.scroll >= sectionThreeStart) {
+        wasBeyondSectionThreeRef.current = true
+        return
+      }
+      if (wasBeyondSectionThreeRef.current) {
+        wasBeyondSectionThreeRef.current = false
+        autoAdvancedRef.current = false
+        armedRef.current = false
+      }
+      if (activeSection < 1) {
+        autoAdvancedRef.current = false
+        armedRef.current = false
+        return
+      }
+      if (autoAdvancedRef.current) return
 
       if (armedRef.current) {
         // ainda parado (a própria pausa) — nada do usuário aconteceu ainda.
@@ -790,16 +825,22 @@ export function Lobby() {
         // disparou o gatilho continuava sendo processado pelo Lenis no(s)
         // frame(s) seguinte(s) e brigava com o alvo do scrollTo, fazendo o
         // scroll "acomodar" bem antes do destino. Travado, nenhum input
-        // durante a animação consegue desviar do destino.
-        lenisInstance.scrollTo(sectionThreeStart, { duration: 1.2, lock: true })
+        // durante a animação consegue desviar do destino. duration FIXA
+        // (getAutoJumpDuration sem argumento, não a distância real deste
+        // salto) — ver comentário em getAutoJumpDuration: usar a distância
+        // real fazia a descida (que parte de onde o usuário parou, variável)
+        // ficar com duração diferente da subida (sempre a distância cheia),
+        // o que ainda "lia" como velocidades diferentes mesmo com o mesmo
+        // px/s médio (bug reportado: "a subida continua mais acelerada").
+        lenisInstance.scrollTo(sectionThreeStart, {
+          duration: getAutoJumpDuration(),
+          lock: true,
+        })
         return
       }
 
-      if (armTimeoutRef.current || lenisInstance.isScrolling !== false) return
-      armTimeoutRef.current = setTimeout(() => {
-        armTimeoutRef.current = null
-        armedRef.current = true
-      }, SECTION2_AUTO_ADVANCE_DELAY_MS)
+      if (lenisInstance.isScrolling !== false) return
+      armedRef.current = true
     },
     [activeSection, prefersReducedMotion]
   )
