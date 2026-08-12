@@ -410,10 +410,10 @@ function useTvScreenMask() {
     const posX = geo.originX + shiftPx - rockLeft
     const posY = geo.originY - rockTop
     return {
-      maskImage: "url(/images/tv-mask.png)",
-      WebkitMaskImage: "url(/images/tv-mask.png)",
-      maskMode: "luminance",
-      WebkitMaskMode: "luminance" as const,
+      // tv-mask-alpha.png (não tv-mask.png), sem mask-mode: veja o
+      // comentário grande na video-mask-layer mais abaixo — mesmo motivo.
+      maskImage: "url(/images/tv-mask-alpha.png)",
+      WebkitMaskImage: "url(/images/tv-mask-alpha.png)",
       maskRepeat: "no-repeat",
       WebkitMaskRepeat: "no-repeat",
       maskSize: `${geo.coverW}px ${geo.coverH}px`,
@@ -836,13 +836,29 @@ export function Lobby() {
               scale: maskScale,
               x: shiftX,
               y: shiftY,
-              maskImage: "url(/images/tv-mask.png)",
-              WebkitMaskImage: "url(/images/tv-mask.png)",
-              // máscara dedicada (preto e branco, gerada por limiar de
-              // brilho): foca só no núcleo claro da tela, sem o bezel branco
-              // do tv vazando vídeo junto. mask-mode: luminance porque a
-              // imagem não tem canal alpha.
-              maskMode: "luminance",
+              // tv-mask-alpha.png, NÃO tv-mask.png: a máscara original é
+              // preto/branco no RGB (o brilho é o que importa), só que o
+              // canal alpha dela não representa o recorte (~157-255 em
+              // TODO lugar, quase opaco tanto dentro quanto fora da tela) —
+              // por isso o código usava mask-mode: luminance, pra forçar o
+              // navegador a ler o RGB em vez do alpha. Safari não suporta
+              // mask-mode: luminance de forma confiável (nem -webkit-mask-
+              // mode): ele sempre lê o alpha, viu "quase opaco em todo
+              // lugar" e mostrou o vídeo por cima da composição inteira,
+              // sem recorte nenhum (bug reportado: "imagem da tv não
+              // aparece no Safari do celular" — na real a máscara é que
+              // não recortava). tv-mask-alpha.png tem o brilho JÁ copiado
+              // pro canal alpha (RGB sólido branco) — daí a máscara padrão
+              // baseada em alpha (sem mask-mode nenhum) funciona igual em
+              // qualquer navegador. Pra regenerar se tv-mask.png mudar:
+              // desenhar a imagem original num canvas, e pra cada pixel
+              // setar alpha = valor do R (RGB vira branco sólido) — o
+              // brilho vira opacidade. tv-mask.png original continua
+              // existindo pra o sampling de brilho via canvas
+              // (useScreenAnchor/useTvScreenMask), que lê o RGB, não o
+              // alpha — só a máscara CSS troca de arquivo.
+              maskImage: "url(/images/tv-mask-alpha.png)",
+              WebkitMaskImage: "url(/images/tv-mask-alpha.png)",
               maskSize: "cover",
               WebkitMaskSize: "cover",
               maskPosition: tvPosition,
