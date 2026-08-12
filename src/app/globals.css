@@ -121,8 +121,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* bg-black direto, não bg-background: o tema ativo (:root, sem .dark)
+     resolve --background pra branco puro. O site inteiro é escuro por
+     convenção direta (cada seção já usa bg-black, nunca o token), mas o
+     <body> em si ficava branco — invisível no desktop, mas aparecia como
+     uma faixa clara no topo durante o rubber-band/overscroll do mobile
+     (o bounce do iOS revela o que está atrás do conteúdo, que é o body). */
   body {
-    @apply bg-background text-foreground;
+    @apply bg-black text-foreground;
   }
   html {
     @apply font-sans;
