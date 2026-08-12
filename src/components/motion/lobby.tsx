@@ -19,7 +19,7 @@ const POSTER_SRC = "/images/mo-mosaic-poster.webp"
 // do layout (coluna animada da section 2 e o fallback estático de motion
 // reduzido), pra não divergir entre elas.
 const EYEBROW_TEXT = "Websites · SaaS · Sistemas com IA"
-const HEADLINE_TEXT = "Somos o seu time estratégico de tecnologia e design"
+const HEADLINE_TEXT = "Somos um time estratégico de tecnologia e design para negócios"
 const SUBHEAD_TEXT = "Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto em todos os estágios."
 const CTA_LABEL = "Falar com a Fantom"
 const CLIENTS_STAT_TEXT = "+ 50 negócios acelerados"
@@ -1037,48 +1037,62 @@ export function Lobby() {
             das pedras) — ver heroStaggerVariants/heroItemVariants.
             ref: mede a altura real deste bloco pra useMobileTvFit (só
             importa no mobile — sem custo/efeito no desktop). */}
-        {/* max-w progressivo (sm -> xl -> 2xl -> min-[1920px]): em telas
-            ultrawide, right-[8%] sozinho já dá bastante margem absoluta
-            (8% de 3440px = ~275px), mas o max-w-[420px] fixo continuava
-            travando a coluna no mesmo tamanho de um notebook comum —
-            ficava pequena e desproporcional num monitor muito largo
-            (pedido: "mais largo"). Tamanho de fonte do headline/subhead
-            também sobe nos mesmos saltos, senão o texto boia perdido
-            dentro de uma coluna maior sem preencher visualmente. */}
+        {/* max-w e fontes em clamp() (não mais saltos fixos por breakpoint:
+            sm/xl/2xl/min-[1920px]) — o salto reto pra um tier "ultrawide"
+            já pegava telas de 1920px (full HD comum, não exatamente
+            ultrawide) e deixava tudo grande demais ali (pedido: "ficou
+            muito grande em telas 1920px"). clamp(mín, valor fluido em vw,
+            máx) cresce continuamente com a largura da tela em vez de pular
+            entre tamanhos fixos — 1920px fica num meio-termo real, só as
+            telas MUITO largas (~2200px+) chegam no teto. Mobile (sem sm:)
+            continua com os tamanhos fixos de sempre, sem clamp nenhum. */}
         <motion.div
           ref={heroContentRef}
-          className="lobby-hero-content pointer-events-none absolute top-[8%] left-1/2 z-20 w-[86%] -translate-x-1/2 text-center sm:top-1/2 sm:right-[8%] sm:left-auto sm:w-auto sm:max-w-[420px] sm:-translate-x-0 sm:-translate-y-1/2 sm:text-left xl:max-w-[480px] 2xl:max-w-[560px] min-[1920px]:max-w-[640px]"
+          className="lobby-hero-content pointer-events-none absolute top-[8%] left-1/2 z-20 w-[86%] -translate-x-1/2 text-center sm:top-1/2 sm:right-[8%] sm:left-auto sm:w-auto sm:max-w-[clamp(420px,32vw,640px)] sm:-translate-x-0 sm:-translate-y-1/2 sm:text-left"
           initial="hidden"
           animate={insideSection2 ? "visible" : "hidden"}
           variants={heroStaggerVariants}
         >
           <motion.p
             variants={heroItemVariants}
-            className="text-xs tracking-[0.2em] text-white/60 uppercase sm:text-sm 2xl:text-base"
+            className="text-xs tracking-[0.2em] text-white/60 uppercase sm:text-[clamp(0.8rem,0.75rem+0.13vw,1rem)]"
           >
             {EYEBROW_TEXT}
           </motion.p>
 
           <motion.h1
             variants={heroItemVariants}
-            className="mt-4 text-2xl leading-tight font-medium text-white sm:text-3xl lg:text-4xl 2xl:text-5xl"
+            className="mt-4 text-2xl leading-tight font-medium text-white sm:text-[clamp(1.875rem,1.4rem+1.15vw,3rem)]"
           >
             {HEADLINE_TEXT}
           </motion.h1>
 
           <motion.p
             variants={heroItemVariants}
-            className="mt-4 text-sm leading-relaxed text-white/70 sm:text-base 2xl:text-lg"
+            className="mt-4 text-sm leading-relaxed text-white/70 sm:text-[clamp(1rem,0.95rem+0.13vw,1.125rem)]"
           >
             {SUBHEAD_TEXT}
           </motion.p>
 
-          <motion.div variants={heroItemVariants} className="pointer-events-auto mt-8">
+          {/* scale-* (não clamp): transform: scale() só aceita número puro,
+              sem unidade — não dá pra misturar um número com vw dentro de
+              clamp()/calc() (tipos incompatíveis, CSS inválido). Dois
+              degraus fixos (sm/2xl) do próprio Tailwind bastam aqui: o
+              botão não precisa da mesma curva fluida do texto, só não
+              ficar pequeno demais perto de um headline bem maior em telas
+              largas. origin-left: cresce a partir da borda esquerda (texto
+              alinhado à esquerda no desktop), não do centro. */}
+          <motion.div
+            variants={heroItemVariants}
+            className="pointer-events-auto mt-8 sm:origin-left sm:scale-100 2xl:scale-110"
+          >
             <LiquidMetalButton label={CTA_LABEL} />
           </motion.div>
 
           <motion.div variants={heroItemVariants} className="mt-10">
-            <p className="text-xs text-white/50 uppercase tracking-[0.15em]">{CLIENTS_STAT_TEXT}</p>
+            <p className="text-xs text-white/50 uppercase tracking-[0.15em] sm:text-[clamp(0.75rem,0.7rem+0.1vw,0.875rem)]">
+              {CLIENTS_STAT_TEXT}
+            </p>
             <LogoMarquee className="mt-4" />
           </motion.div>
         </motion.div>
