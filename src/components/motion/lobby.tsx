@@ -617,6 +617,24 @@ export function Lobby() {
   // section 1 e 2 (não é um estado derivado do scroll, é "já aconteceu?").
   const [loaderActive, setLoaderActive] = useState(true)
   const loaderCompletedRef = useRef(false)
+  // se a página recarrega (F5) já rolada (o navegador restaura a posição
+  // de scroll sozinho, ex.: usuário na section 2 aperta F5) o loader
+  // nascia "true" do mesmo jeito — e, diferente do "EXPLORAR" normal, ele
+  // não tem um fade ligado ao scroll (exploreOpacity), então aparecia por
+  // cima do conteúdo em tela cheia + travava o scroll (lenis.stop()) até a
+  // barra terminar, mesmo o usuário já estando na section 2 (bug
+  // reportado). useLayoutEffect (não useEffect): mede ANTES do primeiro
+  // paint, então desliga o loader antes dele sequer chegar a ficar visível
+  // nesse caso — sem flash.
+  useLayoutEffect(() => {
+    const checkInitialScroll = () => {
+      if (window.scrollY > 0) {
+        loaderCompletedRef.current = true
+        setLoaderActive(false)
+      }
+    }
+    checkInitialScroll()
+  }, [])
   // trava o scroll (roda/toque/trackpad) enquanto o loader roda — sem isso
   // o usuário podia pular a section 2 manualmente antes da barra terminar.
   // No mobile isMobileLayout vira true e este efeito nunca chega a rodar
