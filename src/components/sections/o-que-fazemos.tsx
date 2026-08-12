@@ -1,9 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll } from "motion/react"
+import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useLenis } from "lenis/react"
 import { GradientBars } from "@/components/ui/gradient-bars-background"
+import { getAutoJumpDuration, getSection2ScrollTarget } from "@/components/motion/lobby"
 
 type ServiceItem = {
   title: string
@@ -41,14 +42,6 @@ const SERVICES: ServiceItem[] = [
       "Interfaces e identidade visual sob medida, alinhadas ao produto e à marca.",
   },
 ]
-
-// altura de scroll (vh) dedicada a cada item: a section fica "presa"
-// (sticky) por SERVICES.length * ITEM_SCROLL_VH de scroll, e o progresso
-// dentro dessa janela decide qual item está ativo — mesmo padrão
-// scroll-linked já usado no Lobby (useScroll com target+offset ["start
-// start", "end end"]), sem precisar de GSAP ScrollTrigger pra um stepper
-// simples como este.
-const ITEM_SCROLL_VH = 100
 
 // intervalo (ms) do ciclo automático disparado pelo primeiro hover — 1s
 // ficava mecânico demais ("passando muito rápido"); mais lento junto com
@@ -218,80 +211,79 @@ function ServiceCard({
 
 export function OQueFazemos() {
   const prefersReducedMotion = useReducedMotion()
-  const containerRef = useRef<HTMLDivElement>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
-  const lenis = useLenis()
 
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  })
-
-  // trava o índice controlado pelo scroll enquanto um clique (handleSelect)
-  // está rolando a página programaticamente até a posição do item clicado
-  // — sem isso, ESTE listener reagia a cada posição intermediária que o
-  // scrollTo atravessa no caminho (ex.: clicar no item 4 vindo do item 1
-  // passa pelas faixas de scroll dos itens 2 e 3), fazendo o texto
-  // "piscar" por eles antes de acomodar no item certo (o engasgo
-  // reportado). Só o listener respeita a trava; o clique sempre escreve
-  // direto no estado.
-  const manualSelectRef = useRef(false)
-  useMotionValueEvent(scrollYProgress, "change", (v) => {
-    if (manualSelectRef.current) return
-    const index = Math.min(SERVICES.length - 1, Math.floor(v * SERVICES.length))
-    setActiveIndex(index)
-  })
-
-  // clique num item: além de trocar o texto na hora (feedback imediato),
-  // rola suavemente até o trecho do scroll "dono" daquele item — assim o
-  // scroll da página fica consistente com o item exibido mesmo se o
-  // usuário rolar manualmente depois. A trava acima segura o índice
-  // clicado até a rolagem terminar de acomodar.
-  const handleSelect = useCallback(
-    (index: number) => {
-      setActiveIndex(index)
-      const container = containerRef.current
-      if (!container) return
-      manualSelectRef.current = true
-      const containerTop = container.getBoundingClientRect().top + window.scrollY
-      const scrollable = container.offsetHeight - window.innerHeight
-      const target = containerTop + ((index + 0.5) / SERVICES.length) * scrollable
-      const release = () => {
-        manualSelectRef.current = false
+  // rolar pra CIMA a partir do topo da section deve voltar direto pro
+  // "resting point" da section 2, pulando o mesmo trecho morto do lobby que
+  // o auto-advance section2->3 já pula na descida (ver useLenis em
+  // lobby.tsx) — sem isso, subir daqui exigia rolar manualmente por ~1800px
+  // de lobby sem nada acontecendo visualmente (fricção reportada, espelhada
+  // da que já existia na descida). REVERSE_EDGE_PX: janela (em px de
+  // scroll), pros DOIS lados do topo real da section, que conta como "borda
+  // de saída" — bem dentro da section uma rolada pra cima/baixo pequena
+  // continua normal, só perto da borda de verdade é que dispara o salto.
+  //
+  // IMPORTANTE: checar só o limite de CIMA (scroll > sectionTop + edge) não
+  // bastava — sem checar também o limite de BAIXO, uma rolada pra cima em
+  // QUALQUER lugar ANTES da section (inclusive lá no topo da página)
+  // disparava o salto por engano — o que corrompia o auto-advance da
+  // PRÓPRIA section 2 (bug reportado: descer nulo depois de ter subido).
+  // Com os dois limites, o gatilho só existe mesmo bem perto do topo de
+  // verdade da section.
+  const REVERSE_EDGE_PX = 24
+  const reverseFiredRef = useRef(false)
+  useLenis(
+    (lenisInstance) => {
+      if (prefersReducedMotion) return
+      const section = sectionRef.current
+      if (!section) return
+      const sectionTop = section.getBoundingClientRect().top + window.scrollY
+      const nearTopEdge =
+        lenisInstance.scroll >= sectionTop - REVERSE_EDGE_PX &&
+        lenisInstance.scroll <= sectionTop + REVERSE_EDGE_PX
+      if (!nearTopEdge) {
+        // longe da borda (bem dentro da section OU em qualquer lugar antes
+        // dela) — nada a fazer, mas destrava o gatilho pra próxima vez que o
+        // scroll passar perto da borda de verdade.
+        reverseFiredRef.current = false
+        return
       }
-      if (lenis) lenis.scrollTo(target, { duration: 1, onComplete: release })
-      else {
-        window.scrollTo({ top: target, behavior: "smooth" })
-        setTimeout(release, 1000)
-      }
+      if (reverseFiredRef.current) return
+      // rolou pra baixo (ou parado): não é um pedido de sair pra cima.
+      if (lenisInstance.direction >= 0) return
+      reverseFiredRef.current = true
+      // lock: true — mesmo motivo do auto-advance section2->3: sem isso o
+      // momentum residual da própria rolada que disparou o gatilho
+      // continuava brigando com o alvo do scrollTo. duration FIXA
+      // (getAutoJumpDuration sem argumento) — mesma duração do salto
+      // section2->3 sempre, não proporcional à distância real deste salto
+      // específico; ver comentário grande em getAutoJumpDuration no
+      // lobby.tsx pra entender por que precisa ser fixa (não só a mesma
+      // velocidade média) pros dois sentidos lerem como igualmente rápidos.
+      const target = getSection2ScrollTarget()
+      lenisInstance.scrollTo(target, {
+        duration: getAutoJumpDuration(),
+        lock: true,
+      })
     },
-    [lenis]
+    [prefersReducedMotion]
   )
 
-  // motion reduzido: sem scroll-jacking (nada de altura extra artificial),
-  // card normal, itens só clicáveis (project.md, seção 9).
-  if (prefersReducedMotion) {
-    return (
-      <section
-        id="o-que-fazemos"
-        className="relative flex min-h-screen items-center justify-center bg-black py-12"
-      >
-        <ServiceCard activeIndex={activeIndex} onSelect={setActiveIndex} />
-      </section>
-    )
-  }
-
+  // sem scroll-jacking (nada de altura extra artificial): a section ocupa
+  // uma tela só, os itens trocam apenas por clique (project.md, seção 9) —
+  // removida a navegação por scroll entre os itens (pedido explícito:
+  // "vamos remover a navegação por scroll nos itens da section 3"; era o
+  // mesmo comportamento que o fallback de motion reduzido já tinha, agora é
+  // o único). GradientBars (fundo animado) só entra sem motion reduzido.
   return (
     <section
       id="o-que-fazemos"
-      ref={containerRef}
-      className="relative bg-black"
-      style={{ height: `${SERVICES.length * ITEM_SCROLL_VH}vh` }}
+      ref={sectionRef}
+      className="relative flex min-h-screen items-center justify-center bg-black py-12"
     >
-      <div className="sticky top-0 flex h-screen items-center justify-center">
-        <GradientBars numBars={15} animationDuration={2} className="z-0" />
-        <ServiceCard activeIndex={activeIndex} onSelect={handleSelect} />
-      </div>
+      {!prefersReducedMotion && <GradientBars numBars={15} animationDuration={2} className="z-0" />}
+      <ServiceCard activeIndex={activeIndex} onSelect={setActiveIndex} />
     </section>
   )
 }
