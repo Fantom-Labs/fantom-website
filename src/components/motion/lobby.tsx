@@ -7,6 +7,7 @@ import { AsciiArt } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 import { TextScramble } from "@/components/ui/text-scramble"
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button"
+import { NeonRGBText } from "@/components/ui/neon-rgbtext-effect"
 import { LogoMarquee } from "@/components/ui/logo-marquee"
 import { FloatingRock } from "@/components/motion/floating-rock"
 
@@ -19,7 +20,7 @@ const POSTER_SRC = "/images/mo-mosaic-poster.webp"
 // do layout (coluna animada da section 2 e o fallback estático de motion
 // reduzido), pra não divergir entre elas.
 const EYEBROW_TEXT = "Websites · SaaS · Sistemas com IA"
-const HEADLINE_TEXT = "Somos um time estratégico de tecnologia e design para negócios"
+const HEADLINE_TEXT = "Somos um time de tecnologia e design para negócios e startups"
 const SUBHEAD_TEXT = "Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto em todos os estágios."
 const CTA_LABEL = "Falar com a Fantom"
 const CLIENTS_STAT_TEXT = "+ 50 negócios acelerados"
@@ -789,7 +790,12 @@ export function Lobby() {
               estourando a tela em vez de respeitar o px-6 do pai. */}
           <div className="w-full max-w-lg">
             <p className="text-xs tracking-[0.2em] text-white/60 uppercase sm:text-sm">{EYEBROW_TEXT}</p>
-            <h1 className="mt-4 text-2xl leading-tight font-medium text-white sm:text-3xl">{HEADLINE_TEXT}</h1>
+            <div className="mt-4">
+              <NeonRGBText
+                text={HEADLINE_TEXT}
+                className="text-2xl leading-tight font-medium text-white sm:text-3xl"
+              />
+            </div>
             <p className="mt-4 text-sm leading-relaxed text-white/70 sm:text-base">{SUBHEAD_TEXT}</p>
             <div className="mt-8">
               <LiquidMetalButton label={CTA_LABEL} />
@@ -1060,12 +1066,12 @@ export function Lobby() {
             {EYEBROW_TEXT}
           </motion.p>
 
-          <motion.h1
-            variants={heroItemVariants}
-            className="mt-4 text-2xl leading-tight font-medium text-white sm:text-[clamp(1.875rem,1.4rem+1.15vw,3rem)]"
-          >
-            {HEADLINE_TEXT}
-          </motion.h1>
+          <motion.div variants={heroItemVariants} className="mt-4">
+            <NeonRGBText
+              text={HEADLINE_TEXT}
+              className="text-2xl leading-tight font-medium text-white sm:text-[clamp(1.875rem,1.4rem+1.15vw,3rem)]"
+            />
+          </motion.div>
 
           <motion.p
             variants={heroItemVariants}
