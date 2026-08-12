@@ -1,8 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react"
-import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type Variants } from "motion/react"
+import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type Variants } from "motion/react"
 import { useLenis } from "lenis/react"
+import { X } from "lucide-react"
 import { AsciiArt } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
 import { TextScramble } from "@/components/ui/text-scramble"
@@ -527,14 +528,68 @@ function useRockOrbit() {
   return mounted ? randomOrbit : { topPct1: 28, topPct2: 58 }
 }
 
-// elementos fixos que não participam do zoom: logo-left e ícone de menu.
-// Exportado e renderizado uma vez em page.tsx (fora do Lobby): nested
-// dentro do container "overflow-hidden" do lobby, um `position: fixed`
-// ainda fica CLIPADO quando esse ancestral sai da tela pelo scroll normal
-// da página (overflow:hidden recorta o conteúdo do descendente mesmo ele
-// sendo fixed) — sumia ao entrar na section 3. Fora do lobby, sempre
-// acima do conteúdo, em qualquer seção.
+// seções do menu — lista curta e fixa (pedido explícito: reduzir pra 4
+// itens), não é mais a lista completa de seções da home (essa continua no
+// SectionNav, os pontinhos). "soluções" mapeia pra a seção real "o que
+// fazemos" (única que fala de serviços hoje); "sobre" ainda não tem seção
+// própria (fica clicável mas sem navegar — mesmo placeholder que
+// método/faq/contato já tinham antes, ver handleNavigate).
+const MENU_SECTIONS = [
+  { id: "inicio", label: "Início" },
+  { id: "solucoes", label: "Soluções" },
+  { id: "cases", label: "Cases" },
+  { id: "sobre", label: "Sobre" },
+] as const
+
+// elementos fixos que não participam do zoom: logo-left e o menu (ícone +
+// painel de navegação). Exportado e renderizado uma vez em page.tsx (fora
+// do Lobby): nested dentro do container "overflow-hidden" do lobby, um
+// `position: fixed` ainda fica CLIPADO quando esse ancestral sai da tela
+// pelo scroll normal da página (overflow:hidden recorta o conteúdo do
+// descendente mesmo ele sendo fixed) — sumia ao entrar na section 3. Fora
+// do lobby, sempre acima do conteúdo, em qualquer seção.
 export function LobbyChrome() {
+  const lenis = useLenis()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // fecha clicando fora do painel ou com Escape — comportamento padrão
+  // esperado de um menu dropdown. Só escuta enquanto está aberto.
+  useEffect(() => {
+    if (!isMenuOpen) return
+    const handlePointerDown = (event: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setIsMenuOpen(false)
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMenuOpen(false)
+    }
+    document.addEventListener("pointerdown", handlePointerDown)
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isMenuOpen])
+
+  // "início"/"cases" não são elementos reais no DOM (o lobby ocupa o topo
+  // da página sozinho) — precisam do alvo calculado (topo da página /
+  // resting point da section 2, mesma fonte que scrollToSection2 usa), não
+  // de um id pra resolver. "soluções" mapeia pro id real de "o que
+  // fazemos". "sobre" (e qualquer id futuro sem seção própria ainda) cai no
+  // fallback `#id`: lenis.scrollTo avisa "Target not found" no console e
+  // não faz nada — sem quebrar o clique, só sem navegar até a seção existir.
+  const handleNavigate = useCallback(
+    (id: string) => {
+      setIsMenuOpen(false)
+      const elementId = id === "solucoes" ? "o-que-fazemos" : id
+      const target = id === "inicio" ? 0 : id === "cases" ? getSection2ScrollTarget() : `#${elementId}`
+      if (lenis) lenis.scrollTo(target, { duration: 1.2 })
+      else if (typeof target === "number") window.scrollTo({ top: target, behavior: "smooth" })
+      else document.getElementById(elementId)?.scrollIntoView({ behavior: "smooth" })
+    },
+    [lenis]
+  )
+
   return (
     <>
       {/* left-10px (sem colchetes) não é uma classe Tailwind válida —
@@ -545,15 +600,51 @@ export function LobbyChrome() {
         <img src="/logo-left.svg" alt="Fantom" className="max-w-[80px]" />
       </div>
 
-      {/* TODO: sem funcionalidade ainda, só o visual do botão (menu real vem depois). */}
-      <button
-        type="button"
-        aria-label="Abrir menu"
-        className="fixed right-5 top-0 z-30 flex h-11 w-11 items-center justify-center sm:right-8 sm:top-3"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/icon-menu.svg" alt="" className="h-6 w-6" />
-      </button>
+      <div ref={menuRef} className="fixed right-5 top-0 z-30 sm:right-8 sm:top-3">
+        <button
+          type="button"
+          aria-label={isMenuOpen ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={isMenuOpen}
+          onClick={() => setIsMenuOpen((open) => !open)}
+          className="flex h-11 w-11 items-center justify-center"
+        >
+          {isMenuOpen ? (
+            <X aria-hidden="true" className="h-6 w-6 text-white" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src="/icon-menu.svg" alt="" className="h-6 w-6" />
+          )}
+        </button>
+
+        <AnimatePresence>
+          {isMenuOpen && (
+            // sem card/modal por trás — só os textos flutuando sobre o
+            // fundo, sem seta nem linha (showAffordances={false}, essas
+            // affordances foram pensadas pro "EXPLORAR" sozinho na tela, não
+            // pra uma lista repetida) e em 16px (textSizeClassName, o padrão
+            // de TextScramble é text-sm/14px).
+            <motion.nav
+              aria-label="Menu de navegação"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="absolute top-full right-0 mt-4 flex flex-col items-end gap-3"
+            >
+              {MENU_SECTIONS.map((section) => (
+                <TextScramble
+                  key={section.id}
+                  text={section.label}
+                  onClick={() => handleNavigate(section.id)}
+                  showAffordances={false}
+                  textSizeClassName="text-xs"
+                  className="items-end text-right"
+                />
+              ))}
+            </motion.nav>
+          )}
+        </AnimatePresence>
+      </div>
     </>
   )
 }

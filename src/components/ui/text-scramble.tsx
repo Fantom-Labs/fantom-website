@@ -14,6 +14,14 @@ interface TextScrambleProps {
   // como <div> (não <button>) e some com chevron/glow/sublinhado-no-hover,
   // affordances que só fazem sentido pra um elemento interativo.
   autoScramble?: boolean
+  // esconde seta (chevron) + linha animada + glow — só o texto com o efeito
+  // de scramble no hover, sem nenhuma affordance extra. As affordances
+  // foram pensadas pro "EXPLORAR" (um CTA sozinho na tela); repetidas várias
+  // vezes seguidas numa lista (ex.: itens de um menu) ficam pesadas.
+  showAffordances?: boolean
+  // classe Tailwind pro tamanho do texto — "text-sm" por padrão, igual aos
+  // usos existentes (EXPLORAR/CARREGANDO).
+  textSizeClassName?: string
 }
 
 // intervalo (ms) entre repetições do scramble no modo autoScramble — dá o
@@ -23,7 +31,14 @@ const AUTO_SCRAMBLE_INTERVAL_MS = 1400
 // cores diretas (branco/preto), não os tokens semânticos do shadcn
 // (text-foreground, bg-primary, bg-border) — esses assumem um tema claro
 // e ficariam quase invisíveis contra o fundo preto do lobby.
-export function TextScramble({ text, className = "", onClick, autoScramble = false }: TextScrambleProps) {
+export function TextScramble({
+  text,
+  className = "",
+  onClick,
+  autoScramble = false,
+  showAffordances = true,
+  textSizeClassName = "text-sm",
+}: TextScrambleProps) {
   const [displayText, setDisplayText] = useState(text)
   const [isHovering, setIsHovering] = useState(false)
   const [isScrambling, setIsScrambling] = useState(false)
@@ -93,7 +108,7 @@ export function TextScramble({ text, className = "", onClick, autoScramble = fal
 
   const content = (
     <>
-      <span className="relative flex items-center gap-2 font-mono text-sm tracking-widest uppercase">
+      <span className={`relative flex items-center gap-2 font-mono ${textSizeClassName} tracking-widest uppercase`}>
         {displayText.split("").map((char, i) => (
           <span
             key={i}
@@ -107,7 +122,7 @@ export function TextScramble({ text, className = "", onClick, autoScramble = fal
             {char}
           </span>
         ))}
-        {!autoScramble && (
+        {!autoScramble && showAffordances && (
           <ChevronDown
             aria-hidden="true"
             className={`h-3.5 w-3.5 shrink-0 text-white/80 transition-transform duration-300 ${
@@ -117,7 +132,7 @@ export function TextScramble({ text, className = "", onClick, autoScramble = fal
         )}
       </span>
 
-      {!autoScramble && (
+      {!autoScramble && showAffordances && (
         <>
           {/* linha animada */}
           <span className="relative mt-2 h-px w-full overflow-hidden">
