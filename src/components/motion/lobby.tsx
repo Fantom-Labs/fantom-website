@@ -22,7 +22,7 @@ const POSTER_SRC = "/images/mo-mosaic-poster.webp"
 // reduzido), pra não divergir entre elas.
 const EYEBROW_TEXT = "Websites · SaaS · Sistemas com IA"
 const HEADLINE_TEXT = "Somos um time de tecnologia e design para negócios e startups"
-const SUBHEAD_TEXT = "Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto em todos os estágios."
+const SUBHEAD_TEXT = "Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe."
 const CTA_LABEL = "Falar com a Fantom"
 const CLIENTS_STAT_TEXT = "+ 50 negócios acelerados"
 // wa.me: número sem "+"/espaços + texto pré-preenchido (url-encoded) — abre
@@ -237,13 +237,13 @@ const LOGO_ZOOM_END = 0.75
 // wrapper (top+height em px, left:0/w-full sempre), deixando o
 // object-fit/mask-size: cover de cada camada recalcular o recorte contra
 // essa caixa nova, do jeito nativo do browser.
-// margens reduzidas (eram 24/32): pedido pra aumentar mais um pouco a tv
-// no mobile — como a logo por cima dela (LOGO_ZOOM_END) tem escala
-// própria, independente do tamanho da caixa da tv, aumentar a tv aqui não
-// aumenta a logo junto (pedido explícito: "sem aumentar logo-centralized
-// pois já está muito grande").
-const MOBILE_TV_TOP_MARGIN_PX = 16 // respiro entre o fim do conteúdo e o topo da tv
-const MOBILE_TV_BOTTOM_MARGIN_PX = 20 // respiro entre a base da tv e a borda da viewport
+// margens reduzidas de novo (eram 24/32, depois 16/20): pedido pra aumentar
+// mais um pouco a tv no mobile — como a logo por cima dela (LOGO_ZOOM_END)
+// tem escala própria, independente do tamanho da caixa da tv, aumentar a tv
+// aqui não aumenta a logo junto (pedido explícito, mantido desde a primeira
+// vez: "sem aumentar logo-centralized pois já está muito grande").
+const MOBILE_TV_TOP_MARGIN_PX = 8 // respiro entre o fim do conteúdo e o topo da tv
+const MOBILE_TV_BOTTOM_MARGIN_PX = 10 // respiro entre a base da tv e a borda da viewport
 const MOBILE_TV_MIN_HEIGHT_PX = 140 // piso de segurança em telas muito baixas
 // fallback ANTES da primeira medição real — só usado no primeiro frame
 // client-side, até o efeito medir a altura de verdade do conteúdo da hero.
