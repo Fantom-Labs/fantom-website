@@ -1054,7 +1054,7 @@ export function Lobby() {
             continua com os tamanhos fixos de sempre, sem clamp nenhum. */}
         <motion.div
           ref={heroContentRef}
-          className="lobby-hero-content pointer-events-none absolute top-[8%] left-1/2 z-20 w-[86%] -translate-x-1/2 text-center sm:top-1/2 sm:right-[8%] sm:left-auto sm:w-auto sm:max-w-[clamp(420px,32vw,640px)] sm:-translate-x-0 sm:-translate-y-1/2 sm:text-left"
+          className="lobby-hero-content pointer-events-none absolute top-[calc(8%-20px)] left-1/2 z-20 w-[86%] -translate-x-1/2 text-center sm:top-1/2 sm:right-[8%] sm:left-auto sm:w-auto sm:max-w-[clamp(420px,32vw,640px)] sm:-translate-x-0 sm:-translate-y-[calc(50%+20px)] sm:text-left"
           initial="hidden"
           animate={insideSection2 ? "visible" : "hidden"}
           variants={heroStaggerVariants}
