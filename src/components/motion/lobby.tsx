@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react"
 import { motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type Variants } from "motion/react"
 import { useLenis } from "lenis/react"
 import { AsciiArt } from "@/components/ui/mo-mosaic"
@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/neon-button"
 import { LogoMarquee } from "@/components/ui/logo-marquee"
 import { FloatingRock } from "@/components/motion/floating-rock"
 
-// mesmo poster usado pelo <AsciiArt>, servido como fallback estático
-// quando o usuário prefere motion reduzido (project.md, seção 10).
-const POSTER_SRC =
-  "https://assets.21st.dev/ascii-recipes/thumbnails/user_39AUrstSGWJUKmRU9spgBJgd1hs/95b377f8-e226-434d-be5c-2c7159b3e244.webp"
+// mesmo poster usado pelo <AsciiArt> (agora local, ver mo-mosaic.tsx),
+// servido como fallback estático quando o usuário prefere motion
+// reduzido (project.md, seção 10).
+const POSTER_SRC = "/images/mo-mosaic-poster.webp"
 
 // copy da hero (project.md, seção 6) — mesmo texto usado nas duas versões
 // do layout (coluna animada da section 2 e o fallback estático de motion
@@ -30,14 +30,35 @@ const CLIENTS_STAT_TEXT = "+ 50 negócios acelerados"
 // gatilho (insideSection2) que já controla as pedras. Reversível: ao
 // rolar de volta, o stagger desfaz sozinho (Motion anima de volta pro
 // estado "hidden").
+const HERO_STAGGER_CHILDREN_S = 0.08
+const HERO_ITEM_DURATION_S = 0.5
 const heroStaggerVariants: Variants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
+  visible: { transition: { staggerChildren: HERO_STAGGER_CHILDREN_S } },
 }
 const heroItemVariants: Variants = {
   hidden: { opacity: 0, x: 24 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: "easeOut" } },
+  visible: { opacity: 1, x: 0, transition: { duration: HERO_ITEM_DURATION_S, ease: "easeOut" } },
 }
+// quantos <motion.* variants={heroItemVariants}> existem dentro da coluna da
+// hero (eyebrow, H1, subhead, CTA, stat de clientes) — usado só pra calcular
+// HERO_CONTENT_APPEAR_MS abaixo. Se um item for adicionado/removido na coluna,
+// atualizar aqui também.
+const HERO_ITEM_COUNT = 5
+// tempo total (ms), a partir do instante em que insideSection2 vira true, até
+// o ÚLTIMO item do stagger (eyebrow/H1/subhead/CTA/stat) terminar de aparecer
+// — usado pelo auto-advance section2 -> section3 abaixo, pra não completar a
+// transição antes do conteúdo da section 2 ter realmente aparecido na tela.
+const HERO_CONTENT_APPEAR_MS = ((HERO_ITEM_COUNT - 1) * HERO_STAGGER_CHILDREN_S + HERO_ITEM_DURATION_S) * 1000
+// pausa deliberada (ms) DEPOIS do conteúdo já ter aparecido inteiro, antes do
+// auto-advance pra section 3 — sem isso, o avanço acontece no instante exato
+// em que o último item termina de entrar, o que ainda parece abrupto (dá pra
+// notar que o texto apareceu, mas não pra realmente ler nada). Ajustar aqui
+// se o "feel" da pausa não convencer.
+const SECTION2_HOLD_MS = 1200
+// atraso total, a partir do instante em que a section 2 é alcançada, até o
+// auto-advance pra section 3 disparar.
+const SECTION2_AUTO_ADVANCE_DELAY_MS = HERO_CONTENT_APPEAR_MS + SECTION2_HOLD_MS
 
 // EXPERIMENTAL — protótipo da ideia "zoom pra dentro da tela de TV" (ainda
 // não documentado no project.md, é uma direção em avaliação). A saída do
@@ -74,11 +95,6 @@ const SCROLL_HEIGHT = `${LOBBY_SCROLL_HEIGHT_VH}vh`
 const ZOOM_RANGE: [number, number] = [0, 0.5]
 const SHIFT_RANGE: [number, number] = ZOOM_RANGE
 const SHIFT_X_TARGET = "-18vw"
-// mobile: em vez de deslocar a cena da tv pra ESQUERDA (liberando uma
-// coluna à direita, que não existe numa tela estreita), desloca pra
-// BAIXO — o conteúdo da hero fica fixo no topo (ver className responsivo
-// da coluna de conteúdo) e a tv assentada ocupa a metade de baixo.
-const SHIFT_Y_TARGET_MOBILE = "60vh"
 // duração (em fração de scrollYProgress) do fade do "EXPLORE".
 const EXPLORE_FADE_END = 0.15
 // --- seções da home simuladas pelo scroll do lobby -------------------------
@@ -130,27 +146,89 @@ const TV_POSITION_Y = 52
 const TV_POSITION_X_MOBILE = 50
 
 // escala final da logo na section 2 — 1.5x maior que o valor original
-// (0.4) que cabia justo dentro da tela do tv sem estourar.
-const LOGO_ZOOM_END = 0.6
+// (0.4) que cabia justo dentro da tela do tv sem estourar. Aumentada de
+// novo (pedido: "ta um pouco pequena"), ainda dentro da margem da tela.
+const LOGO_ZOOM_END = 0.75
 
-// mobile: depois do zoom completo, o conjunto inteiro (tv + vídeo + logo
-// — já posicionados/deslocados corretamente entre si) encolhe mais um
-// pouco a partir do centro da viewport, revelando fundo preto ao redor —
-// sem isso, object-cover sempre preenche 100% da tela, então a "tv" nunca
-// parece "caber" dentro do celular, só sangra pelas bordas. Aplicado como
-// wrapper por fora dos três elementos: como eles já se movem/escalam
-// certo entre si, escalar o grupo inteiro junto encolhe tudo mantendo a
-// logo grudada na tela da tv, sem precisar recalcular a âncora (screenAnchor)
-// pra um fator de escala extra.
-const MOBILE_FIT_SCALE = 0.62
+// mobile: object-fit/mask "cover" pra uma viewport retrato (estreita e
+// alta) contra essa foto paisagem (2752x1536) usa a ALTURA INTEIRA da
+// imagem (sh=naturalH sempre, já que imgRatio > boxRatio) — a tela do tv
+// só ocupa ~49% dessa altura (SCREEN_FRAC_H), então o resto do quadro
+// (topo do móvel/parede acima, base abaixo) fica visível junto, SEM
+// máscara ali (só a tela tem o recorte do mosaico). Isso não é bug: é a
+// FOTO INTEIRA do tv (moldura + tela), do mesmo jeito que o desktop já
+// mostra em repouso (maskScale final = 1, igual aos dois). O que
+// "vazava" era o shiftY/MOBILE_FIT_SCALE desencontrados (ver
+// SHIFT_Y_TARGET_MOBILE) empurrando o conjunto quase inteiro pra fora da
+// viewport, sobrando só uma tira desconectada — não a tela mascarada
+// desalinhada da imagem, os dois sempre usam a mesma transform.
+
+// mobile: a composição da tv (foto + vídeo mascarado + logo) ocupa a
+// LARGURA INTEIRA da viewport (pedido explícito: "deve ocupar toda a
+// largura" — nada de encolher dos dois lados) e só a ALTURA é ajustada,
+// pro conjunto caber no espaço que sobra abaixo do conteúdo da hero. Por
+// isso não é mais um "encolher tudo a partir do centro" (o que
+// cortava/reduzia a largura junto) — é redimensionar a própria CAIXA do
+// wrapper (top+height em px, left:0/w-full sempre), deixando o
+// object-fit/mask-size: cover de cada camada recalcular o recorte contra
+// essa caixa nova, do jeito nativo do browser.
+const MOBILE_TV_TOP_MARGIN_PX = 24 // respiro entre o fim do conteúdo e o topo da tv
+const MOBILE_TV_BOTTOM_MARGIN_PX = 32 // respiro entre a base da tv e a borda da viewport
+const MOBILE_TV_MIN_HEIGHT_PX = 140 // piso de segurança em telas muito baixas
+// fallback ANTES da primeira medição real — só usado no primeiro frame
+// client-side, até o efeito medir a altura de verdade do conteúdo da hero.
+const MOBILE_TV_FALLBACK = { topPx: 420, heightPx: 320 }
+
+// mede a altura REAL do conteúdo da hero em tempo de execução (mesmo
+// espírito do useScreenAnchor acima, "derivado, não chutado") e devolve a
+// caixa (top/height, em px) que a tv deve ocupar: começa
+// MOBILE_TV_TOP_MARGIN_PX abaixo do conteúdo, termina
+// MOBILE_TV_BOTTOM_MARGIN_PX antes da borda da viewport. Recalcula no
+// resize (inclui rotação de tela).
+function useMobileTvFit(isMobileLayout: boolean, heroRef: React.RefObject<HTMLDivElement | null>) {
+  const [box, setBox] = useState(MOBILE_TV_FALLBACK)
+
+  // useLayoutEffect (não useEffect): mede e aplica ANTES do primeiro
+  // paint, evitando um pulo visível do fallback pro tamanho medido de
+  // verdade (heroRef já está montado nesse ponto, a medição é síncrona).
+  useLayoutEffect(() => {
+    if (!isMobileLayout) return
+
+    const measure = () => {
+      const heroEl = heroRef.current
+      if (!heroEl) return
+      const heroBottomPx = heroEl.getBoundingClientRect().bottom
+      const viewportH = window.innerHeight
+      if (!viewportH) return
+
+      const topPx = heroBottomPx + MOBILE_TV_TOP_MARGIN_PX
+      const bottomPx = viewportH - MOBILE_TV_BOTTOM_MARGIN_PX
+      const heightPx = Math.max(bottomPx - topPx, MOBILE_TV_MIN_HEIGHT_PX)
+
+      setBox({ topPx, heightPx })
+    }
+
+    measure()
+    window.addEventListener("resize", measure)
+    return () => window.removeEventListener("resize", measure)
+  }, [isMobileLayout, heroRef])
+
+  return box
+}
 
 // calcula, em tempo real, onde o centro da máscara (tv-mask.png) cai na
-// viewport atual — replicando o mesmo algoritmo de object-fit: cover +
+// CAIXA atual — replicando o mesmo algoritmo de object-fit: cover +
 // object-position usado pelo fundo/máscara. Evita depender de uma
 // porcentagem fixa (que quebra em proporções de tela diferentes, o mesmo
 // problema que o chroma key já resolveu pro vídeo). Recalcula no resize
 // e quando o TV_POSITION_X efetivo muda (troca de layout mobile/desktop).
-function useScreenAnchor(tvPositionX: number, tvPositionY: number) {
+// boxHOverride: no mobile a caixa NÃO é mais a viewport inteira (ver
+// useMobileTvFit — só a largura é cheia, a altura é o espaço medido que
+// sobra abaixo do conteúdo) — sem isso, a logo calcularia a posição
+// contra a altura ERRADA (viewport inteira) e ficaria fora do lugar
+// dentro da tela da tv. undefined (desktop) usa window.innerHeight, igual
+// a caixa real lá (wrapper inset-0).
+function useScreenAnchor(tvPositionX: number, tvPositionY: number, boxHOverride?: number) {
   const [anchor, setAnchor] = useState({ xPct: 50, yPct: 50 })
 
   useEffect(() => {
@@ -161,7 +239,7 @@ function useScreenAnchor(tvPositionX: number, tvPositionY: number) {
       const naturalW = img.naturalWidth
       const naturalH = img.naturalHeight
       const boxW = window.innerWidth
-      const boxH = window.innerHeight
+      const boxH = boxHOverride ?? window.innerHeight
       if (!naturalW || !naturalH || !boxW || !boxH) return
 
       const boxRatio = boxW / boxH
@@ -209,7 +287,7 @@ function useScreenAnchor(tvPositionX: number, tvPositionY: number) {
 
     window.addEventListener("resize", compute)
     return () => window.removeEventListener("resize", compute)
-  }, [tvPositionX, tvPositionY])
+  }, [tvPositionX, tvPositionY, boxHOverride])
 
   return anchor
 }
@@ -332,10 +410,18 @@ function useTvScreenMask() {
 // composição empilhada (conteúdo em cima, tv embaixo, ambos centralizados)
 // em vez do deslocamento lateral usado no desktop.
 const MOBILE_BREAKPOINT_QUERY = "(max-width: 639px)"
+// useLayoutEffect (não useEffect) de propósito: roda ANTES do browser
+// pintar o primeiro frame, não depois. Sem isso, celulares reais chegavam
+// a mostrar um frame com o layout de DESKTOP (zoom cheio, "section 1")
+// antes do media query resolver e trocar pro layout empilhado — um flash
+// perceptível (bug reportado: "site iniciando na section 1"). No servidor
+// (SSR) useLayoutEffect não roda (só client), então o fallback SSR
+// continua sendo isMobile=false — sem mismatch de hidratação, só o timing
+// no cliente muda.
 function useIsMobileLayout() {
   const [isMobile, setIsMobile] = useState(false)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const mql = window.matchMedia(MOBILE_BREAKPOINT_QUERY)
     const update = () => setIsMobile(mql.matches)
     update()
@@ -406,10 +492,29 @@ export function LobbyChrome() {
 export function Lobby() {
   const prefersReducedMotion = useReducedMotion()
   const isMobileLayout = useIsMobileLayout()
+  // isMobileLayout só existe no CLIENTE, depois de montar — o HTML gerado
+  // pelo servidor (e o primeiro frame antes da hidratação) sempre assume
+  // "false" (não tem como o servidor saber a largura da tela). Nesse
+  // intervalo (que pode ser bem maior que um frame, em conexão/aparelho
+  // lento — é ISSO que o bug reportado "site iniciando na section 1"
+  // descreve), o mobile via o zoom cheio de desktop por um instante. Como
+  // JS não consegue interceptar o que o servidor já mandou, a correção é
+  // puramente CSS: `mounted` (useMounted, já existente) também nasce
+  // "false" no servidor E no primeiro render do cliente (sem mismatch de
+  // hidratação), então dá pra escopar regras em globals.css só pra esse
+  // intervalo (".not-hydrated" + media query mobile) que aproximam a
+  // composição final sem depender de JS ter rodado — ver classes
+  // lobby-tv-wrapper/lobby-tv-img/lobby-tv-mask/lobby-explore abaixo.
+  const mounted = useMounted()
   const containerRef = useRef<HTMLDivElement>(null)
+  const heroContentRef = useRef<HTMLDivElement>(null)
   const tvPositionX = isMobileLayout ? TV_POSITION_X_MOBILE : TV_POSITION_X
   const tvPosition = `${tvPositionX}% ${TV_POSITION_Y}%`
-  const screenAnchor = useScreenAnchor(tvPositionX, TV_POSITION_Y)
+  const mobileTvFit = useMobileTvFit(isMobileLayout, heroContentRef)
+  // mobile: a caixa real da tv não é mais a viewport inteira (só a altura
+  // medida por useMobileTvFit) — passa esse boxHOverride pra âncora da
+  // logo calcular a posição contra a caixa certa (ver useScreenAnchor).
+  const screenAnchor = useScreenAnchor(tvPositionX, TV_POSITION_Y, isMobileLayout ? mobileTvFit.heightPx : undefined)
   const { isInsideTvMask, getTvMaskStyle } = useTvScreenMask()
   const lenis = useLenis()
 
@@ -418,30 +523,41 @@ export function Lobby() {
     offset: ["start start", "end end"],
   })
 
-  const maskScale = useTransform(scrollYProgress, ZOOM_RANGE, [ZOOM_START, 1])
-  // mobile: encolhe o grupo inteiro (tv+vídeo+logo) um pouco mais depois
-  // do zoom, revelando fundo preto ao redor — ver comentário em
-  // MOBILE_FIT_SCALE. 1 (sem efeito) no desktop.
-  const mobileFitScale = useTransform(scrollYProgress, SHIFT_RANGE, [1, isMobileLayout ? MOBILE_FIT_SCALE : 1])
+  // mobile: o site "começa" direto na composição assentada (tv+mascara já
+  // alinhadas, sem o zoom-in vindo de uma section 1 em tela cheia — essa
+  // fase inicial não existe no mobile). Em vez de ramificar o JSX inteiro,
+  // cada useTransform abaixo colapsa pro MESMO valor nas duas pontas do
+  // range quando isMobileLayout — a interpolação fica uma constante, então
+  // o valor já nasce no estado final e nunca muda com o scroll. Desktop
+  // sem alteração nenhuma (ranges originais, intactos).
+  const maskScale = useTransform(scrollYProgress, ZOOM_RANGE, [isMobileLayout ? 1 : ZOOM_START, 1])
   // cancela o zoom do wrapper no conteúdo do vídeo: a "janela" da máscara
   // precisa encolher, mas o enquadramento do vídeo em si não deveria
   // começar ampliado — ele só devia diminuir de tamanho, não de zoom.
   const videoCounterScale = useTransform(maskScale, (s) => 1 / s)
-  const logoScale = useTransform(scrollYProgress, ZOOM_RANGE, [1, LOGO_ZOOM_END])
+  const logoScale = useTransform(scrollYProgress, ZOOM_RANGE, [isMobileLayout ? LOGO_ZOOM_END : 1, LOGO_ZOOM_END])
   // a logo começa no centro puro da viewport (onde o vídeo está em tela
   // cheia) e termina no centro real da tela do tv (calculado por
   // useScreenAnchor), acompanhando o scroll — não é uma posição fixa.
-  const logoLeft = useTransform(scrollYProgress, ZOOM_RANGE, ["50%", `${screenAnchor.xPct}%`])
-  const logoTop = useTransform(scrollYProgress, ZOOM_RANGE, ["50%", `${screenAnchor.yPct}%`])
-  // depois do zoom completo (com uma pausa), desloca o conjunto inteiro
-  // (fundo + vídeo mascarado + logo) suavemente — no desktop, pra
-  // esquerda (shiftX), liberando a coluna direita pro conteúdo; no
-  // mobile, pra BAIXO (shiftY), já que o conteúdo fica fixo no topo (ver
-  // className responsivo da coluna de conteúdo mais abaixo) e não há
-  // coluna lateral numa tela estreita. Mesmo valor aplicado aos três
-  // (fundo + vídeo + logo), então se movem colados.
+  // mobile: já nasce na posição final (sem o "centro puro" de largada).
+  const logoLeft = useTransform(
+    scrollYProgress,
+    ZOOM_RANGE,
+    [isMobileLayout ? `${screenAnchor.xPct}%` : "50%", `${screenAnchor.xPct}%`]
+  )
+  const logoTop = useTransform(
+    scrollYProgress,
+    ZOOM_RANGE,
+    [isMobileLayout ? `${screenAnchor.yPct}%` : "50%", `${screenAnchor.yPct}%`]
+  )
+  // desloca o conjunto (fundo + vídeo mascarado + logo) pra ESQUERDA
+  // depois do zoom completo, só no desktop (shiftX) — libera a coluna
+  // direita pro conteúdo. Mobile não desloca mais nada: a posição vertical
+  // da tv agora vem de redimensionar a própria caixa do wrapper
+  // (useMobileTvFit/top+height em px, ver JSX), não de um shift por
+  // transform — por isso "0vh" sempre no mobile.
   const shiftX = useTransform(scrollYProgress, SHIFT_RANGE, ["0vw", isMobileLayout ? "0vw" : SHIFT_X_TARGET])
-  const shiftY = useTransform(scrollYProgress, SHIFT_RANGE, ["0vh", isMobileLayout ? SHIFT_Y_TARGET_MOBILE : "0vh"])
+  const shiftY = useTransform(scrollYProgress, SHIFT_RANGE, ["0vh", "0vh"])
   // combina o deslocamento com a centralização própria da logo (-50%).
   const logoX = useTransform(shiftX, (v) => `calc(-50% + ${v})`)
   const logoY = useTransform(shiftY, (v) => `calc(-50% + ${v})`)
@@ -481,37 +597,57 @@ export function Lobby() {
   // é autônoma (anima sozinha assim que dispara), só a saída reage ao
   // scroll voltando pro início. o gatilho é o booleano abaixo (cruza o
   // limiar da section 2 em qualquer direção), não um valor contínuo.
-  const insideSection2 = activeSection >= 1
+  // mobile: sempre "dentro" da section 2 — o site já começa nela, não tem
+  // scroll pra cruzar limiar nenhum (conteúdo aparece de cara, com o
+  // stagger de entrada rodando uma vez no mount).
+  const insideSection2 = isMobileLayout || activeSection >= 1
   const rockOrbit = useRockOrbit()
 
-  // transição section 2 -> section 3 automática: assim que o movimento de
-  // scroll que trouxe o usuário pra section 2 (portfolio) ACOMODA (para
-  // de vez, mesmo que só por causa da própria inércia/easing do Lenis),
-  // completa sozinho o resto do trecho do lobby até o início da section 3
-  // (#o-que-fazemos) — não precisa rolar manualmente até sair do lobby
-  // inteiro. Chegar na section 2 já implica ter rolado pra baixo até
-  // aqui, então não precisa checar direção de novo — só esperar acomodar.
+  // transição section 2 -> section 3: NÃO é mais automática por tempo — só
+  // completa o resto do trecho do lobby até o início da section 3
+  // (#o-que-fazemos) quando o usuário efetivamente voltar a rolar pra baixo
+  // (feedback: "só deve descer quando o usuário rolar pra baixo após essa
+  // pausa"). Sem isso o usuário precisaria rolar manualmente por um trecho
+  // grande e "morto" do lobby (zoom e deslocamento já terminaram em
+  // SHIFT_RANGE[1], mas o bloco de 300vh só acaba bem depois) — então a
+  // PRÓXIMA rolada real dele, uma vez "armado", é sequestrada e vira o
+  // salto completo até a section 3, em vez de avançar só o pouquinho do
+  // próprio gesto.
   //
-  // Por que esperar "acomodar" (isScrolling voltar a false) em vez de
-  // disparar direto ao cruzar o limiar da section 2: o Lenis global tem
-  // duration:1.2s (LenisProvider), então o PRÓPRIO scroll de entrada
-  // ainda está em andamento no exato frame em que cruza o limiar —
-  // disparar ali saltava pra section 3 na mesma rolada, sem o conteúdo da
-  // section 2 (hero, pedras) chegar a aparecer (bug reportado). Esperar o
-  // acomodar de verdade garante que a section 2 apareceu primeiro.
-  //
-  // Dispara uma vez por "visita" à section 2: o ref rearma quando o
-  // usuário volta pra section 1 (scroll de volta pra cima), então
-  // funciona de novo se ele descer outra vez depois.
+  // Fases por "visita" à section 2 (os refs rearmam quando o usuário volta
+  // pra section 1, então funciona de novo se ele descer outra vez depois):
+  //   1. Esperar a rolada que trouxe o usuário até aqui ACOMODAR (isScrolling
+  //      volta a false) — ela ainda está em andamento no exato frame em que
+  //      cruza o limiar (Lenis global tem duration:1.2s, LenisProvider),
+  //      então dar o salto aqui saltaria pra section 3 na mesma rolada, sem
+  //      o conteúdo da section 2 (hero, pedras) chegar a aparecer.
+  //   2. Depois de acomodar, contar SECTION2_AUTO_ADVANCE_DELAY_MS
+  //      (conteúdo aparecer + SECTION2_HOLD_MS de pausa de leitura) e então
+  //      "armar" o gatilho — ainda sem mexer no scroll.
+  //   3. Só then, na PRÓXIMA vez que isScrolling virar true de novo (o
+  //      usuário rolou) EM DIREÇÃO A BAIXO (direction > 0 — rolar pra cima
+  //      não conta como pedido de avançar), dar o salto.
   const autoAdvancedRef = useRef(false)
+  const armedRef = useRef(false)
+  const armTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    return () => {
+      if (armTimeoutRef.current) clearTimeout(armTimeoutRef.current)
+    }
+  }, [])
   useLenis(
     (lenisInstance) => {
       if (prefersReducedMotion) return
       if (activeSection < 1) {
         autoAdvancedRef.current = false
+        armedRef.current = false
+        if (armTimeoutRef.current) {
+          clearTimeout(armTimeoutRef.current)
+          armTimeoutRef.current = null
+        }
         return
       }
-      if (autoAdvancedRef.current || lenisInstance.isScrolling !== false) return
+      if (autoAdvancedRef.current) return
       // altura TOTAL do bloco do lobby (não o "lobbyMaxScroll" usado em
       // scrollToSection2/section-nav, que é só onde o sticky SOLTA — a
       // partir dali o conteúdo do lobby ainda ocupa a tela inteira,
@@ -519,13 +655,29 @@ export function Lobby() {
       // começa de fato depois desse bloco inteiro.
       const sectionThreeStart = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight
       if (lenisInstance.scroll >= sectionThreeStart) return
-      autoAdvancedRef.current = true
-      // lock: true — sem isso, o momentum residual do próprio wheel que
-      // disparou o gatilho continuava sendo processado pelo Lenis no(s)
-      // frame(s) seguinte(s) e brigava com o alvo do scrollTo, fazendo o
-      // scroll "acomodar" bem antes do destino. Travado, nenhum input
-      // durante a animação consegue desviar do destino.
-      lenisInstance.scrollTo(sectionThreeStart, { duration: 1.2, lock: true })
+
+      if (armedRef.current) {
+        // ainda parado (a própria pausa) — nada do usuário aconteceu ainda.
+        if (lenisInstance.isScrolling === false) return
+        // rolou pra cima: não é um pedido de avançar, ignora e continua
+        // armado (uma rolada pra baixo depois ainda dispara normalmente).
+        if (lenisInstance.direction <= 0) return
+        autoAdvancedRef.current = true
+        armedRef.current = false
+        // lock: true — sem isso, o momentum residual do próprio wheel que
+        // disparou o gatilho continuava sendo processado pelo Lenis no(s)
+        // frame(s) seguinte(s) e brigava com o alvo do scrollTo, fazendo o
+        // scroll "acomodar" bem antes do destino. Travado, nenhum input
+        // durante a animação consegue desviar do destino.
+        lenisInstance.scrollTo(sectionThreeStart, { duration: 1.2, lock: true })
+        return
+      }
+
+      if (armTimeoutRef.current || lenisInstance.isScrolling !== false) return
+      armTimeoutRef.current = setTimeout(() => {
+        armTimeoutRef.current = null
+        armedRef.current = true
+      }, SECTION2_AUTO_ADVANCE_DELAY_MS)
     },
     [activeSection, prefersReducedMotion]
   )
@@ -569,14 +721,31 @@ export function Lobby() {
   }
 
   return (
-    <div ref={containerRef} className="relative" style={{ height: SCROLL_HEIGHT }}>
-      <div className="sticky top-0 h-screen overflow-hidden bg-black">
-        {/* wrapper do encolhimento extra do mobile (MOBILE_FIT_SCALE) —
-            os três filhos (tv, vídeo mascarado, logo) já se posicionam
-            certo entre si; escalar o grupo INTEIRO a partir do centro da
-            viewport encolhe tudo junto sem precisar recalcular a âncora
-            da logo pra um fator extra. scale:1 (sem efeito) no desktop. */}
-        <motion.div style={{ scale: mobileFitScale }} className="absolute inset-0">
+    <div
+      ref={containerRef}
+      className={`relative ${mounted ? "" : "not-hydrated"}`}
+      style={{ height: SCROLL_HEIGHT }}
+    >
+      {/* h-dvh, não h-screen: 100vh é a altura NOMINAL da viewport mobile,
+          sem descontar a barra de endereço do navegador — a área
+          visível real costuma ser menor, e a diferença "cortava" o
+          rodapé da composição da tv. dvh acompanha a viewport visível de
+          verdade. Sem efeito no desktop (as duas coincidem). */}
+      <div className="sticky top-0 h-dvh overflow-hidden bg-black">
+        {/* wrapper da cena da tv. Desktop: inset-0 (viewport inteira),
+            igual sempre foi. Mobile: left:0 + w-full (largura INTEIRA,
+            sem encolher dos lados) e top/height em px vindos de
+            useMobileTvFit (espaço medido abaixo do conteúdo da hero) — os
+            filhos (tv, vídeo mascarado, logo) continuam "absolute inset-0"
+            entre si, então herdam essa caixa e o object-fit/mask-size:
+            cover de cada um recalcula o recorte contra ela nativamente.
+            lobby-tv-wrapper: seletor estável pro fallback CSS pré-hidratação
+            (".not-hydrated", ver globals.css) — precisa existir nos dois
+            ramos do ternário, já que no SSR isMobileLayout é sempre false. */}
+        <motion.div
+          className={`lobby-tv-wrapper ${isMobileLayout ? "absolute left-0 w-full" : "absolute inset-0"}`}
+          style={isMobileLayout ? { top: mobileTvFit.topPx, height: mobileTvFit.heightPx } : undefined}
+        >
           {/* cena da tv: escala junto com a máscara (mesmo valor, mesma
               origem no centro), então as duas sempre se movem coladas uma
               na outra, começando ampliada e desamplia até o tamanho normal. */}
@@ -585,7 +754,7 @@ export function Lobby() {
             alt=""
             aria-hidden="true"
             style={{ scale: maskScale, x: shiftX, y: shiftY, objectPosition: tvPosition }}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="lobby-tv-img absolute inset-0 h-full w-full object-cover"
           />
 
           {/* vídeo recortado pela própria foto do tv (chroma/luma key): só
@@ -611,7 +780,7 @@ export function Lobby() {
               maskRepeat: "no-repeat",
               WebkitMaskRepeat: "no-repeat",
             }}
-            className="absolute inset-0 z-10 overflow-hidden"
+            className="lobby-tv-mask absolute inset-0 z-10 overflow-hidden"
           >
             <motion.div style={{ scale: videoCounterScale }} className="absolute inset-0">
               <MouseResponsiveBackground className="absolute left-0 top-0 h-[110%] w-[110%]">
@@ -651,13 +820,18 @@ export function Lobby() {
             pra dentro da tv em vez de simplesmente sumir no lugar. Fica
             parado, só a opacidade muda — só existe na tela inicial
             (posição fixa em relação à viewport, não à logo). Clique rola
-            suavemente até a section 2. */}
-        <motion.div
-          style={{ opacity: exploreOpacity, pointerEvents: explorePointerEvents }}
-          className="absolute top-[calc(50%+150px)] left-1/2 z-20 -translate-x-1/2"
-        >
-          <TextScramble text="EXPLORAR" onClick={scrollToSection2} />
-        </motion.div>
+            suavemente até a section 2.
+            Ausente no mobile: o site já começa na section 2 lá, não existe
+            a tela cheia inicial (zoom-in) que esse convite faz sentido pra
+            sair. */}
+        {!isMobileLayout && (
+          <motion.div
+            style={{ opacity: exploreOpacity, pointerEvents: explorePointerEvents }}
+            className="lobby-explore absolute top-[calc(50%+150px)] left-1/2 z-20 -translate-x-1/2"
+          >
+            <TextScramble text="EXPLORAR" onClick={scrollToSection2} />
+          </motion.div>
+        )}
 
         {/* pedras flutuantes: órbita elíptica contínua (tipo elétron ao
             redor do núcleo — a própria tela cheia do dispositivo, não a
@@ -684,13 +858,14 @@ export function Lobby() {
             reaparece flutuando no meio do caminho.
 
             Desativadas no mobile: a órbita e a máscara "entra na tv" das
-            pedras dependem de SHIFT_X_TARGET (deslocamento horizontal),
-            que no mobile vira 0 (o deslocamento agora é vertical, ver
-            shiftY) — tornar as pedras responsivas fica pra uma próxima
-            passada; por ora, é um floreio de desktop que não muda o
-            conteúdo, então desligar é seguro. */}
+            pedras dependem de SHIFT_X_TARGET (deslocamento horizontal, só
+            desktop) e da viewport inteira como caixa da tv — nenhum dos
+            dois vale no mobile (caixa da tv é só o espaço medido por
+            useMobileTvFit) — tornar as pedras responsivas fica pra uma
+            próxima passada; por ora, é um floreio de desktop que não muda
+            o conteúdo, então desligar é seguro. */}
         {!isMobileLayout && (
-          <div className="pointer-events-none absolute inset-0 z-10">
+          <div className="lobby-rocks pointer-events-none absolute inset-0 z-10">
             <div
               style={{ top: `${rockOrbit.topPct1}%` }}
               className="absolute left-1/2 w-32 -translate-x-1/2 -translate-y-1/2 sm:w-[179.2px]"
@@ -728,13 +903,17 @@ export function Lobby() {
 
         {/* conteúdo da hero (project.md, seção 6). Desktop (sm+): coluna à
             direita, liberada pelo deslocamento lateral da tv (shiftX).
-            Mobile: fixo no TOPO, centralizado — a tv desce (shiftY) pra
-            metade de baixo em vez de ir pro lado, então não sobra uma
-            "coluna direita" pra ancorar o conteúdo numa tela estreita.
+            Mobile: fixo no TOPO, centralizado — a tv ocupa o espaço que
+            sobra abaixo (useMobileTvFit redimensiona o wrapper da tv em
+            torno da altura real deste bloco), não há "coluna direita" pra
+            ancorar o conteúdo numa tela estreita.
             Entra em stagger assim que chega na section 2 (mesmo gatilho
-            das pedras) — ver heroStaggerVariants/heroItemVariants. */}
+            das pedras) — ver heroStaggerVariants/heroItemVariants.
+            ref: mede a altura real deste bloco pra useMobileTvFit (só
+            importa no mobile — sem custo/efeito no desktop). */}
         <motion.div
-          className="pointer-events-none absolute top-[8%] left-1/2 z-20 w-[86%] -translate-x-1/2 text-center sm:top-1/2 sm:right-[8%] sm:left-auto sm:w-auto sm:max-w-[420px] sm:-translate-x-0 sm:-translate-y-1/2 sm:text-left"
+          ref={heroContentRef}
+          className="lobby-hero-content pointer-events-none absolute top-[8%] left-1/2 z-20 w-[86%] -translate-x-1/2 text-center sm:top-1/2 sm:right-[8%] sm:left-auto sm:w-auto sm:max-w-[420px] sm:-translate-x-0 sm:-translate-y-1/2 sm:text-left"
           initial="hidden"
           animate={insideSection2 ? "visible" : "hidden"}
           variants={heroStaggerVariants}

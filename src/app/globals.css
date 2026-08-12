@@ -158,3 +158,43 @@
     }
   }
 }
+
+/* Lobby (section 2, mobile) — fallback pré-hidratação. O HTML gerado pelo
+   servidor (e o primeiro frame do cliente, antes do JS rodar) não sabe a
+   largura da tela, então sempre assume desktop: no mobile isso mostrava,
+   por um instante (podendo durar bem mais que um frame em conexão/aparelho
+   lento), o zoom cheio de desktop com "EXPLORAR" — bug reportado como "site
+   iniciando na section 1". Como é HTML/CSS que o servidor já mandou, só CSS
+   resolve (JS chega tarde demais). Escopado por ".not-hydrated" (ver
+   useMounted em lobby.tsx — nasce "false" no servidor E no primeiro render
+   do cliente, sem mismatch de hidratação, e vira "" assim que monta) + media
+   query mobile (mesmo breakpoint de MOBILE_BREAKPOINT_QUERY em lobby.tsx) —
+   nunca afeta desktop, e some sozinho assim que o React assume com os
+   valores medidos de verdade (useMobileTvFit). !important é necessário pra
+   vencer os transforms/opacity inline que o Motion já aplica no SSR. */
+@media (max-width: 639px) {
+  .not-hydrated .lobby-explore,
+  .not-hydrated .lobby-rocks {
+    display: none !important;
+  }
+
+  .not-hydrated .lobby-tv-wrapper {
+    top: auto !important;
+    right: auto !important;
+    bottom: 32px !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 42vh !important;
+  }
+
+  .not-hydrated .lobby-tv-img,
+  .not-hydrated .lobby-tv-mask {
+    transform: none !important;
+  }
+
+  .not-hydrated .lobby-hero-content,
+  .not-hydrated .lobby-hero-content * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
