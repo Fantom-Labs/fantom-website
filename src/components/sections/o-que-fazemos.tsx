@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useLenis } from "lenis/react"
 import { GradientBars } from "@/components/ui/gradient-bars-background"
-import { getAutoJumpDuration, getSection2ScrollTarget } from "@/components/motion/lobby"
+import { autoJumpScrollTo, getSection2ScrollTarget } from "@/components/motion/lobby"
 
 type ServiceItem = {
   title: string
@@ -260,19 +260,20 @@ export function OQueFazemos() {
       // rolou pra baixo (ou parado): não é um pedido de sair pra cima.
       if (lenisInstance.direction >= 0) return
       reverseFiredRef.current = true
-      // lock: true — mesmo motivo do auto-advance section2->3: sem isso o
-      // momentum residual da própria rolada que disparou o gatilho
-      // continuava brigando com o alvo do scrollTo. duration FIXA
-      // (getAutoJumpDuration sem argumento) — mesma duração do salto
-      // section2->3 sempre, não proporcional à distância real deste salto
-      // específico; ver comentário grande em getAutoJumpDuration no
-      // lobby.tsx pra entender por que precisa ser fixa (não só a mesma
-      // velocidade média) pros dois sentidos lerem como igualmente rápidos.
-      const target = getSection2ScrollTarget()
-      lenisInstance.scrollTo(target, {
-        duration: getAutoJumpDuration(),
-        lock: true,
-      })
+      // autoJumpScrollTo (não scrollTo direto com lock:true): trava o
+      // scroll só por um instante curto (AUTO_JUMP_LOCK_GUARD_MS, pra
+      // absorver o momentum residual da própria rolada que disparou o
+      // gatilho), não pela animação inteira — travar pelo tempo todo
+      // (versão anterior) fazia o usuário, ao subir pra section 2 e tentar
+      // descer de novo rápido, cair bem dentro dessa janela travada (bug
+      // reportado, ver comentário grande em autoJumpScrollTo no lobby.tsx).
+      // duration FIXA (getAutoJumpDuration sem argumento) — mesma duração
+      // do salto section2->3 sempre, não proporcional à distância real
+      // deste salto específico; ver comentário grande em
+      // getAutoJumpDuration no lobby.tsx pra entender por que precisa ser
+      // fixa (não só a mesma velocidade média) pros dois sentidos lerem
+      // como igualmente rápidos.
+      autoJumpScrollTo(lenisInstance, getSection2ScrollTarget())
     },
     [prefersReducedMotion]
   )

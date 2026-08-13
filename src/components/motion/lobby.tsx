@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react"
 import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform, type Variants } from "motion/react"
 import { useLenis } from "lenis/react"
+import type Lenis from "lenis"
 import { X } from "lucide-react"
 import { AsciiArt } from "@/components/ui/mo-mosaic"
 import { MouseResponsiveBackground } from "@/components/ui/mouse-responsive-background"
@@ -130,6 +131,53 @@ export function getAutoJumpDuration(): number {
     Math.max(referenceDistance / AUTO_JUMP_SPEED_PX_PER_S, AUTO_JUMP_MIN_DURATION_S),
     AUTO_JUMP_MAX_DURATION_S
   )
+}
+// tempo (ms) que o salto automático trava o scroll pra absorver o momentum
+// residual do PRÓPRIO gesto que disparou o gatilho (ver comentário grande
+// onde os dois saltos chamam isso: "lock: true — sem isso, o momentum
+// residual..."). NÃO é a duração da animação inteira (getAutoJumpDuration,
+// ~0.6-2.2s) — travar o scroll pelo tempo TODO do salto (`{ lock: true }`
+// direto no scrollTo, versão anterior) bloqueava qualquer tentativa de
+// scroll do usuário durante o salto inteiro, não só o instante inicial que
+// precisava de proteção. Reportado como "trava": subir pra section 2
+// (salto reverso, seu próprio lock de ~1.9s) e tentar descer rápido caía
+// bem dentro dessa janela — usava a MESMA função nos dois saltos (forward e
+// reverse), então o problema existia nos dois sentidos. Curto o bastante
+// pra não ser perceptível como delay, longo o bastante pra cobrir os
+// primeiros frames onde o momentum residual do wheel ainda chega.
+const AUTO_JUMP_LOCK_GUARD_MS = 250
+// dispara um scrollTo travado só durante o guard acima (não a animação
+// inteira) — chamado pelos dois saltos automáticos (forward aqui em
+// lobby.tsx, reverse em o-que-fazemos.tsx) pra manter o mesmo
+// comportamento nos dois sentidos. `set isLocked` é `private` no .d.ts do
+// Lenis (só `get` é público) — mas no JS compilado é um setter comum (não
+// um `#private` de verdade, ver node_modules/lenis/dist/lenis.mjs), então
+// o cast abaixo é seguro em runtime; sem ele não tem como fazer um lock
+// CURTO (só `stop()`/`start()` são públicos, mas esses abortam a animação
+// inteira via `reset()` — não servem aqui, ver comentário acima) nem
+// passar `{ lock: true }` pro scrollTo (trava pela duração INTEIRA, o
+// problema que este helper existe pra resolver).
+type LenisWithLockSetter = Lenis & { isLocked: boolean }
+export function autoJumpScrollTo(lenisInstance: Lenis, target: number) {
+  const lockable = lenisInstance as LenisWithLockSetter
+  // isLocked entra dentro de onStart, NÃO antes do scrollTo: o próprio
+  // scrollTo despreza a chamada inteira se isLocked já for true na hora
+  // (`if ((this.isStopped || this.isLocked) && !force) return`, ver
+  // node_modules/lenis/dist/lenis.mjs) — travar ANTES fazia o salto
+  // travar a si mesmo antes de sequer começar a animar (bug descoberto
+  // testando este fix: o "salto" nunca saía do lugar, só o momentum
+  // residual do tick que disparou o gatilho continuava rolando sozinho).
+  // onStart roda depois que o scrollTo já aceitou iniciar a animação —
+  // mesmo ponto onde a própria opção `lock` do Lenis faz isso internamente.
+  lenisInstance.scrollTo(target, {
+    duration: getAutoJumpDuration(),
+    onStart: () => {
+      lockable.isLocked = true
+      setTimeout(() => {
+        lockable.isLocked = false
+      }, AUTO_JUMP_LOCK_GUARD_MS)
+    },
+  })
 }
 // desktop: em telas MUITO largas (ultrawide), a tv (cover-fit contra a
 // viewport inteira) cobre uma faixa vertical menor da foto original — o
@@ -846,33 +894,51 @@ export function Lobby() {
 
   // transição section 2 -> section 3: NÃO é mais automática por tempo — só
   // completa o resto do trecho do lobby até o início da section 3
-  // (#o-que-fazemos) quando o usuário efetivamente voltar a rolar pra baixo
-  // (feedback: "só deve descer quando o usuário rolar pra baixo após essa
-  // pausa"). Sem isso o usuário precisaria rolar manualmente por um trecho
-  // grande e "morto" do lobby (zoom e deslocamento já terminaram em
-  // SHIFT_RANGE[1], mas o bloco de 300vh só acaba bem depois) — então a
-  // PRÓXIMA rolada real dele, uma vez "armado", é sequestrada e vira o
-  // salto completo até a section 3, em vez de avançar só o pouquinho do
-  // próprio gesto.
+  // (#o-que-fazemos) quando o usuário efetivamente PAUSAR e então continuar
+  // rolando pra baixo. Sem isso o usuário precisaria rolar manualmente por
+  // um trecho grande e "morto" do lobby (zoom e deslocamento já terminaram
+  // em SHIFT_RANGE[1], mas o bloco de 300vh só acaba bem depois) — então,
+  // depois de uma pausa real, a rolada seguinte pra baixo é sequestrada e
+  // vira o salto completo até a section 3.
   //
-  // Fases por "visita" à section 2 (os refs rearmam quando o usuário volta
-  // pra section 1, então funciona de novo se ele descer outra vez depois):
-  //   1. Esperar a rolada que trouxe o usuário até aqui ACOMODAR (isScrolling
-  //      volta a false) — ela ainda está em andamento no exato frame em que
-  //      cruza o limiar (Lenis global tem duration:1.2s, LenisProvider),
-  //      então dar o salto aqui saltaria pra section 3 na mesma rolada, sem
-  //      o conteúdo da section 2 (hero, pedras) chegar a aparecer.
-  //   2. Assim que acomodar, "armar" o gatilho na hora — sem pausa artificial
-  //      (removida a pedido explícito: "remova o delay que tem definido
-  //      para ser possível descer a sessão, já que o scroll é semi
-  //      automático" — o scroll já é assistido/suave por natureza, esperar
-  //      alguns segundos parado só pra poder continuar descendo virou
-  //      fricção, não proteção).
-  //   3. Só then, na PRÓXIMA vez que isScrolling virar true de novo (o
-  //      usuário rolou) EM DIREÇÃO A BAIXO (direction > 0 — rolar pra cima
-  //      não conta como pedido de avançar), dar o salto.
+  // Por que precisa da pausa (e não só "cruzou o alvo rolando pra baixo"):
+  // o salto trava o scroll por um instante (AUTO_JUMP_LOCK_GUARD_MS, ver
+  // autoJumpScrollTo). Disparar isso na MESMA rolada contínua que trouxe o
+  // usuário até aqui (sem pausa nenhuma) faz a section 2 nem chegar a
+  // "segurar" — o usuário sente que rolou uma vez e o scroll travou/pulou
+  // direto pra section 3, sem nunca ter conseguido parar ali (bug
+  // reportado: "continua travando o scroll, e ao tirar o delay começou a
+  // descer da section 2 pra 3 direto. só piorou").
+  //
+  // Por que NÃO usar isScrolling===false pra detectar a pausa (tentativa
+  // anterior): o wheel handler do Lenis reinicia a MESMA animação
+  // (duration:1.2s, LenisProvider) a cada tick — numa rolada contínua
+  // (sem soltar o trackpad/mouse), isScrolling nunca volta a false NO MEIO
+  // do gesto, só ~1.2s depois do ÚLTIMO tick. Detectar a pausa direto do
+  // INPUT bruto (wheel/touchmove nativos, ver lastWheelOrTouchAtRef abaixo)
+  // em vez de um estado derivado do Lenis resolve isso: reflete quando o
+  // usuário genuinamente parou de mandar input, não quando a animação de
+  // easing (que pode continuar rodando por mais tempo) termina de vez.
   const autoAdvancedRef = useRef(false)
-  const armedRef = useRef(false)
+  const lastWheelOrTouchAtRef = useRef(0)
+  useEffect(() => {
+    const markInput = () => {
+      lastWheelOrTouchAtRef.current = Date.now()
+    }
+    window.addEventListener("wheel", markInput, { passive: true })
+    window.addEventListener("touchmove", markInput, { passive: true })
+    return () => {
+      window.removeEventListener("wheel", markInput)
+      window.removeEventListener("touchmove", markInput)
+    }
+  }, [])
+  // gap mínimo (ms) sem nenhum input bruto pra considerar que o usuário
+  // "pausou" — curto o bastante pra não parecer uma espera de verdade
+  // (pedido explícito, ver comentário grande acima: nenhum delay
+  // perceptível), longo o bastante pra nunca ser preenchido por ticks
+  // consecutivos de uma rolada contínua de trackpad/mouse (que chegam bem
+  // mais rápido que isso).
+  const SECTION2_PAUSE_GAP_MS = 150
   // rastreia se o scroll já passou do início da section 3 nesta "visita" —
   // sem isso, voltar da section 3 pra section 2 e descer de novo não
   // disparava o auto-advance uma segunda vez (bug reportado: "só ocorre uma
@@ -899,57 +965,29 @@ export function Lobby() {
       if (wasBeyondSectionThreeRef.current) {
         wasBeyondSectionThreeRef.current = false
         autoAdvancedRef.current = false
-        armedRef.current = false
       }
-      // só arma depois que o scroll realmente chegou perto do "resting
-      // point" da section 2 (mesmo alvo do salto reverso, getSection2ScrollTarget)
-      // — NÃO usar activeSection aqui (versão anterior): no MOBILE
-      // activeSection já nasce >=1 desde scroll=0 (início/portfólio
-      // mostram a mesma tela, ver getLobbySections/insideSection2 acima),
-      // então checar "activeSection < 1" nunca segurava nada lá — o
-      // auto-advance armava e disparava na PRIMEIRA pausa de scroll do
-      // usuário, bem antes de "chegar" na section 2 de verdade, e batia de
-      // volta com o salto reverso (o-que-fazemos.tsx) — ping-pong (bug
-      // reportado: "fica bugando no scroll em ambas as direções, de forma
-      // caótica", só no mobile). Checar a posição real do scroll (não um
-      // estado derivado com semântica diferente por plataforma) funciona
-      // igual nos dois — no desktop os dois limiares já coincidiam
-      // (SHIFT_RANGE[1] é a mesma base dos dois cálculos).
+      // só passa daqui depois que o scroll realmente chegou perto do
+      // "resting point" da section 2 (mesmo alvo do salto reverso,
+      // getSection2ScrollTarget) — NÃO usar activeSection (versão
+      // anterior): no MOBILE activeSection já nasce >=1 desde scroll=0
+      // (início/portfólio mostram a mesma tela, ver
+      // getLobbySections/insideSection2 acima), então checar
+      // "activeSection < 1" nunca segurava nada lá. Checar a posição real
+      // do scroll (não um estado derivado com semântica diferente por
+      // plataforma) funciona igual nos dois — no desktop os dois limiares
+      // já coincidiam (SHIFT_RANGE[1] é a mesma base dos dois cálculos).
       if (lenisInstance.scroll < getSection2ScrollTarget()) {
         autoAdvancedRef.current = false
-        armedRef.current = false
         return
       }
       if (autoAdvancedRef.current) return
-
-      if (armedRef.current) {
-        // ainda parado (a própria pausa) — nada do usuário aconteceu ainda.
-        if (lenisInstance.isScrolling === false) return
-        // rolou pra cima: não é um pedido de avançar, ignora e continua
-        // armado (uma rolada pra baixo depois ainda dispara normalmente).
-        if (lenisInstance.direction <= 0) return
-        autoAdvancedRef.current = true
-        armedRef.current = false
-        // lock: true — sem isso, o momentum residual do próprio wheel que
-        // disparou o gatilho continuava sendo processado pelo Lenis no(s)
-        // frame(s) seguinte(s) e brigava com o alvo do scrollTo, fazendo o
-        // scroll "acomodar" bem antes do destino. Travado, nenhum input
-        // durante a animação consegue desviar do destino. duration FIXA
-        // (getAutoJumpDuration sem argumento, não a distância real deste
-        // salto) — ver comentário em getAutoJumpDuration: usar a distância
-        // real fazia a descida (que parte de onde o usuário parou, variável)
-        // ficar com duração diferente da subida (sempre a distância cheia),
-        // o que ainda "lia" como velocidades diferentes mesmo com o mesmo
-        // px/s médio (bug reportado: "a subida continua mais acelerada").
-        lenisInstance.scrollTo(sectionThreeStart, {
-          duration: getAutoJumpDuration(),
-          lock: true,
-        })
-        return
-      }
-
-      if (lenisInstance.isScrolling !== false) return
-      armedRef.current = true
+      if (lenisInstance.direction <= 0) return
+      // ainda dentro de uma rolada contínua (o último input bruto foi há
+      // menos de SECTION2_PAUSE_GAP_MS) — não conta como "pausou e decidiu
+      // continuar", deixa essa rolada só avançar o pouquinho normal dela.
+      if (Date.now() - lastWheelOrTouchAtRef.current < SECTION2_PAUSE_GAP_MS) return
+      autoAdvancedRef.current = true
+      autoJumpScrollTo(lenisInstance, sectionThreeStart)
     },
     [prefersReducedMotion]
   )
