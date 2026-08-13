@@ -901,7 +901,21 @@ export function Lobby() {
         autoAdvancedRef.current = false
         armedRef.current = false
       }
-      if (activeSection < 1) {
+      // só arma depois que o scroll realmente chegou perto do "resting
+      // point" da section 2 (mesmo alvo do salto reverso, getSection2ScrollTarget)
+      // — NÃO usar activeSection aqui (versão anterior): no MOBILE
+      // activeSection já nasce >=1 desde scroll=0 (início/portfólio
+      // mostram a mesma tela, ver getLobbySections/insideSection2 acima),
+      // então checar "activeSection < 1" nunca segurava nada lá — o
+      // auto-advance armava e disparava na PRIMEIRA pausa de scroll do
+      // usuário, bem antes de "chegar" na section 2 de verdade, e batia de
+      // volta com o salto reverso (o-que-fazemos.tsx) — ping-pong (bug
+      // reportado: "fica bugando no scroll em ambas as direções, de forma
+      // caótica", só no mobile). Checar a posição real do scroll (não um
+      // estado derivado com semântica diferente por plataforma) funciona
+      // igual nos dois — no desktop os dois limiares já coincidiam
+      // (SHIFT_RANGE[1] é a mesma base dos dois cálculos).
+      if (lenisInstance.scroll < getSection2ScrollTarget()) {
         autoAdvancedRef.current = false
         armedRef.current = false
         return
@@ -937,7 +951,7 @@ export function Lobby() {
       if (lenisInstance.isScrolling !== false) return
       armedRef.current = true
     },
-    [activeSection, prefersReducedMotion]
+    [prefersReducedMotion]
   )
 
   // fallback estático: sem scroll-zoom, sem parallax, uma tela só (project.md, seção 10).
