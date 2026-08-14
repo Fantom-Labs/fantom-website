@@ -1011,8 +1011,10 @@ export function Lobby() {
   if (isMobileLayout) {
     return (
       <div id="portfolio" className="relative bg-black">
+        {/* pt-[104px] (não pt-14/56px): pedido explícito pra descer o
+            conteúdo mais 48px (56+48). */}
         <motion.div
-          className="relative z-20 mx-auto w-[86%] pt-14 text-center"
+          className="relative z-20 mx-auto w-[86%] pt-[104px] text-center"
           initial="hidden"
           animate="visible"
           variants={heroStaggerVariants}
@@ -1031,11 +1033,6 @@ export function Lobby() {
 
           <motion.div variants={heroItemVariants} className="mt-5">
             <LiquidMetalButton label={CTA_LABEL} href={WHATSAPP_CTA_HREF} />
-          </motion.div>
-
-          <motion.div variants={heroItemVariants} className="mt-6">
-            <p className="text-xs text-white/50 uppercase tracking-[0.15em]">{CLIENTS_STAT_TEXT}</p>
-            <LogoMarquee className="mt-3" />
           </motion.div>
         </motion.div>
 
@@ -1088,6 +1085,13 @@ export function Lobby() {
               <img src="/images/logo-centralized.svg" alt="Fantom" className="w-[240px]" />
             </MouseResponsiveBackground>
           </motion.div>
+        </div>
+
+        {/* logos de clientes: abaixo da composição da tv (pedido explícito
+            — antes ficava junto do resto do conteúdo da hero, acima). */}
+        <div className="relative z-20 mx-auto w-[86%] pt-4 pb-10 text-center">
+          <p className="text-xs text-white/50 uppercase tracking-[0.15em]">{CLIENTS_STAT_TEXT}</p>
+          <LogoMarquee className="mt-3" />
         </div>
       </div>
     )
