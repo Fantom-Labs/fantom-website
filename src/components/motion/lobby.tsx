@@ -959,10 +959,26 @@ export function Lobby() {
       }
       if (autoAdvancedRef.current) return
       if (lenisInstance.direction <= 0) return
+      // lastWheelOrTouchAtRef.current === 0: nenhum input bruto de
+      // verdade ainda aconteceu nesta página (valor inicial do ref,
+      // useRef(0)) — sem esse check, "Date.now() - 0" é um número gigante,
+      // sempre maior que SECTION2_PAUSE_GAP_MS, e o gate abaixo lia isso
+      // como "usuário pausou há muito tempo, pode continuar" quando na
+      // real o usuário nunca tinha rolado NADA ainda. Isso disparava o
+      // salto sozinho logo depois do loader terminar (o próprio
+      // scrollToSection2 automático do loader tem direction>0 nos frames
+      // finais, e cruza o limiar abaixo) — o visitante caía direto na
+      // section 3, sem nunca ver a hero (bug encontrado testando a
+      // navegação da nova section 4, mas pré-existente, não introduzido
+      // por ela).
       // ainda dentro de uma rolada contínua (o último input bruto foi há
       // menos de SECTION2_PAUSE_GAP_MS) — não conta como "pausou e decidiu
       // continuar", deixa essa rolada só avançar o pouquinho normal dela.
-      if (Date.now() - lastWheelOrTouchAtRef.current < SECTION2_PAUSE_GAP_MS) return
+      if (
+        lastWheelOrTouchAtRef.current === 0 ||
+        Date.now() - lastWheelOrTouchAtRef.current < SECTION2_PAUSE_GAP_MS
+      )
+        return
       autoAdvancedRef.current = true
       autoJumpScrollTo(lenisInstance, sectionThreeStart)
     },

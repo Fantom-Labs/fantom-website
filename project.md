@@ -97,7 +97,7 @@ O site é a principal peça de prova desse reposicionamento. Como a Fantom se ve
 1. **#início (Hero)** — headline + linha de apoio + CTA. Loader ASCII converte-se no frame da hero.
 2. **#portfolio (Prova)** — 6 cards de case, filtráveis por tipo (informativo).
 3. **#o-que-fazemos** — o que entregamos + os dois formatos (sócios / projeto) + ecossistema de parceiros.
-4. **#metodo (MAGO)** — as quatro etapas.
+4. **#metodo** — "Soluções": badge + headline + parágrafo + 3 cards (churn, performance/segurança, suporte).
 5. **#faq** — objeções principais (faz o trabalho da triagem que foi tirada da navegação).
 6. **#contato** — CTA final.
 7. **Rodapé** — assinatura dos fundadores.

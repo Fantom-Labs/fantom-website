@@ -1,10 +1,19 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AnimatePresence, motion, useReducedMotion } from "motion/react"
+import {
+  AnimatePresence,
+  motion,
+  useMotionValueEvent,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "motion/react"
 import { useLenis } from "lenis/react"
+import { CardFrame } from "@/components/ui/card-frame"
 import { GradientBars } from "@/components/ui/gradient-bars-background"
-import { autoJumpScrollTo, getSection2ScrollTarget, useIsMobileLayout } from "@/components/motion/lobby"
+import { autoJumpScrollTo, getSection2ScrollTarget, getSectionThreeStart, useIsMobileLayout } from "@/components/motion/lobby"
+import { MetodoCard } from "@/components/sections/metodo"
 
 type ServiceItem = {
   title: string
@@ -145,21 +154,7 @@ function ServiceCard({
   const activeService = SERVICES[activeIndex]
 
   return (
-    // largura no mobile: calc(100vw-40px), não 80vw — 80vw deixava a margem
-    // (~39px numa tela de 390px) maior que a do logo/menu-icon (left-5/
-    // right-5, 20px, ver LobbyChrome), o frame ficava "flutuando" fora do
-    // alinhamento do resto do chrome fixo da página (pedido explícito:
-    // "aumentar a largura do frame deixando a margem igual à do
-    // menu-icon"). Volta a 80vw a partir do sm: (desktop mantém como já
-    // estava, só o mobile mudou).
-    // h-auto no mobile (não h-[85vh]): uma altura FIXA force a lista de
-    // serviços (overflow-y-auto mais abaixo) a criar uma scrollbar INTERNA
-    // sempre que o conteúdo (lista empilhada + descrição expandida) não
-    // coubesse nesses 85vh — pedido explícito: "não pode ter isso, o
-    // componente tem que se adaptar ao conteúdo". Volta a h-[85vh] a partir
-    // do sm: (desktop mantém como já estava — lá o layout é lado a lado,
-    // não empilhado, cabe tranquilo).
-    <div className="relative z-10 flex h-auto w-[calc(100vw-40px)] flex-col rounded-[20px] border border-white/15 bg-white/[0.03] p-6 backdrop-blur-lg sm:h-[85vh] sm:w-[80vw] sm:p-8 lg:p-16">
+    <CardFrame>
       <div className="mb-3 flex items-center gap-3 sm:mb-4">
         <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
         <span className="text-sm tracking-[0.2em] text-white/70 uppercase">
@@ -179,7 +174,7 @@ function ServiceCard({
       <div className="grid gap-8 sm:min-h-0 sm:flex-1 lg:grid-cols-[0.85fr_1.15fr] lg:gap-10">
         {/* overflow-y-auto/min-h-0 só a partir do sm: no mobile a lista
             cresce junto com o conteúdo (sem scrollbar interna, ver o
-            comentário grande no h-auto do card acima) — no desktop
+            comentário grande no h-auto do CardFrame) — no desktop
             continua cabendo dentro da altura fixa da linha (min-h-0 é o
             que permite ela encolher pra caber ali, com scroll interno se
             precisar). */}
@@ -229,52 +224,98 @@ function ServiceCard({
           <ImageFrame service={activeService} />
         </div>
       </div>
-    </div>
+    </CardFrame>
   )
+}
+
+// altura (vh) do bloco pinado que contém os cards das sections 3 e 4 —
+// menor que o LOBBY_SCROLL_HEIGHT_VH do lobby.tsx (300vh): aqui é só um
+// slide horizontal num eixo só, sem as várias fases (zoom + shift + pausa)
+// que o zoom da tv precisa. h-screen no wrapper sticky, então 220vh dá
+// 120vh de distância pinada de verdade — o bastante pra um "detém no card
+// 1 → desliza → detém no card 2" deliberado, sem zona morta exagerada.
+const PIN_SCROLL_HEIGHT_VH = 220
+// fração de scrollYProgress onde o slide de fato acontece — antes de 0.2 e
+// depois de 0.75 o scroll "detém" em cada card (nada se move ainda/mais),
+// dando tempo de ler antes da troca.
+const SLIDE_RANGE: [number, number] = [0.2, 0.75]
+
+// alvo (px de scroll) de onde o card da section 4 (#metodo) fica
+// centralizado. Os dois cards (#o-que-fazemos e #metodo) compartilham a
+// MESMA geometria vertical — os dois são "absolute inset-0" dentro do
+// mesmo wrapper sticky, só a posição HORIZONTAL (translateX) diferencia —
+// então um href="#metodo"/scrollIntoView nativo não consegue expressar
+// "role até o ponto em que o slide horizontal já terminou", só "role até o
+// topo vertical deste elemento" (que é idêntico ao do outro card). Por
+// isso um alvo calculado explícito, mesmo padrão de
+// getSection2ScrollTarget/getSectionThreeStart no lobby.tsx — usado pelo
+// interceptor de clique no ponto "Método" do SectionNav.
+export function getMetodoScrollTarget(): number {
+  const pinTop = getSectionThreeStart()
+  const pinnedDistance = (PIN_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
+  return pinTop + SLIDE_RANGE[1] * pinnedDistance + 2
 }
 
 export function OQueFazemos() {
   const prefersReducedMotion = useReducedMotion()
   const isMobileLayout = useIsMobileLayout()
-  const sectionRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
 
-  // rolar pra CIMA a partir do topo da section deve voltar direto pro
-  // "resting point" da section 2, pulando o mesmo trecho morto do lobby que
-  // o auto-advance section2->3 já pula na descida (ver useLenis em
-  // lobby.tsx) — sem isso, subir daqui exigia rolar manualmente por ~1800px
-  // de lobby sem nada acontecendo visualmente (fricção reportada, espelhada
-  // da que já existia na descida). REVERSE_EDGE_PX: janela (em px de
-  // scroll), pros DOIS lados do topo real da section, que conta como "borda
-  // de saída" — bem dentro da section uma rolada pra cima/baixo pequena
-  // continua normal, só perto da borda de verdade é que dispara o salto.
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"],
+  })
+  const cardOneX = useTransform(scrollYProgress, SLIDE_RANGE, ["0%", "-100%"])
+  const cardTwoX = useTransform(scrollYProgress, SLIDE_RANGE, ["100%", "0%"])
+
+  // qual card está "corrente" (metade do slide) — só pra alternar `inert`
+  // no card fora de tela (ver JSX do branch pinado): sem isso, os botões
+  // reais do ServiceCard continuam focáveis via Tab mesmo transladados pra
+  // fora da viewport (e vice-versa quando o card 2 está fora).
+  const [isMetodoCurrent, setIsMetodoCurrent] = useState(false)
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    setIsMetodoCurrent(v >= (SLIDE_RANGE[0] + SLIDE_RANGE[1]) / 2)
+  })
+
+  // rolar pra CIMA a partir do topo do bloco (section 3+4) deve voltar
+  // direto pro "resting point" da section 2, pulando o mesmo trecho morto
+  // do lobby que o auto-advance section2->3 já pula na descida (ver
+  // useLenis em lobby.tsx) — sem isso, subir daqui exigia rolar
+  // manualmente por ~1800px de lobby sem nada acontecendo visualmente
+  // (fricção reportada, espelhada da que já existia na descida).
+  // REVERSE_EDGE_PX: janela (em px de scroll), pros DOIS lados do topo real
+  // do bloco, que conta como "borda de saída" — bem dentro dele uma rolada
+  // pra cima/baixo pequena continua normal, só perto da borda de verdade é
+  // que dispara o salto.
   //
   // IMPORTANTE: checar só o limite de CIMA (scroll > sectionTop + edge) não
   // bastava — sem checar também o limite de BAIXO, uma rolada pra cima em
-  // QUALQUER lugar ANTES da section (inclusive lá no topo da página)
+  // QUALQUER lugar ANTES do bloco (inclusive lá no topo da página)
   // disparava o salto por engano — o que corrompia o auto-advance da
   // PRÓPRIA section 2 (bug reportado: descer nulo depois de ter subido).
   // Com os dois limites, o gatilho só existe mesmo bem perto do topo de
-  // verdade da section.
+  // verdade do bloco.
   //
-  // isMobileLayout: mobile não tem mais o "trecho morto" pra pular (a
-  // section 2 lá é fluxo normal, sem scroll-jacking, ver lobby.tsx) — nada
-  // pra este gatilho fazer, o scroll de volta já é 100% nativo/simples.
+  // isMobileLayout: mobile não tem o bloco pinado nem o "trecho morto" pra
+  // pular (a section 2 lá é fluxo normal, sem scroll-jacking, ver
+  // lobby.tsx) — nada pra este gatilho fazer, o scroll de volta já é 100%
+  // nativo/simples.
   const REVERSE_EDGE_PX = 24
   const reverseFiredRef = useRef(false)
   useLenis(
     (lenisInstance) => {
       if (prefersReducedMotion || isMobileLayout) return
-      const section = sectionRef.current
-      if (!section) return
-      const sectionTop = section.getBoundingClientRect().top + window.scrollY
+      const container = containerRef.current
+      if (!container) return
+      const containerTop = container.getBoundingClientRect().top + window.scrollY
       const nearTopEdge =
-        lenisInstance.scroll >= sectionTop - REVERSE_EDGE_PX &&
-        lenisInstance.scroll <= sectionTop + REVERSE_EDGE_PX
+        lenisInstance.scroll >= containerTop - REVERSE_EDGE_PX &&
+        lenisInstance.scroll <= containerTop + REVERSE_EDGE_PX
       if (!nearTopEdge) {
-        // longe da borda (bem dentro da section OU em qualquer lugar antes
-        // dela) — nada a fazer, mas destrava o gatilho pra próxima vez que o
-        // scroll passar perto da borda de verdade.
+        // longe da borda (bem dentro do bloco OU em qualquer lugar antes
+        // dele) — nada a fazer, mas destrava o gatilho pra próxima vez que
+        // o scroll passar perto da borda de verdade.
         reverseFiredRef.current = false
         return
       }
@@ -300,20 +341,77 @@ export function OQueFazemos() {
     [prefersReducedMotion, isMobileLayout]
   )
 
-  // sem scroll-jacking (nada de altura extra artificial): a section ocupa
-  // uma tela só, os itens trocam apenas por clique (project.md, seção 9) —
-  // removida a navegação por scroll entre os itens (pedido explícito:
-  // "vamos remover a navegação por scroll nos itens da section 3"; era o
-  // mesmo comportamento que o fallback de motion reduzido já tinha, agora é
-  // o único). GradientBars (fundo animado) só entra sem motion reduzido.
+  // fallback estático (motion reduzido): as duas sections empilham
+  // normalmente, sem fundo animado (GradientBars) nem slide nenhum — mesma
+  // convenção já usada em Lobby() pra motion reduzido.
+  if (prefersReducedMotion) {
+    return (
+      <>
+        <section id="o-que-fazemos" className="relative flex min-h-screen items-center justify-center bg-black py-12">
+          <ServiceCard activeIndex={activeIndex} onSelect={setActiveIndex} />
+        </section>
+        <section id="metodo" className="relative flex min-h-screen items-center justify-center bg-black py-12">
+          <MetodoCard />
+        </section>
+      </>
+    )
+  }
+
+  // mobile: sem scroll-jacking (pedido explícito, mesma decisão já tomada
+  // pro resto do mobile, ver lobby.tsx) — as duas sections empilham
+  // normalmente, cada uma com seu próprio fundo (GradientBars é só CSS,
+  // sem contexto WebGL — barato manter duas instâncias montadas).
+  if (isMobileLayout) {
+    return (
+      <>
+        <section id="o-que-fazemos" className="relative flex min-h-screen items-center justify-center bg-black py-12">
+          <GradientBars numBars={15} animationDuration={2} className="z-0" />
+          <ServiceCard activeIndex={activeIndex} onSelect={setActiveIndex} />
+        </section>
+        <section id="metodo" className="relative flex min-h-screen items-center justify-center bg-black py-12">
+          <GradientBars numBars={15} animationDuration={2} className="z-0" />
+          <MetodoCard />
+        </section>
+      </>
+    )
+  }
+
+  // desktop: transição horizontal pinada (pedido explícito) — o card da
+  // section 3 desliza pra fora à esquerda enquanto o card da section 4
+  // entra pela direita, sobre o MESMO fundo (GradientBars, uma instância
+  // só) que permanece parado. Mesmo padrão mecânico do zoom do lobby
+  // (container alto + sticky + useTransform), só que num eixo só
+  // (translateX) e sem lógica de auto-jump/pausa — aqui é scrubado
+  // continuamente pelo próprio scroll, reversível de graça (subir
+  // simplesmente volta o transform, não precisa de gatilho nenhum).
+  //
+  // overflow-hidden no wrapper sticky não é decorativo: sem ele, o
+  // wrapper fora de tela (translated ±100%) expandiria a região de scroll
+  // HORIZONTAL da página inteira, aparecendo como uma scrollbar horizontal
+  // visível durante o slide.
   return (
-    <section
-      id="o-que-fazemos"
-      ref={sectionRef}
-      className="relative flex min-h-screen items-center justify-center bg-black py-12"
-    >
-      {!prefersReducedMotion && <GradientBars numBars={15} animationDuration={2} className="z-0" />}
-      <ServiceCard activeIndex={activeIndex} onSelect={setActiveIndex} />
-    </section>
+    <div ref={containerRef} className="relative" style={{ height: `${PIN_SCROLL_HEIGHT_VH}vh` }}>
+      <div className="sticky top-0 h-screen overflow-hidden bg-black">
+        <GradientBars numBars={15} animationDuration={2} className="z-0" />
+
+        <motion.div
+          id="o-que-fazemos"
+          style={{ x: cardOneX }}
+          inert={isMetodoCurrent}
+          className="absolute inset-0 z-10 flex items-center justify-center"
+        >
+          <ServiceCard activeIndex={activeIndex} onSelect={setActiveIndex} />
+        </motion.div>
+
+        <motion.div
+          id="metodo"
+          style={{ x: cardTwoX }}
+          inert={!isMetodoCurrent}
+          className="absolute inset-0 z-10 flex items-center justify-center"
+        >
+          <MetodoCard />
+        </motion.div>
+      </div>
+    </div>
   )
 }
