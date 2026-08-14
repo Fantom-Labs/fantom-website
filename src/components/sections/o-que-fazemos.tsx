@@ -152,7 +152,14 @@ function ServiceCard({
     // "aumentar a largura do frame deixando a margem igual à do
     // menu-icon"). Volta a 80vw a partir do sm: (desktop mantém como já
     // estava, só o mobile mudou).
-    <div className="relative z-10 flex h-[85vh] w-[calc(100vw-40px)] flex-col rounded-[20px] border border-white/15 bg-white/[0.03] p-6 backdrop-blur-lg sm:w-[80vw] sm:p-8 lg:p-16">
+    // h-auto no mobile (não h-[85vh]): uma altura FIXA force a lista de
+    // serviços (overflow-y-auto mais abaixo) a criar uma scrollbar INTERNA
+    // sempre que o conteúdo (lista empilhada + descrição expandida) não
+    // coubesse nesses 85vh — pedido explícito: "não pode ter isso, o
+    // componente tem que se adaptar ao conteúdo". Volta a h-[85vh] a partir
+    // do sm: (desktop mantém como já estava — lá o layout é lado a lado,
+    // não empilhado, cabe tranquilo).
+    <div className="relative z-10 flex h-auto w-[calc(100vw-40px)] flex-col rounded-[20px] border border-white/15 bg-white/[0.03] p-6 backdrop-blur-lg sm:h-[85vh] sm:w-[80vw] sm:p-8 lg:p-16">
       <div className="mb-3 flex items-center gap-3 sm:mb-4">
         <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
         <span className="text-sm tracking-[0.2em] text-white/70 uppercase">
@@ -169,8 +176,14 @@ function ServiceCard({
           coluna, não pela altura da linha (sobrava ~9px de altura livre
           antes desse ajuste) — pedido do usuário pra aumentar o tamanho
           das imagens da section. */}
-      <div className="grid min-h-0 flex-1 gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-10">
-        <ul className="flex min-h-0 flex-col justify-center overflow-y-auto pr-2">
+      <div className="grid gap-8 sm:min-h-0 sm:flex-1 lg:grid-cols-[0.85fr_1.15fr] lg:gap-10">
+        {/* overflow-y-auto/min-h-0 só a partir do sm: no mobile a lista
+            cresce junto com o conteúdo (sem scrollbar interna, ver o
+            comentário grande no h-auto do card acima) — no desktop
+            continua cabendo dentro da altura fixa da linha (min-h-0 é o
+            que permite ela encolher pra caber ali, com scroll interno se
+            precisar). */}
+        <ul className="flex flex-col justify-center pr-2 sm:min-h-0 sm:overflow-y-auto">
           {SERVICES.map((service, index) => {
             const isActive = index === activeIndex
             return (
@@ -207,7 +220,7 @@ function ServiceCard({
           })}
         </ul>
 
-        <div className="flex h-full min-h-0 min-w-0 items-center justify-center">
+        <div className="flex min-w-0 items-center justify-center sm:h-full sm:min-h-0">
           {/* proporção fixa em 577/580 (mesma geometria do painel no
               design de referência, Figma node 1353:3213): o frame nunca
               estica pra fora da proporção da imagem, só encolhe pra

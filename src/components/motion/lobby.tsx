@@ -305,10 +305,22 @@ function useScreenAnchor(tvPositionX: number, tvPositionY: number, boxAspectRati
   const [anchor, setAnchor] = useState({ xPct: 50, yPct: 50 })
 
   useEffect(() => {
+    // cancelled: guarda contra condição de corrida — isMobileLayout nasce
+    // false (SSR) e vira true logo depois de montar (useLayoutEffect em
+    // useIsMobileLayout), re-renderizando com tvPositionX/boxAspectRatio
+    // NOVOS (mobile) e reexecutando este efeito. Sem essa guarda, a imagem
+    // do efeito ANTERIOR (ainda carregando, com os parâmetros de DESKTOP
+    // capturados no closure) podia terminar de carregar DEPOIS da do efeito
+    // novo e sobrescrever a âncora correta com uma calculada contra a caixa
+    // errada — bug reportado: "às vezes logo-centralized está ficando
+    // torto (pra esquerda)", intermitente porque dependia de qual dos dois
+    // carregamentos terminava por último.
+    let cancelled = false
     const img = new Image()
     img.src = "/images/tv-mask.png"
 
     const compute = () => {
+      if (cancelled) return
       const naturalW = img.naturalWidth
       const naturalH = img.naturalHeight
       const boxW = window.innerWidth
@@ -359,7 +371,10 @@ function useScreenAnchor(tvPositionX: number, tvPositionY: number, boxAspectRati
     if (img.complete) compute()
 
     window.addEventListener("resize", compute)
-    return () => window.removeEventListener("resize", compute)
+    return () => {
+      cancelled = true
+      window.removeEventListener("resize", compute)
+    }
   }, [tvPositionX, tvPositionY, boxAspectRatio])
 
   return anchor
