@@ -53,28 +53,32 @@ export function SectionNav() {
     syncActiveIdIfStale()
   }, [SECTIONS])
 
-  // TEMPORÁRIO: as 2 primeiras seções (início/portfólio) ainda não existem
-  // como elementos reais no DOM (o lobby ocupa o topo da página sozinho),
-  // então usamos o progresso do próprio scroll do lobby (mesma tabela que
-  // o Lobby usa) enquanto o scroll ainda está dentro do lobby. A PARTIR
-  // DAÍ (y > lobbyMaxScroll, já saiu do lobby), este efeito para de mexer
-  // no activeId — o IntersectionObserver abaixo assume sozinho pra
-  // qualquer seção real no DOM (o-que-fazemos e as próximas). Sem esse
-  // guard, este handler dispara em TODO scroll da página inteira (não só
-  // dentro do lobby) e ficava sobrescrevendo o que o observer acabou de
-  // setar, sempre de volta pra "portfolio" — por isso o nav não
-  // acompanhava a seção 3 em diante.
+  // TEMPORÁRIO (desktop only): "início"/"portfólio" ainda não existem como
+  // elementos reais no DOM lá (o lobby ocupa o topo da página sozinho, com
+  // scroll-jacking — ver lobby.tsx), então usamos o progresso do próprio
+  // scroll do lobby (mesma tabela que o Lobby usa) enquanto o scroll ainda
+  // está dentro do lobby. A PARTIR DAÍ (y > lobbyMaxScroll, já saiu do
+  // lobby), este efeito para de mexer no activeId — o IntersectionObserver
+  // abaixo assume sozinho pra qualquer seção real no DOM (o-que-fazemos e
+  // as próximas). Sem esse guard, este handler dispara em TODO scroll da
+  // página inteira (não só dentro do lobby) e ficava sobrescrevendo o que
+  // o observer acabou de setar, sempre de volta pra "portfolio" — por isso
+  // o nav não acompanhava a seção 3 em diante.
+  //
+  // Mobile nem entra aqui: a section 2 (id="portfolio") já é um elemento
+  // real no DOM lá (sem scroll-jacking, ver o branch isMobileLayout em
+  // Lobby()), então o IntersectionObserver abaixo já cobre ela sozinho,
+  // junto com o-que-fazemos/método/faq/contato — nenhuma tabela de
+  // progresso simulada é necessária.
   const { scrollY } = useScroll()
   useMotionValueEvent(scrollY, "change", (y) => {
+    if (isMobileLayout) return
     const lobbyMaxScroll = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
     if (lobbyMaxScroll <= 0 || y > lobbyMaxScroll) return
     const progress = y / lobbyMaxScroll
     const lobbySections = getLobbySections(isMobileLayout)
     const activeIndex = getActiveLobbySection(progress, isMobileLayout)
-    // mobile: "início" (índice 0) nunca vira o activeId — SECTIONS já não
-    // tem ponto pra ela (ver useSections), então cai sempre em
-    // "portfólio" (o próprio SECTIONS[0] no mobile).
-    setActiveId(isMobileLayout ? lobbySections[1].id : lobbySections[activeIndex].id)
+    setActiveId(lobbySections[activeIndex].id)
   })
 
   useEffect(() => {

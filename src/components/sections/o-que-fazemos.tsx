@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useLenis } from "lenis/react"
 import { GradientBars } from "@/components/ui/gradient-bars-background"
-import { autoJumpScrollTo, getSection2ScrollTarget } from "@/components/motion/lobby"
+import { autoJumpScrollTo, getSection2ScrollTarget, useIsMobileLayout } from "@/components/motion/lobby"
 
 type ServiceItem = {
   title: string
@@ -218,6 +218,7 @@ function ServiceCard({
 
 export function OQueFazemos() {
   const prefersReducedMotion = useReducedMotion()
+  const isMobileLayout = useIsMobileLayout()
   const sectionRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
 
@@ -238,11 +239,15 @@ export function OQueFazemos() {
   // PRÓPRIA section 2 (bug reportado: descer nulo depois de ter subido).
   // Com os dois limites, o gatilho só existe mesmo bem perto do topo de
   // verdade da section.
+  //
+  // isMobileLayout: mobile não tem mais o "trecho morto" pra pular (a
+  // section 2 lá é fluxo normal, sem scroll-jacking, ver lobby.tsx) — nada
+  // pra este gatilho fazer, o scroll de volta já é 100% nativo/simples.
   const REVERSE_EDGE_PX = 24
   const reverseFiredRef = useRef(false)
   useLenis(
     (lenisInstance) => {
-      if (prefersReducedMotion) return
+      if (prefersReducedMotion || isMobileLayout) return
       const section = sectionRef.current
       if (!section) return
       const sectionTop = section.getBoundingClientRect().top + window.scrollY
@@ -275,7 +280,7 @@ export function OQueFazemos() {
       // como igualmente rápidos.
       autoJumpScrollTo(lenisInstance, getSection2ScrollTarget())
     },
-    [prefersReducedMotion]
+    [prefersReducedMotion, isMobileLayout]
   )
 
   // sem scroll-jacking (nada de altura extra artificial): a section ocupa
