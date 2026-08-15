@@ -156,7 +156,7 @@ export function MetodoCard() {
               "use o efeito do text-scramble quando elas estiverem
               aparecendo" + "ao passar o cursor pelas métricas deve também
               ocorrer o efeito text-scramble". */}
-          <div className="mt-auto flex flex-wrap gap-6 pt-6">
+          <div className="mt-auto flex flex-wrap gap-[56px] pt-6">
             {METRICS.map((metric) => (
               <div key={metric.label}>
                 <TextScramble text={metric.value} scrambleOnVisible showAffordances={false} textSizeClassName="text-2xl" />

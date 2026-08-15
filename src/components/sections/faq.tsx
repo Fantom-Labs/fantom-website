@@ -54,8 +54,19 @@ export function FaqCard() {
           mais estreita, o accordion de perguntas na outra, mais larga
           (0.85fr/1.15fr, mesma proporção do ServiceCard) — design de
           referência: Figma node 1452:138. */}
+      {/* grid explícito de 2 colunas x 2 linhas (não implícito): o card de
+          agendamento virou um item IRMÃO do texto e do accordion (não mais
+          aninhado dentro da coluna de texto) — precisava disso pra poder
+          ficar por ÚLTIMO no DOM (mobile empilha na ordem do DOM, pedido
+          explícito: "no mobile o card de agendamento deve ficar por
+          último") sem bagunçar a posição dele no desktop. No desktop, o
+          auto-placement do grid (grid-auto-flow row, padrão) encaixa os 3
+          itens na ordem que já dá certo sozinho: texto→linha1/col1,
+          accordion→linha1/col2, card→linha2/col1 (accordion com
+          lg:row-span-2 pra ocupar as duas linhas da coluna 2, cobrindo a
+          altura combinada de texto+card na coluna 1). */}
       <div className="grid gap-8 sm:min-h-0 sm:flex-1 lg:grid-cols-[0.85fr_1.15fr] lg:gap-10">
-        <div className="flex flex-col justify-center">
+        <div className="flex flex-col justify-center lg:self-start">
           <div className="flex items-center gap-3">
             <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
             <span className="text-sm tracking-[0.2em] text-white/70 uppercase">FAQ</span>
@@ -68,27 +79,6 @@ export function FaqCard() {
           <p className="mt-4 text-white/70">
             Tire suas dúvidas sobre nossos serviços.
           </p>
-
-          {/* card de agendamento — mesmo número de WhatsApp da hero
-              (WHATSAPP_CTA_HREF em lobby.tsx), só com a mensagem
-              pré-preenchida trocada pro contexto de agendamento. */}
-          <div className="mt-6 max-w-[300px] rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-            <p className="text-lg text-white/90">
-              Fale com um de nossos especialistas em uma call de{" "}
-              <span className="text-[#5699ff]">20 minutos</span>
-            </p>
-
-            <a
-              href={SCHEDULE_CALL_HREF}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 inline-flex items-center gap-3 rounded-full bg-[#3448ff] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#2b3bdb]"
-            >
-              Agende uma reunião
-              <span className="h-4 w-px bg-white/30" aria-hidden="true" />
-              <CalendarCheck2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-            </a>
-          </div>
         </div>
 
         {/* accordion: mesma técnica de expand/collapse do ServiceCard
@@ -103,7 +93,7 @@ export function FaqCard() {
             via utilitários arbitrários (mesmo padrão do carrossel mobile em
             metodo.tsx) — o scroll em si continua funcionando se o conteúdo
             realmente precisar, só a barra visual some. */}
-        <ul className="flex flex-col justify-center sm:min-h-0 sm:overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <ul className="flex flex-col justify-center sm:min-h-0 sm:overflow-y-auto lg:row-span-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {FAQS.map(({ question, answer }, index) => {
             const isOpen = index === openIndex
             return (
@@ -134,6 +124,28 @@ export function FaqCard() {
             )
           })}
         </ul>
+
+        {/* card de agendamento — mesmo número de WhatsApp da hero
+            (WHATSAPP_CTA_HREF em lobby.tsx), só com a mensagem
+            pré-preenchida trocada pro contexto de agendamento. Por último
+            no DOM de propósito (ver comentário grande no grid acima). */}
+        <div className="max-w-[300px] rounded-2xl border border-white/10 bg-white/[0.03] p-6 lg:self-start">
+          <p className="text-lg text-white/90">
+            Fale com um de nossos especialistas em uma call de{" "}
+            <span className="text-[#5699ff]">20 minutos</span>
+          </p>
+
+          <a
+            href={SCHEDULE_CALL_HREF}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 inline-flex items-center gap-3 rounded-full bg-[#3448ff] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#2b3bdb]"
+          >
+            Agende uma reunião
+            <span className="h-4 w-px bg-white/30" aria-hidden="true" />
+            <CalendarCheck2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+          </a>
+        </div>
       </div>
     </CardFrame>
   )
