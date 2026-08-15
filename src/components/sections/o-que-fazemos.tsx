@@ -42,7 +42,7 @@ const SERVICES: ServiceItem[] = [
   {
     title: "SaaS",
     description: "Produtos digitais completos, do zero ao produto rodando.",
-    images: ["/images/section-3/saas-s3.png"],
+    images: ["/images/section-3/saas-s3.png", "/images/section-3/saas2-s3.png"],
   },
   {
     title: "Sistemas de IA",
