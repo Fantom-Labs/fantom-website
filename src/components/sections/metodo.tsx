@@ -61,7 +61,10 @@ function MetodoCardMobile() {
           <span className="text-sm tracking-[0.2em] text-white/70 uppercase">Soluções</span>
         </div>
 
-        <h2 className="mt-4 text-4xl leading-[40px] font-medium text-white">
+        {/* mesmo tamanho do heading da section 3 no mobile (text-3xl, ver
+            o-que-fazemos.tsx) — pedido explícito: "deve ter o mesmo tamanho
+            do heading da section 3". */}
+        <h2 className="mt-4 text-3xl font-medium text-white">
           Crescimento acelerado com resultados metrificáveis
         </h2>
 
