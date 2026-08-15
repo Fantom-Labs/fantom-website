@@ -1,4 +1,10 @@
 import { CardFrame } from "@/components/ui/card-frame"
+import { TextScramble } from "@/components/ui/text-scramble"
+
+const METRICS = [
+  { value: "+50", label: "negócios desenvolvidos" },
+  { value: "+100", label: "projetos entregues" },
+]
 
 // ícones próprios (public/icon-*.svg) — dois tons (azul #5699FF + escuro
 // #161616), casam com o design de referência; substituem os ícones
@@ -17,7 +23,7 @@ const METHOD_FEATURES = [
   {
     icon: "/icon-support.svg",
     title: "Suporte com especialistas",
-    description: "Tenha acesso a um suporte contínuo e assessoria completa",
+    description: "Trabalhamos com um suporte contínuo e assessoria com experts para cada projeto.",
   },
 ]
 
@@ -50,6 +56,20 @@ export function MetodoCard() {
             Criamos soluções digitais que ajudam a vender e automatizar tarefas,
             combinando design e tecnologia.
           </p>
+
+          {/* métricas: scramble uma vez só, quando aparecem na tela
+              (scrambleOnVisible, ver text-scramble.tsx) — não em loop
+              (autoScramble) nem por hover (comportamento padrão): pedido
+              explícito: "use o efeito do text-scramble quando elas
+              estiverem aparecendo". */}
+          <div className="mt-6 flex flex-wrap gap-6">
+            {METRICS.map((metric) => (
+              <div key={metric.label}>
+                <TextScramble text={metric.value} scrambleOnVisible showAffordances={false} textSizeClassName="text-2xl" />
+                <p className="mt-1 max-w-[10rem] text-xs text-white/50 uppercase tracking-[0.15em]">{metric.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* cards mais compactos (p-4 não p-5, ícone h-8 não h-10, mt-3 não

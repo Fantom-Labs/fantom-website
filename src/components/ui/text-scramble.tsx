@@ -14,6 +14,14 @@ interface TextScrambleProps {
   // como <div> (não <button>) e some com chevron/glow/sublinhado-no-hover,
   // affordances que só fazem sentido pra um elemento interativo.
   autoScramble?: boolean
+  // dispara o scramble UMA VEZ, quando o elemento entra na viewport
+  // (IntersectionObserver) — não em loop (diferente de autoScramble) nem
+  // por hover. Usado nas métricas da section 4 (pedido explícito: "use o
+  // efeito do text-scramble quando elas estiverem aparecendo"), que
+  // continuam montadas mesmo fora de tela (o slide horizontal da section
+  // 3→4 só translada, não desmonta) — só reobserva de novo se `text`
+  // mudar. Mesmo renderiza como <div> não-interativo que autoScramble.
+  scrambleOnVisible?: boolean
   // esconde seta (chevron) + linha animada + glow — só o texto com o efeito
   // de scramble no hover, sem nenhuma affordance extra. As affordances
   // foram pensadas pro "EXPLORAR" (um CTA sozinho na tela); repetidas várias
@@ -36,6 +44,7 @@ export function TextScramble({
   className = "",
   onClick,
   autoScramble = false,
+  scrambleOnVisible = false,
   showAffordances = true,
   textSizeClassName = "text-sm",
 }: TextScrambleProps) {
@@ -44,6 +53,7 @@ export function TextScramble({
   const [isScrambling, setIsScrambling] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const frameRef = useRef(0)
+  const visibleTriggerRef = useRef<HTMLDivElement>(null)
 
   const scramble = useCallback(() => {
     setIsScrambling(true)
@@ -101,10 +111,33 @@ export function TextScramble({
   }, [autoScramble, text])
 
   useEffect(() => {
+    if (!scrambleOnVisible) return
+    const el = visibleTriggerRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return
+        scramble()
+        observer.disconnect()
+      },
+      { threshold: 0.4 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- scramble já depende de text
+  }, [scrambleOnVisible, text])
+
+  useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
   }, [])
+
+  // autoScramble (loop) e scrambleOnVisible (uma vez, na entrada) são os
+  // dois modos "não-interativos" — nenhum dos dois precisa de
+  // chevron/glow/sublinhado-no-hover (affordances pensadas pro botão
+  // clicável) nem do wrapper <button>.
+  const isNonInteractive = autoScramble || scrambleOnVisible
 
   const content = (
     <>
@@ -122,7 +155,7 @@ export function TextScramble({
             {char}
           </span>
         ))}
-        {!autoScramble && showAffordances && (
+        {!isNonInteractive && showAffordances && (
           <ChevronDown
             aria-hidden="true"
             className={`h-3.5 w-3.5 shrink-0 text-white/80 transition-transform duration-300 ${
@@ -132,7 +165,7 @@ export function TextScramble({
         )}
       </span>
 
-      {!autoScramble && showAffordances && (
+      {!isNonInteractive && showAffordances && (
         <>
           {/* linha animada */}
           <span className="relative mt-2 h-px w-full overflow-hidden">
@@ -155,8 +188,12 @@ export function TextScramble({
     </>
   )
 
-  if (autoScramble) {
-    return <div className={`relative inline-flex flex-col select-none ${className}`}>{content}</div>
+  if (isNonInteractive) {
+    return (
+      <div ref={visibleTriggerRef} className={`relative inline-flex flex-col select-none ${className}`}>
+        {content}
+      </div>
+    )
   }
 
   return (
