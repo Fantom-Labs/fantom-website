@@ -303,6 +303,120 @@ export function OQueFazemos() {
     }, SNAP_IDLE_MS)
   })
 
+  // slide automático entre os dois cards (pedido explícito: "quando rola
+  // pra baixo na section 3, vai sozinho pra 4, e quando rola pra cima na 4
+  // vai direto pra 3, como um slide, mas seguindo a lógica atual") — mesmo
+  // padrão do auto-advance/reverso section2->3 em lobby.tsx: parado numa
+  // ponta (card 1 ou card 2 em repouso, fora do trecho ativo do slide) +
+  // uma rolada NOVA na direção de avançar dispara o salto completo pro
+  // outro lado. Complementa (não substitui) o auto-complete de
+  // meio-de-slide acima: aquele cobre "não travar NO MEIO"; este cobre
+  // "não precisar arrastar manualmente desde o repouso".
+  //
+  // "armar" via VELOCIDADE (não input bruto/wheel-touch, tentativa
+  // anterior): o salto section2->3 do lobby (autoJumpScrollTo) TAMBÉM
+  // cruza esse mesmo limiar de progress ao entrar neste pin — como é uma
+  // animação puramente programática (sem nenhum wheel/touch novo
+  // acontecendo durante ela), um gate baseado em "faz tempo que não chega
+  // input bruto" ficava satisfeito ENQUANTO essa animação alheia ainda
+  // estava em voo, e o gatilho disparava sozinho no meio dela, encadeando
+  // direto pro card 2 sem o usuário ter pedido uma segunda vez (bug
+  // encontrado testando: a chegada vinda do lobby já continuava sozinha
+  // até a section 4). Velocidade resolve isso: só arma quando o scroll
+  // genuinamente ACOMODOU (velocity ~0) — não importa QUEM causou o
+  // movimento anterior (lobby, este mesmo componente, ou o usuário), só
+  // dispara depois que ele realmente parou. Só então uma rolada NOVA
+  // (direction virando > 0 ou < 0 de novo) dispara o salto.
+  const VELOCITY_REST_PX = 0.05
+  // lenisInstance.direction NÃO reseta pra 0 quando o scroll acomoda —
+  // reset() (chamado ao completar qualquer scrollTo) zera isLocked/
+  // isScrolling/velocity, mas NÃO mexe em `direction` (ver
+  // node_modules/lenis/dist/lenis.mjs): ele fica "grudado" no último sinal
+  // não-nulo indefinidamente. Usar "direction > 0" pra decidir SE disparar
+  // (versão anterior) disparava sozinho assim que "armava", mesmo sem
+  // nenhuma rolada nova de verdade — porque o sinal residual da PRÓPRIA
+  // animação que trouxe o scroll até aqui ainda estava lá (bug encontrado
+  // testando: chegar em #o-que-fazemos vindo do lobby continuava sozinho
+  // até #metodo mesmo depois do fix de velocidade acima). Em vez disso,
+  // rastreia o evento de wheel bruto mais recente (timestamp + sinal do
+  // deltaY) — só conta como "pedido novo" um evento que aconteceu DEPOIS
+  // do instante em que armou.
+  const lastWheelRef = useRef({ at: 0, deltaY: 0 })
+  useEffect(() => {
+    const markWheel = (event: WheelEvent) => {
+      lastWheelRef.current = { at: Date.now(), deltaY: event.deltaY }
+    }
+    window.addEventListener("wheel", markWheel, { passive: true })
+    return () => window.removeEventListener("wheel", markWheel)
+  }, [])
+
+  const slideForwardFiredRef = useRef(false)
+  const slideReverseFiredRef = useRef(false)
+  const slideForwardArmedAtRef = useRef<number | null>(null)
+  const slideReverseArmedAtRef = useRef<number | null>(null)
+  useLenis(
+    (lenisInstance) => {
+      if (prefersReducedMotion || isMobileLayout) return
+      const progress = scrollYProgress.get()
+      const atRest = Math.abs(lenisInstance.velocity) < VELOCITY_REST_PX
+
+      // volta a cruzar pro lado oposto de onde disparou/armou por último —
+      // conta como nova "visita" a essa ponta, rearma o gatilho dela
+      // (mesmo padrão de wasBeyondSectionThreeRef em lobby.tsx, só que os
+      // dois lados vivem no mesmo pin aqui, então é só checar a posição
+      // atual).
+      if (progress > SLIDE_RANGE[0]) {
+        slideForwardFiredRef.current = false
+        slideForwardArmedAtRef.current = null
+      }
+      if (progress < SLIDE_RANGE[1]) {
+        slideReverseFiredRef.current = false
+        slideReverseArmedAtRef.current = null
+      }
+
+      // em repouso no card 1 (section 3): primeiro precisa ACOMODAR de
+      // verdade (arma), só then uma rolada de wheel NOVA (depois do
+      // instante em que armou) dispara.
+      //
+      // nearPinStart: sem isso, "progress <= SLIDE_RANGE[0]" também é
+      // verdade ANTES do usuário sequer chegar perto deste pin (o valor de
+      // scrollYProgress fica "clampado" em 0 enquanto a página está longe
+      // do container, não só quando genuinamente em repouso no início dele
+      // — mesmo container, dois motivos diferentes pro mesmo número) — sem
+      // esse check extra, o gatilho armava sozinho já no carregamento da
+      // página (scroll=0, velocity=0 também "parece" repouso).
+      if (progress <= SLIDE_RANGE[0] && !slideForwardFiredRef.current) {
+        const nearPinStart = Math.abs(lenisInstance.scroll - getSectionThreeStart()) < 50
+        if (slideForwardArmedAtRef.current === null) {
+          if (atRest && nearPinStart) slideForwardArmedAtRef.current = Date.now()
+          return
+        }
+        if (lastWheelRef.current.at > slideForwardArmedAtRef.current && lastWheelRef.current.deltaY > 0) {
+          slideForwardFiredRef.current = true
+          autoJumpScrollTo(lenisInstance, getMetodoScrollTarget())
+        }
+        return
+      }
+
+      // em repouso no card 2 (section 4): mesma lógica, sentido oposto.
+      // nearPinEnd: mesmo motivo do nearPinStart acima (progress também
+      // "clampa" em 1 se o scroll estiver bem depois deste pin, não só
+      // genuinamente em repouso no fim dele).
+      if (progress >= SLIDE_RANGE[1] && !slideReverseFiredRef.current) {
+        const nearPinEnd = Math.abs(lenisInstance.scroll - getMetodoScrollTarget()) < 50
+        if (slideReverseArmedAtRef.current === null) {
+          if (atRest && nearPinEnd) slideReverseArmedAtRef.current = Date.now()
+          return
+        }
+        if (lastWheelRef.current.at > slideReverseArmedAtRef.current && lastWheelRef.current.deltaY < 0) {
+          slideReverseFiredRef.current = true
+          autoJumpScrollTo(lenisInstance, getSectionThreeStart())
+        }
+      }
+    },
+    [prefersReducedMotion, isMobileLayout]
+  )
+
   // rolar pra CIMA a partir do topo do bloco (section 3+4) deve voltar
   // direto pro "resting point" da section 2, pulando o mesmo trecho morto
   // do lobby que o auto-advance section2->3 já pula na descida (ver
@@ -328,6 +442,7 @@ export function OQueFazemos() {
   // nativo/simples.
   const REVERSE_EDGE_PX = 24
   const reverseFiredRef = useRef(false)
+  const reverseArmedAtRef = useRef<number | null>(null)
   useLenis(
     (lenisInstance) => {
       if (prefersReducedMotion || isMobileLayout) return
@@ -342,11 +457,26 @@ export function OQueFazemos() {
         // dele) — nada a fazer, mas destrava o gatilho pra próxima vez que
         // o scroll passar perto da borda de verdade.
         reverseFiredRef.current = false
+        reverseArmedAtRef.current = null
         return
       }
       if (reverseFiredRef.current) return
-      // rolou pra baixo (ou parado): não é um pedido de sair pra cima.
-      if (lenisInstance.direction >= 0) return
+      // precisa ACOMODAR de verdade nesta borda antes de armar — sem isso,
+      // o salto reverso NOVO da section 4 pro card 1 (ver useLenis logo
+      // acima) pousa EXATAMENTE nesta borda como parte de uma rolada pra
+      // cima já em andamento, e esse gatilho disparava de novo em cima do
+      // mesmo movimento, encadeando section4 -> section3 -> lobby numa
+      // rolada só (bug encontrado testando o slide automático da section
+      // 4: "quando rola pra cima na 4 vai direto pra 3" virou "vai direto
+      // pro lobby"). Mesmo padrão de VELOCITY_REST_PX + lastWheelRef do
+      // useLenis acima (não lenisInstance.direction — ele fica "grudado"
+      // no último sinal não-nulo mesmo depois do scroll acomodar de
+      // verdade, ver comentário grande lá).
+      if (reverseArmedAtRef.current === null) {
+        if (Math.abs(lenisInstance.velocity) < VELOCITY_REST_PX) reverseArmedAtRef.current = Date.now()
+        return
+      }
+      if (!(lastWheelRef.current.at > reverseArmedAtRef.current && lastWheelRef.current.deltaY < 0)) return
       reverseFiredRef.current = true
       // autoJumpScrollTo (não scrollTo direto com lock:true): trava o
       // scroll só por um instante curto (AUTO_JUMP_LOCK_GUARD_MS, pra
