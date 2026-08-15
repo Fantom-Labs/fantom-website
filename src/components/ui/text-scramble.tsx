@@ -190,7 +190,15 @@ export function TextScramble({
 
   if (isNonInteractive) {
     return (
-      <div ref={visibleTriggerRef} className={`relative inline-flex flex-col select-none ${className}`}>
+      <div
+        ref={visibleTriggerRef}
+        className={`relative inline-flex flex-col select-none ${className}`}
+        // scrambleOnVisible também rescrambla no hover (pedido explícito:
+        // "ao passar o cursor pelas métricas deve também ocorrer o efeito
+        // text-scramble, como ocorre no icon-menu") — autoScramble fica de
+        // fora, já está em loop contínuo, hover não acrescenta nada.
+        onMouseEnter={scrambleOnVisible ? scramble : undefined}
+      >
         {content}
       </div>
     )
