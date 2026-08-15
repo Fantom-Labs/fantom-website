@@ -106,8 +106,8 @@ Copy completa versionada em `fantom-website-home.md`.
 
 **Hero (versão atual):**
 > `Websites · SaaS · Sistemas com IA`
-> **Somos um time de tecnologia e design para negócios e startups**
-> Da primeira reunião ao produto gerando receita, cuidamos de cada detalhe do seu projeto em todos os estágios.
+> **Somos o time de design e tecnologia de grandes negócios e startups**
+> Do mapeamento estratégico inicial ao produto gerando receita com suporte aos usuários, cuidamos de cada detalhe.
 > `[ Falar com a Fantom ]` — componente `liquid-metal-button` (shader de metal líquido + ícone de WhatsApp)
 > `+ 50 negócios acelerados` — carrossel de logos de clientes (rolagem automática, componente `logo-marquee`)
 

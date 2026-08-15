@@ -23,7 +23,7 @@ const POSTER_SRC = "/images/mo-mosaic-poster.webp"
 // reduzido), pra não divergir entre elas.
 const EYEBROW_TEXT = "Websites · SaaS · Sistemas com IA"
 const HEADLINE_TEXT = "Somos o time de design e tecnologia de grandes negócios e startups"
-const SUBHEAD_TEXT = "Do mapeamento estratégico inicial ao produto gerando receits com suporte aos usuários, cuidamos de cada detalhe."
+const SUBHEAD_TEXT = "Do mapeamento estratégico inicial ao produto gerando receita com suporte aos usuários, cuidamos de cada detalhe."
 const CTA_LABEL = "Falar com a Fantom"
 const CLIENTS_STAT_TEXT = "+ 50 negócios acelerados"
 // wa.me: número sem "+"/espaços + texto pré-preenchido (url-encoded) — abre
