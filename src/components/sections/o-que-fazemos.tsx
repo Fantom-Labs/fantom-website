@@ -602,24 +602,34 @@ export function OQueFazemos() {
 
   // mobile: sem scroll-jacking (pedido explícito, mesma decisão já tomada
   // pro resto do mobile, ver lobby.tsx) — as três sections empilham
-  // normalmente, cada uma com seu próprio fundo (GradientBars é só CSS,
-  // sem contexto WebGL — barato manter as três instâncias montadas).
+  // normalmente. Fundo (GradientBars) ÚNICO pras três, não mais uma
+  // instância por section — pedido explícito: "já que o background das
+  // sections 2,3 e 4 são iguais e não tem transição como no desktop, deixe
+  // o bg um só pras 3 sections em vez dos 3 seguidos". absolute inset-0
+  // preenche a altura do wrapper relative que envolve as três (soma das
+  // três), não mais a altura de uma section só — bg-black sai do wrapper
+  // (não mais de cada section), senão o preto de cada uma cobriria o fundo
+  // compartilhado por trás.
+  //
+  // sem min-h-screen: cada section forçava uma tela cheia de altura mesmo
+  // com o card (bem mais curto) centralizado ali dentro, deixando um vão
+  // vazio grande entre um card e o próximo — pedido explícito: "diminua a
+  // distância entre as sections no mobile". Altura vira só a do conteúdo +
+  // py-8, aproximando os cards de verdade.
   if (isMobileLayout) {
     return (
-      <>
-        <section id="o-que-fazemos" className="relative flex min-h-screen items-center justify-center bg-black py-12">
-          <GradientBars numBars={15} animationDuration={2} className="z-0" />
+      <div className="relative bg-black">
+        <GradientBars numBars={15} animationDuration={2} className="z-0" />
+        <section id="o-que-fazemos" className="relative flex items-center justify-center py-8">
           <ServiceCard activeIndex={activeIndex} onSelect={setActiveIndex} />
         </section>
-        <section id="metodo" className="relative flex min-h-screen items-center justify-center bg-black py-12">
-          <GradientBars numBars={15} animationDuration={2} className="z-0" />
+        <section id="metodo" className="relative flex items-center justify-center py-8">
           <MetodoCard />
         </section>
-        <section id="faq" className="relative flex min-h-screen items-center justify-center bg-black py-12">
-          <GradientBars numBars={15} animationDuration={2} className="z-0" />
+        <section id="faq" className="relative flex items-center justify-center py-8">
           <FaqCard />
         </section>
-      </>
+      </div>
     )
   }
 
