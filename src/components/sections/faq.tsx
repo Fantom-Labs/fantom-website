@@ -94,8 +94,16 @@ export function FaqCard() {
         {/* accordion: mesma técnica de expand/collapse do ServiceCard
             (grid-template-rows 0fr/1fr, sem altura fixa/max-height) — só um
             item aberto por vez (clicar em outro fecha o anterior), primeiro
-            item aberto por padrão (mesmo padrão do ServiceCard). */}
-        <ul className="flex flex-col justify-center sm:min-h-0 sm:overflow-y-auto">
+            item aberto por padrão (mesmo padrão do ServiceCard). Trocar de
+            item abre um e fecha outro ao MESMO tempo (sem mode="wait") —
+            durante os ~300ms de sobreposição das duas transições, a altura
+            somada dos dois passa da altura disponível por um instante,
+            disparando o overflow-y-auto (bug reportado: barra de rolagem
+            piscando rápido ao clicar numa pergunta). Scrollbar escondida
+            via utilitários arbitrários (mesmo padrão do carrossel mobile em
+            metodo.tsx) — o scroll em si continua funcionando se o conteúdo
+            realmente precisar, só a barra visual some. */}
+        <ul className="flex flex-col justify-center sm:min-h-0 sm:overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {FAQS.map(({ question, answer }, index) => {
             const isOpen = index === openIndex
             return (
