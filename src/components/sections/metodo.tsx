@@ -7,17 +7,17 @@ const METHOD_FEATURES = [
   {
     icon: "/icon-churn.svg",
     title: "Redução de Churn em até 50%",
-    description: "UX aplicado com tecnologias de alta performance",
+    description: "UX aplicado a tecnologias de alta performance e acompanhamento dos usuários para implementação contínua de melhorias.",
   },
   {
     icon: "/icon-security.svg",
     title: "Performance e Segurança",
-    description: "Soluções digitais robustas, seguras e escaláveis.",
+    description: "Soluções digitais robustas, seguras e escaláveis com toda a infra e arquitetura necessárias para atingir milhões de usuários.",
   },
   {
     icon: "/icon-support.svg",
     title: "Suporte com especialistas",
-    description: "Expertise aplicada com inteligência.",
+    description: "Tenha acesso a um suporte contínuo e assessoria completa",
   },
 ]
 
@@ -47,18 +47,28 @@ export function MetodoCard() {
           </h2>
 
           <p className="mt-4 text-white/70">
-            A Fantom é uma parceira estratégica. Criamos soluções digitais que ajudam a vender e executar,
-            combinando UX, desenvolvimento web e tecnologias de IA próprias para reduzir churn, aumentar taxas de
-            conversão e gerar receita.
+            Criamos soluções digitais que ajudam a vender e automatizar tarefas,
+            combinando design e tecnologia.
           </p>
         </div>
 
-        <div className="flex flex-col justify-center gap-4 sm:gap-6">
+        {/* cards mais compactos (p-4 não p-5, ícone h-8 não h-10, mt-3 não
+            mt-4, gap-3/sm:gap-4 não gap-4/sm:gap-6): com a copy mais longa
+            das descrições, os 3 cards empilhados passaram a ocupar mais
+            altura que o frame (h-[85vh], fixo) em janelas mais baixas —
+            "os cards no total ocupam uma altura maior que o frame
+            principal" (bug reportado). Não aumentar a altura do frame pra
+            compensar: ele fica centralizado num wrapper sticky com
+            overflow-hidden (ver o branch pinado do desktop em
+            o-que-fazemos.tsx) — crescer além da altura da viewport
+            cortaria o topo/base dos cards em vez de só "vazar" a borda
+            arredondada como acontece hoje. */}
+        <div className="flex flex-col justify-center gap-3 sm:gap-4">
           {METHOD_FEATURES.map(({ icon, title, description }) => (
-            <div key={title} className="rounded-2xl border border-white/15 bg-white/[0.02] p-5">
+            <div key={title} className="rounded-2xl border border-white/15 bg-white/[0.02] p-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={icon} alt="" aria-hidden="true" className="h-10 w-10" />
-              <p className="mt-4 font-medium text-white">{title}</p>
+              <img src={icon} alt="" aria-hidden="true" className="h-8 w-8" />
+              <p className="mt-3 font-medium text-white">{title}</p>
               <p className="mt-2 text-sm text-white/60">{description}</p>
             </div>
           ))}
