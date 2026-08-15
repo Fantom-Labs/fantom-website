@@ -144,7 +144,7 @@ export function MetodoCard() {
             Crescimento acelerado com resultados metrificáveis
           </h2>
 
-          <p className="mt-4 max-w-[600px] text-white/70">
+          <p className="mt-4 max-w-[500px] text-white/70">
             Criamos soluções digitais que ajudam a vender e automatizar tarefas,
             combinando design e tecnologia.
           </p>
@@ -183,7 +183,7 @@ export function MetodoCard() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={icon} alt="" aria-hidden="true" className="h-8 w-8" />
               <p className="mt-3 font-medium text-white">{title}</p>
-              <p className="mt-2 text-sm text-white/60">{description}</p>
+              <p className="mt-2 max-w-[500px] text-sm text-white/60">{description}</p>
             </div>
           ))}
         </div>

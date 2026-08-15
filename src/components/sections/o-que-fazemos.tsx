@@ -14,6 +14,7 @@ import { CardFrame } from "@/components/ui/card-frame"
 import { GradientBars } from "@/components/ui/gradient-bars-background"
 import { autoJumpScrollTo, getSection2ScrollTarget, getSectionThreeStart, useIsMobileLayout } from "@/components/motion/lobby"
 import { MetodoCard } from "@/components/sections/metodo"
+import { FaqCard } from "@/components/sections/faq"
 
 type ServiceItem = {
   title: string
@@ -213,32 +214,88 @@ function ServiceCard({
   )
 }
 
-// altura (vh) do bloco pinado que contém os cards das sections 3 e 4 —
+// altura (vh) do bloco pinado que contém os cards das sections 3, 4 e 5 —
 // menor que o LOBBY_SCROLL_HEIGHT_VH do lobby.tsx (300vh): aqui é só um
 // slide horizontal num eixo só, sem as várias fases (zoom + shift + pausa)
-// que o zoom da tv precisa. h-screen no wrapper sticky, então 220vh dá
-// 120vh de distância pinada de verdade — o bastante pra um "detém no card
-// 1 → desliza → detém no card 2" deliberado, sem zona morta exagerada.
-const PIN_SCROLL_HEIGHT_VH = 220
-// fração de scrollYProgress onde o slide de fato acontece — antes de 0.2 e
-// depois de 0.75 o scroll "detém" em cada card (nada se move ainda/mais),
-// dando tempo de ler antes da troca.
-const SLIDE_RANGE: [number, number] = [0.2, 0.75]
+// que o zoom da tv precisa. h-screen no wrapper sticky, então 340vh dá
+// 240vh de distância pinada de verdade — o bastante pra dois ciclos
+// "detém → desliza → detém" deliberados (card1→card2, depois card2→card3),
+// sem zona morta exagerada. Cresceu de 220vh (só 1 transição, 2 cards) na
+// mesma proporção de quando o FAQ (3º card) entrou.
+const PIN_SCROLL_HEIGHT_VH = 340
+// frações de scrollYProgress onde cada slide de fato acontece — um par por
+// transição (card1↔card2, card2↔card3). Fora desses trechos o scroll
+// "detém" em cada card (nada se move ainda/mais), dando tempo de ler antes
+// da troca. dwell do meio (entre os dois pares, onde o card2/método fica em
+// repouso) um pouco mais largo que os das pontas: é o card com mais
+// conteúdo pra ler.
+const SLIDE_RANGE_1: [number, number] = [0.15, 0.35]
+const SLIDE_RANGE_2: [number, number] = [0.65, 0.85]
 
 // alvo (px de scroll) de onde o card da section 4 (#metodo) fica
-// centralizado. Os dois cards (#o-que-fazemos e #metodo) compartilham a
-// MESMA geometria vertical — os dois são "absolute inset-0" dentro do
+// centralizado. Os três cards (#o-que-fazemos, #metodo, #faq) compartilham
+// a MESMA geometria vertical — todos são "absolute inset-0" dentro do
 // mesmo wrapper sticky, só a posição HORIZONTAL (translateX) diferencia —
 // então um href="#metodo"/scrollIntoView nativo não consegue expressar
 // "role até o ponto em que o slide horizontal já terminou", só "role até o
-// topo vertical deste elemento" (que é idêntico ao do outro card). Por
-// isso um alvo calculado explícito, mesmo padrão de
-// getSection2ScrollTarget/getSectionThreeStart no lobby.tsx — usado pelo
-// interceptor de clique no ponto "Método" do SectionNav.
+// topo vertical deste elemento" (idêntico nos três). Por isso um alvo
+// calculado explícito, mesmo padrão de getSection2ScrollTarget/
+// getSectionThreeStart no lobby.tsx — usado pelo interceptor de clique nos
+// pontos "Método"/"FAQ" do SectionNav.
 export function getMetodoScrollTarget(): number {
   const pinTop = getSectionThreeStart()
   const pinnedDistance = (PIN_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
-  return pinTop + SLIDE_RANGE[1] * pinnedDistance + 2
+  return pinTop + SLIDE_RANGE_1[1] * pinnedDistance + 2
+}
+
+// mesma lógica de getMetodoScrollTarget, só que pro fim da SEGUNDA
+// transição (card2→card3) — onde o card da section 5 (#faq) fica
+// centralizado.
+export function getFaqScrollTarget(): number {
+  const pinTop = getSectionThreeStart()
+  const pinnedDistance = (PIN_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
+  return pinTop + SLIDE_RANGE_2[1] * pinnedDistance + 2
+}
+
+// gatilho genérico de avanço/reverso do slide automático (ver useLenis mais
+// abaixo) — "parado numa ponta (posição perto do alvo + velocidade ~0) +
+// uma rolada NOVA na direção certa dispara o salto completo pro outro
+// lado". Usado 4x (forward/reverso dos dois pares de cards, 1↔2 e 2↔3),
+// mesma lógica exata pros 4 casos, só mudam os limiares de posição/wheel e
+// o alvo do salto — extraído num helper só, não duplicado 4x, porque esse
+// mecanismo já passou por várias rodadas de debugging nesta sessão (bugs
+// de encadeamento indevido entre lobby→card1→card2, ver comentários
+// grandes mais abaixo) e duplicar aumentava o risco de um dos 4 pontos
+// ficar com um bug que os outros já não têm.
+type EdgeTriggerRefs = {
+  firedRef: { current: boolean }
+  armedAtRef: { current: number | null }
+}
+
+function checkEdgeTrigger(
+  refs: EdgeTriggerRefs,
+  atRest: boolean,
+  nearPin: boolean,
+  wheel: { at: number; deltaY: number },
+  wheelSign: 1 | -1,
+  fire: () => void
+) {
+  if (refs.firedRef.current) return
+  if (refs.armedAtRef.current === null) {
+    if (atRest && nearPin) refs.armedAtRef.current = Date.now()
+    return
+  }
+  const wheelIsFresh = wheel.at > refs.armedAtRef.current
+  const wheelSignMatches = wheelSign > 0 ? wheel.deltaY > 0 : wheel.deltaY < 0
+  if (wheelIsFresh && wheelSignMatches) {
+    refs.firedRef.current = true
+    fire()
+  }
+}
+
+function resetEdgeTrigger(refs: EdgeTriggerRefs) {
+  refs.firedRef.current = false
+  refs.armedAtRef.current = null
 }
 
 export function OQueFazemos() {
@@ -252,14 +309,35 @@ export function OQueFazemos() {
     target: containerRef,
     offset: ["start start", "end end"],
   })
-  const cardOneX = useTransform(scrollYProgress, SLIDE_RANGE, ["0%", "-100%"])
-  const cardTwoX = useTransform(scrollYProgress, SLIDE_RANGE, ["100%", "0%"])
+  // cada card mapeado ao longo do progress INTEIRO (não só do seu próprio
+  // trecho de slide): fica esperando fora de tela (100%/-100%) até chegar
+  // sua vez, desliza durante o par de breakpoints que lhe cabe, e
+  // permanece na posição final depois disso — useTransform aceita ranges
+  // multi-ponto (piecewise), não só 2 pontos, por isso dá pra expressar
+  // "espera → desliza → fica" numa chamada só por card.
+  const cardOneX = useTransform(
+    scrollYProgress,
+    [0, SLIDE_RANGE_1[0], SLIDE_RANGE_1[1], 1],
+    ["0%", "0%", "-100%", "-100%"]
+  )
+  const cardTwoX = useTransform(
+    scrollYProgress,
+    [0, SLIDE_RANGE_1[0], SLIDE_RANGE_1[1], SLIDE_RANGE_2[0], SLIDE_RANGE_2[1], 1],
+    ["100%", "100%", "0%", "0%", "-100%", "-100%"]
+  )
+  const cardThreeX = useTransform(
+    scrollYProgress,
+    [0, SLIDE_RANGE_2[0], SLIDE_RANGE_2[1], 1],
+    ["100%", "100%", "0%", "0%"]
+  )
 
-  // qual card está "corrente" (metade do slide) — só pra alternar `inert`
-  // no card fora de tela (ver JSX do branch pinado): sem isso, os botões
-  // reais do ServiceCard continuam focáveis via Tab mesmo transladados pra
-  // fora da viewport (e vice-versa quando o card 2 está fora).
-  const [isMetodoCurrent, setIsMetodoCurrent] = useState(false)
+  // qual card está "corrente" (0/1/2) — só pra alternar `inert` nos cards
+  // fora de tela (ver JSX do branch pinado): sem isso, os botões/accordions
+  // reais dos cards não-correntes continuam focáveis via Tab mesmo
+  // transladados pra fora da viewport.
+  const [currentCardIndex, setCurrentCardIndex] = useState(0)
+  const midpoint1 = (SLIDE_RANGE_1[0] + SLIDE_RANGE_1[1]) / 2
+  const midpoint2 = (SLIDE_RANGE_2[0] + SLIDE_RANGE_2[1]) / 2
   // auto-complete do slide (pedido explícito: "não deve ser possível parar
   // a rolagem no meio entre as seções") — debounce: a cada mudança de
   // scrollYProgress, cancela o timer anterior e agenda um novo. Só quando
@@ -271,32 +349,43 @@ export function OQueFazemos() {
   // auto-advance da section 2->3 em lobby.tsx, só que aqui via mudança de
   // valor em vez de input bruto — mais simples, não precisa de listener
   // de wheel/touch separado, já que scrollYProgress só muda enquanto a
-  // posição de scroll realmente está se movendo).
+  // posição de scroll realmente está se movendo). Agora com dois pares de
+  // breakpoints (2 transições, 3 cards): descobre em qual dos dois o
+  // progress está ANTES de decidir o alvo do snap.
   const SNAP_IDLE_MS = 150
   const snapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    setIsMetodoCurrent(v >= (SLIDE_RANGE[0] + SLIDE_RANGE[1]) / 2)
+    setCurrentCardIndex(v < midpoint1 ? 0 : v < midpoint2 ? 1 : 2)
 
     if (snapTimeoutRef.current) clearTimeout(snapTimeoutRef.current)
     if (isMobileLayout || prefersReducedMotion || !lenis) return
-    // já assentado numa ponta (não estritamente DENTRO do slide) — nada
-    // pra completar.
-    if (v <= SLIDE_RANGE[0] || v >= SLIDE_RANGE[1]) return
+    const inSlide1 = v > SLIDE_RANGE_1[0] && v < SLIDE_RANGE_1[1]
+    const inSlide2 = v > SLIDE_RANGE_2[0] && v < SLIDE_RANGE_2[1]
+    // já assentado numa ponta (não estritamente DENTRO de nenhum dos dois
+    // trechos de slide) — nada pra completar.
+    if (!inSlide1 && !inSlide2) return
     snapTimeoutRef.current = setTimeout(() => {
-      const target = v >= (SLIDE_RANGE[0] + SLIDE_RANGE[1]) / 2 ? getMetodoScrollTarget() : getSectionThreeStart()
+      const target = inSlide1
+        ? v >= midpoint1
+          ? getMetodoScrollTarget()
+          : getSectionThreeStart()
+        : v >= midpoint2
+          ? getFaqScrollTarget()
+          : getMetodoScrollTarget()
       lenis.scrollTo(target, { lock: true })
     }, SNAP_IDLE_MS)
   })
 
-  // slide automático entre os dois cards (pedido explícito: "quando rola
-  // pra baixo na section 3, vai sozinho pra 4, e quando rola pra cima na 4
-  // vai direto pra 3, como um slide, mas seguindo a lógica atual") — mesmo
-  // padrão do auto-advance/reverso section2->3 em lobby.tsx: parado numa
-  // ponta (card 1 ou card 2 em repouso, fora do trecho ativo do slide) +
-  // uma rolada NOVA na direção de avançar dispara o salto completo pro
-  // outro lado. Complementa (não substitui) o auto-complete de
-  // meio-de-slide acima: aquele cobre "não travar NO MEIO"; este cobre
-  // "não precisar arrastar manualmente desde o repouso".
+  // slide automático entre os cards (pedido explícito: "quando rola pra
+  // baixo na section 3, vai sozinho pra 4, e quando rola pra cima na 4 vai
+  // direto pra 3, como um slide, mas seguindo a lógica atual" — mesma
+  // lógica estendida agora pro par card2↔card3/#faq) — mesmo padrão do
+  // auto-advance/reverso section2->3 em lobby.tsx: parado numa ponta (um
+  // card em repouso, fora do trecho ativo do slide) + uma rolada NOVA na
+  // direção de avançar dispara o salto completo pro outro lado. Complementa
+  // (não substitui) o auto-complete de meio-de-slide acima: aquele cobre
+  // "não travar NO MEIO"; este cobre "não precisar arrastar manualmente
+  // desde o repouso".
   //
   // "armar" via VELOCIDADE (não input bruto/wheel-touch, tentativa
   // anterior): o salto section2->3 do lobby (autoJumpScrollTo) TAMBÉM
@@ -335,68 +424,79 @@ export function OQueFazemos() {
     return () => window.removeEventListener("wheel", markWheel)
   }, [])
 
-  const slideForwardFiredRef = useRef(false)
-  const slideReverseFiredRef = useRef(false)
-  const slideForwardArmedAtRef = useRef<number | null>(null)
-  const slideReverseArmedAtRef = useRef<number | null>(null)
+  // um par de refs (fired + armedAt) por edge — 4 edges no total: forward1
+  // (card1→card2), reverse1 (card2→card1), forward2 (card2→card3), reverse2
+  // (card3→card2). checkEdgeTrigger/resetEdgeTrigger (definidos acima do
+  // componente) implementam a lógica compartilhada; cada edge só passa os
+  // limiares de posição/wheel/alvo que lhe cabem.
+  const forward1Ref = useRef(false)
+  const forward1ArmedAtRef = useRef<number | null>(null)
+  const reverse1Ref = useRef(false)
+  const reverse1ArmedAtRef = useRef<number | null>(null)
+  const forward2Ref = useRef(false)
+  const forward2ArmedAtRef = useRef<number | null>(null)
+  const reverse2Ref = useRef(false)
+  const reverse2ArmedAtRef = useRef<number | null>(null)
   useLenis(
     (lenisInstance) => {
       if (prefersReducedMotion || isMobileLayout) return
       const progress = scrollYProgress.get()
       const atRest = Math.abs(lenisInstance.velocity) < VELOCITY_REST_PX
+      const wheel = lastWheelRef.current
+
+      // dwell2 (card2/método em repouso, entre as duas transições): zona
+      // com vizinho dos DOIS lados — diferente de dwell1/dwell3 (abertas
+      // contra os limites naturais 0/1 do progress, sem "mais além" pra
+      // vazar). reverse1 (card2→card1) e forward2 (card2→card3) MORAM
+      // aqui, os dois.
+      const inDwell2 = progress >= SLIDE_RANGE_1[1] && progress < SLIDE_RANGE_2[0]
 
       // volta a cruzar pro lado oposto de onde disparou/armou por último —
-      // conta como nova "visita" a essa ponta, rearma o gatilho dela
-      // (mesmo padrão de wasBeyondSectionThreeRef em lobby.tsx, só que os
-      // dois lados vivem no mesmo pin aqui, então é só checar a posição
-      // atual).
-      if (progress > SLIDE_RANGE[0]) {
-        slideForwardFiredRef.current = false
-        slideForwardArmedAtRef.current = null
-      }
-      if (progress < SLIDE_RANGE[1]) {
-        slideReverseFiredRef.current = false
-        slideReverseArmedAtRef.current = null
-      }
+      // conta como nova "visita" a essa ponta, rearma o gatilho dela (mesmo
+      // padrão de wasBeyondSectionThreeRef em lobby.tsx). forward1/reverse2
+      // resetam num limiar só (mesma semântica original de 2 cards: a
+      // própria zona deles já é aberta contra 0/1, não tem "mais além").
+      // reverse1/forward2 precisam resetar saindo de dwell2 por QUALQUER
+      // lado — sem isso, ficar armado numa visita antiga a dwell2 (ex.:
+      // reverse1 arma ali, mas o usuário segue em frente até o card3 sem
+      // nunca disparar reverse1) sobrevivia indefinidamente e disparava
+      // sozinho bem mais tarde, em cima de um wheel completamente não
+      // relacionado (bug encontrado testando o round-trip completo
+      // card1→2→3→2→1: um único up-nudge vindo do card3 disparava reverse2
+      // E o reverse1 "esquecido" ao mesmo tempo, pulando direto pro card1
+      // em vez de parar no card2).
+      if (progress > SLIDE_RANGE_1[0]) resetEdgeTrigger({ firedRef: forward1Ref, armedAtRef: forward1ArmedAtRef })
+      if (!inDwell2) resetEdgeTrigger({ firedRef: reverse1Ref, armedAtRef: reverse1ArmedAtRef })
+      if (!inDwell2) resetEdgeTrigger({ firedRef: forward2Ref, armedAtRef: forward2ArmedAtRef })
+      if (progress < SLIDE_RANGE_2[1]) resetEdgeTrigger({ firedRef: reverse2Ref, armedAtRef: reverse2ArmedAtRef })
 
-      // em repouso no card 1 (section 3): primeiro precisa ACOMODAR de
-      // verdade (arma), só then uma rolada de wheel NOVA (depois do
-      // instante em que armou) dispara.
-      //
-      // nearPinStart: sem isso, "progress <= SLIDE_RANGE[0]" também é
-      // verdade ANTES do usuário sequer chegar perto deste pin (o valor de
-      // scrollYProgress fica "clampado" em 0 enquanto a página está longe
-      // do container, não só quando genuinamente em repouso no início dele
-      // — mesmo container, dois motivos diferentes pro mesmo número) — sem
-      // esse check extra, o gatilho armava sozinho já no carregamento da
-      // página (scroll=0, velocity=0 também "parece" repouso).
-      if (progress <= SLIDE_RANGE[0] && !slideForwardFiredRef.current) {
+      // nearPin em cada checagem: sem isso, os limiares de progress abaixo
+      // também são verdade ANTES do usuário sequer chegar perto do pin (o
+      // valor de scrollYProgress fica "clampado" em 0 ou 1 enquanto a
+      // página está longe do container, não só quando genuinamente em
+      // repouso numa ponta dele — mesmo container, dois motivos diferentes
+      // pro mesmo número) — sem esse check extra, o gatilho armava sozinho
+      // já no carregamento da página.
+      if (progress <= SLIDE_RANGE_1[0]) {
         const nearPinStart = Math.abs(lenisInstance.scroll - getSectionThreeStart()) < 50
-        if (slideForwardArmedAtRef.current === null) {
-          if (atRest && nearPinStart) slideForwardArmedAtRef.current = Date.now()
-          return
-        }
-        if (lastWheelRef.current.at > slideForwardArmedAtRef.current && lastWheelRef.current.deltaY > 0) {
-          slideForwardFiredRef.current = true
+        checkEdgeTrigger({ firedRef: forward1Ref, armedAtRef: forward1ArmedAtRef }, atRest, nearPinStart, wheel, 1, () =>
           autoJumpScrollTo(lenisInstance, getMetodoScrollTarget())
-        }
-        return
+        )
       }
-
-      // em repouso no card 2 (section 4): mesma lógica, sentido oposto.
-      // nearPinEnd: mesmo motivo do nearPinStart acima (progress também
-      // "clampa" em 1 se o scroll estiver bem depois deste pin, não só
-      // genuinamente em repouso no fim dele).
-      if (progress >= SLIDE_RANGE[1] && !slideReverseFiredRef.current) {
-        const nearPinEnd = Math.abs(lenisInstance.scroll - getMetodoScrollTarget()) < 50
-        if (slideReverseArmedAtRef.current === null) {
-          if (atRest && nearPinEnd) slideReverseArmedAtRef.current = Date.now()
-          return
-        }
-        if (lastWheelRef.current.at > slideReverseArmedAtRef.current && lastWheelRef.current.deltaY < 0) {
-          slideReverseFiredRef.current = true
+      if (inDwell2) {
+        const nearMetodo = Math.abs(lenisInstance.scroll - getMetodoScrollTarget()) < 50
+        checkEdgeTrigger({ firedRef: reverse1Ref, armedAtRef: reverse1ArmedAtRef }, atRest, nearMetodo, wheel, -1, () =>
           autoJumpScrollTo(lenisInstance, getSectionThreeStart())
-        }
+        )
+        checkEdgeTrigger({ firedRef: forward2Ref, armedAtRef: forward2ArmedAtRef }, atRest, nearMetodo, wheel, 1, () =>
+          autoJumpScrollTo(lenisInstance, getFaqScrollTarget())
+        )
+      }
+      if (progress >= SLIDE_RANGE_2[1]) {
+        const nearFaq = Math.abs(lenisInstance.scroll - getFaqScrollTarget()) < 50
+        checkEdgeTrigger({ firedRef: reverse2Ref, armedAtRef: reverse2ArmedAtRef }, atRest, nearFaq, wheel, -1, () =>
+          autoJumpScrollTo(lenisInstance, getMetodoScrollTarget())
+        )
       }
     },
     [prefersReducedMotion, isMobileLayout]
@@ -481,7 +581,7 @@ export function OQueFazemos() {
     [prefersReducedMotion, isMobileLayout]
   )
 
-  // fallback estático (motion reduzido): as duas sections empilham
+  // fallback estático (motion reduzido): as três sections empilham
   // normalmente, sem fundo animado (GradientBars) nem slide nenhum — mesma
   // convenção já usada em Lobby() pra motion reduzido.
   if (prefersReducedMotion) {
@@ -493,14 +593,17 @@ export function OQueFazemos() {
         <section id="metodo" className="relative flex min-h-screen items-center justify-center bg-black py-12">
           <MetodoCard />
         </section>
+        <section id="faq" className="relative flex min-h-screen items-center justify-center bg-black py-12">
+          <FaqCard />
+        </section>
       </>
     )
   }
 
   // mobile: sem scroll-jacking (pedido explícito, mesma decisão já tomada
-  // pro resto do mobile, ver lobby.tsx) — as duas sections empilham
+  // pro resto do mobile, ver lobby.tsx) — as três sections empilham
   // normalmente, cada uma com seu próprio fundo (GradientBars é só CSS,
-  // sem contexto WebGL — barato manter duas instâncias montadas).
+  // sem contexto WebGL — barato manter as três instâncias montadas).
   if (isMobileLayout) {
     return (
       <>
@@ -512,23 +615,31 @@ export function OQueFazemos() {
           <GradientBars numBars={15} animationDuration={2} className="z-0" />
           <MetodoCard />
         </section>
+        <section id="faq" className="relative flex min-h-screen items-center justify-center bg-black py-12">
+          <GradientBars numBars={15} animationDuration={2} className="z-0" />
+          <FaqCard />
+        </section>
       </>
     )
   }
 
-  // desktop: transição horizontal pinada (pedido explícito) — o card da
-  // section 3 desliza pra fora à esquerda enquanto o card da section 4
-  // entra pela direita, sobre o MESMO fundo (GradientBars, uma instância
-  // só) que permanece parado. Mesmo padrão mecânico do zoom do lobby
-  // (container alto + sticky + useTransform), só que num eixo só
-  // (translateX) e sem lógica de auto-jump/pausa — aqui é scrubado
+  // desktop: transição horizontal pinada (pedido explícito, agora
+  // estendida pra um 3º card: "a section 5 deve ter o mesmo princípio da
+  // section 3 e 4, mesma transição de card que ocorre da section 3 pra 4")
+  // — cada card desliza pra fora à esquerda enquanto o próximo entra pela
+  // direita, sobre o MESMO fundo (GradientBars, uma instância só) que
+  // permanece parado. Mesmo padrão mecânico do zoom do lobby (container
+  // alto + sticky + useTransform), só que num eixo só (translateX) e sem
+  // lógica de auto-jump/pausa NO SCRUB em si — aqui é scrubado
   // continuamente pelo próprio scroll, reversível de graça (subir
-  // simplesmente volta o transform, não precisa de gatilho nenhum).
+  // simplesmente volta o transform, não precisa de gatilho nenhum; o
+  // auto-advance/reverso de mais acima só cobre o "parado numa ponta +
+  // rolada nova").
   //
-  // overflow-hidden no wrapper sticky não é decorativo: sem ele, o
-  // wrapper fora de tela (translated ±100%) expandiria a região de scroll
-  // HORIZONTAL da página inteira, aparecendo como uma scrollbar horizontal
-  // visível durante o slide.
+  // overflow-hidden no wrapper sticky não é decorativo: sem ele, os
+  // wrappers fora de tela (translated ±100%) expandiriam a região de
+  // scroll HORIZONTAL da página inteira, aparecendo como uma scrollbar
+  // horizontal visível durante o slide.
   return (
     <div ref={containerRef} className="relative" style={{ height: `${PIN_SCROLL_HEIGHT_VH}vh` }}>
       <div className="sticky top-0 h-screen overflow-hidden bg-black">
@@ -537,7 +648,7 @@ export function OQueFazemos() {
         <motion.div
           id="o-que-fazemos"
           style={{ x: cardOneX }}
-          inert={isMetodoCurrent}
+          inert={currentCardIndex !== 0}
           className="absolute inset-0 z-10 flex items-center justify-center"
         >
           <ServiceCard activeIndex={activeIndex} onSelect={setActiveIndex} />
@@ -546,10 +657,19 @@ export function OQueFazemos() {
         <motion.div
           id="metodo"
           style={{ x: cardTwoX }}
-          inert={!isMetodoCurrent}
+          inert={currentCardIndex !== 1}
           className="absolute inset-0 z-10 flex items-center justify-center"
         >
           <MetodoCard />
+        </motion.div>
+
+        <motion.div
+          id="faq"
+          style={{ x: cardThreeX }}
+          inert={currentCardIndex !== 2}
+          className="absolute inset-0 z-10 flex items-center justify-center"
+        >
+          <FaqCard />
         </motion.div>
       </div>
     </div>

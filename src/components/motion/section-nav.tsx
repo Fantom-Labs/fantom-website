@@ -10,7 +10,7 @@ import {
   getSectionThreeStart,
   useIsMobileLayout,
 } from "@/components/motion/lobby"
-import { getMetodoScrollTarget } from "@/components/sections/o-que-fazemos"
+import { getFaqScrollTarget, getMetodoScrollTarget } from "@/components/sections/o-que-fazemos"
 
 // substitui a scrollbar tradicional: barras horizontais empilhadas à
 // direita, meia altura, indicando a seção atual pela cor (branco vs cinza).
@@ -124,11 +124,11 @@ export function SectionNav() {
           href={`#${section.id}`}
           aria-label={section.label}
           aria-current={activeId === section.id ? "true" : undefined}
-          // "o-que-fazemos"/"metodo": âncora nativa (href="#id") não dá
-          // conta pra NENHUM dos dois — os dois cards são absolute inset-0
-          // dentro do MESMO wrapper sticky no branch pinado do desktop
-          // (ver o-que-fazemos.tsx), então os dois SEMPRE reportam a mesma
-          // posição vertical (getBoundingClientRect().top já é 0, "já
+          // "o-que-fazemos"/"metodo"/"faq": âncora nativa (href="#id") não
+          // dá conta pra NENHUM dos três — os três cards são absolute
+          // inset-0 dentro do MESMO wrapper sticky no branch pinado do
+          // desktop (ver o-que-fazemos.tsx), então os três SEMPRE reportam a
+          // mesma posição vertical (getBoundingClientRect().top já é 0, "já
           // chegou") não importa em qual sub-posição do slide o scroll
           // esteja — só a posição horizontal (translateX) muda. Clicar em
           // "O que fazemos" a partir do estado com #metodo visível
@@ -136,9 +136,9 @@ export function SectionNav() {
           // "no topo" e não rola nada, deixando o slide horizontal
           // errado no lugar (bug encontrado testando a versão que só
           // interceptava "metodo") — precisa do alvo calculado explícito
-          // nos DOIS sentidos. Só intercepta quando o branch pinado está
-          // de fato ativo (!isMobileLayout && !prefersReducedMotion) — nos
-          // dois fallbacks (mobile, reduced-motion) as duas são sections
+          // nos TRÊS. Só intercepta quando o branch pinado está de fato
+          // ativo (!isMobileLayout && !prefersReducedMotion) — nos dois
+          // fallbacks (mobile, reduced-motion) as três são sections
           // empilhadas normais, com geometria vertical PRÓPRIA cada uma, e
           // a âncora nativa já resolve certo.
           onClick={(event) => {
@@ -157,6 +157,9 @@ export function SectionNav() {
             if (section.id === "metodo") {
               event.preventDefault()
               lenis?.scrollTo(getMetodoScrollTarget(), { lock: true })
+            } else if (section.id === "faq") {
+              event.preventDefault()
+              lenis?.scrollTo(getFaqScrollTarget(), { lock: true })
             } else if (section.id === "o-que-fazemos") {
               event.preventDefault()
               lenis?.scrollTo(getSectionThreeStart(), { lock: true })
