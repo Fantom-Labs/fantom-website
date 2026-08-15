@@ -88,7 +88,7 @@ function MetodoCardMobile() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={icon} alt="" aria-hidden="true" className="h-[62px] w-[62px]" />
             <p className="mt-6 w-full text-2xl font-medium text-white">{title}</p>
-            <p className="mt-4 w-full text-2xl text-white/60">{description}</p>
+            <p className="mt-4 w-full text-lg font-normal text-white/60">{description}</p>
           </div>
         ))}
       </div>
