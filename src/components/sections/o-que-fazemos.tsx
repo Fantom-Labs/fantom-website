@@ -259,6 +259,7 @@ export function getMetodoScrollTarget(): number {
 export function OQueFazemos() {
   const prefersReducedMotion = useReducedMotion()
   const isMobileLayout = useIsMobileLayout()
+  const lenis = useLenis()
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
 
@@ -274,8 +275,32 @@ export function OQueFazemos() {
   // reais do ServiceCard continuam focáveis via Tab mesmo transladados pra
   // fora da viewport (e vice-versa quando o card 2 está fora).
   const [isMetodoCurrent, setIsMetodoCurrent] = useState(false)
+  // auto-complete do slide (pedido explícito: "não deve ser possível parar
+  // a rolagem no meio entre as seções") — debounce: a cada mudança de
+  // scrollYProgress, cancela o timer anterior e agenda um novo. Só quando
+  // o valor fica PARADO de verdade por SNAP_IDLE_MS (nenhuma mudança nova
+  // reagenda o timer nesse meio tempo) é que ele finalmente dispara —
+  // funciona tanto pra um usuário que soltou o input quanto pra uma
+  // rolada contínua que ainda está em andamento (cada frame de mudança
+  // continua adiando o snap, mesmo padrão de debounce que resolveu o
+  // auto-advance da section 2->3 em lobby.tsx, só que aqui via mudança de
+  // valor em vez de input bruto — mais simples, não precisa de listener
+  // de wheel/touch separado, já que scrollYProgress só muda enquanto a
+  // posição de scroll realmente está se movendo).
+  const SNAP_IDLE_MS = 150
+  const snapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     setIsMetodoCurrent(v >= (SLIDE_RANGE[0] + SLIDE_RANGE[1]) / 2)
+
+    if (snapTimeoutRef.current) clearTimeout(snapTimeoutRef.current)
+    if (isMobileLayout || prefersReducedMotion || !lenis) return
+    // já assentado numa ponta (não estritamente DENTRO do slide) — nada
+    // pra completar.
+    if (v <= SLIDE_RANGE[0] || v >= SLIDE_RANGE[1]) return
+    snapTimeoutRef.current = setTimeout(() => {
+      const target = v >= (SLIDE_RANGE[0] + SLIDE_RANGE[1]) / 2 ? getMetodoScrollTarget() : getSectionThreeStart()
+      lenis.scrollTo(target, { lock: true })
+    }, SNAP_IDLE_MS)
   })
 
   // rolar pra CIMA a partir do topo do bloco (section 3+4) deve voltar
