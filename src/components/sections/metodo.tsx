@@ -42,7 +42,7 @@ export function MetodoCard() {
           fluxo normal, uma coluna só). Badge: mesmo design do ServiceCard
           (dot quadrado azul + label). */}
       <div className="grid gap-8 sm:min-h-0 sm:flex-1 lg:grid-cols-[1fr_1fr] lg:gap-10">
-        <div className="flex flex-col justify-center">
+        <div className="flex flex-col justify-start pb-[77px]">
           <div className="flex items-center gap-3">
             <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
             <span className="text-sm tracking-[0.2em] text-white/70 uppercase">Soluções</span>
@@ -62,7 +62,7 @@ export function MetodoCard() {
               (autoScramble) nem por hover (comportamento padrão): pedido
               explícito: "use o efeito do text-scramble quando elas
               estiverem aparecendo". */}
-          <div className="mt-6 flex flex-wrap gap-6">
+          <div className="mt-auto flex flex-wrap gap-6 pt-6">
             {METRICS.map((metric) => (
               <div key={metric.label}>
                 <TextScramble text={metric.value} scrambleOnVisible showAffordances={false} textSizeClassName="text-2xl" />
@@ -85,7 +85,7 @@ export function MetodoCard() {
             arredondada como acontece hoje. */}
         <div className="flex flex-col justify-center gap-3 sm:gap-4">
           {METHOD_FEATURES.map(({ icon, title, description }) => (
-            <div key={title} className="w-[calc(100%-20px)] rounded-2xl border border-white/15 bg-white/[0.02] p-4">
+            <div key={title} className="w-[calc(100%-20px)] rounded-[8px] border border-white/15 bg-white/[0.02] p-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={icon} alt="" aria-hidden="true" className="h-8 w-8" />
               <p className="mt-3 font-medium text-white">{title}</p>
