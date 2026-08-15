@@ -93,24 +93,3 @@ Continuamos. A etapa de Otimizar existe porque produto bom muda com o uso.
 Não. Entramos onde tecnologia e design bem feitos resolvem um problema real.
 
 ---
-
-## #contato
-
-Da primeira reunião ao produto gerando receita.
-
-`[ Falar com a Fantom ]`
-
----
-
-## Rodapé
-
-Fantom · Por Múcio Miranda (founder, CTO, desenvolvedor e designer) e Caio Torres (atendimento e suporte técnico)
-
----
-
-## Pendências (informações ainda não recebidas)
-
-- Confirmação se o dado "aumento de até 30%" (KOMMUchat) pode ser repetido no site novo
-- Ano de fundação da Fantom
-- Idioma adicional (inglês) — descartado por enquanto, só PT-BR
-- Identidade visual (logo, paleta, tipografia) — não iniciada, por decisão do projeto

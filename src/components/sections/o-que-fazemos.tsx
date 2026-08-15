@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   AnimatePresence,
   motion,
@@ -20,8 +20,8 @@ type ServiceItem = {
   description: string
   // imagens de exemplo do serviço: anexadas depois, case a caso (por ora,
   // undefined em alguns — o painel à direita cai no placeholder). Mais de
-  // uma imagem: o primeiro hover dispara um ciclo automático (crossfade)
-  // que continua mesmo depois que o cursor sai — ver ImageFrame.
+  // uma imagem: ciclo automático (crossfade) enquanto o item estiver
+  // selecionado — ver ImageFrame.
   images?: string[]
 }
 
@@ -56,56 +56,41 @@ const SERVICES: ServiceItem[] = [
   },
 ]
 
-// intervalo (ms) do ciclo automático disparado pelo primeiro hover — 1s
-// ficava mecânico demais ("passando muito rápido"); mais lento junto com
-// um crossfade mais longo (ver transition abaixo) dá o ar suave/elegante
-// pedido.
-const HOVER_ROTATE_MS = 2800
+// intervalo (ms) do ciclo automático do item selecionado — pedido
+// explícito: "devem passar automaticamente também, pode ser uns 3
+// segundos". Crossfade mais longo (ver transition abaixo) dá o ar
+// suave/elegante pedido.
+const AUTO_ROTATE_MS = 3000
 
-// dono do próprio frame (não só do conteúdo): o mouseenter precisa ficar
-// num elemento ESTÁVEL que nunca desmonta enquanto o mouse permanece em
-// cima dele — se ficasse na imagem que troca via AnimatePresence, cada
-// troca desmonta/remonta o alvo do listener.
 function ImageFrame({ service }: { service: ServiceItem }) {
   const images = service.images ?? []
   const [frame, setFrame] = useState(0)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // roda sozinho pro item selecionado, sem precisar de hover (pedido
+  // explícito: "as imagens do item selecionado devem passar
+  // automaticamente também") — reseta o frame e reinicia o ciclo toda vez
+  // que troca de item, pra sempre começar da primeira imagem.
   useEffect(() => {
+    // setState síncrono aqui de propósito, sem adiar em setTimeout(0): um
+    // adiamento deixaria `frame` (índice do item ANTERIOR) e `images`
+    // (array do item NOVO, já trocado) descasados por um tick — se o item
+    // anterior tinha mais imagens que o novo, esse índice cai fora do
+    // array e o placeholder "Imagem em breve" pisca por um frame, violando
+    // o pedido explícito de "o frame vazio não aparece em nenhum momento".
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset de estado local ao trocar de item (prop `service`), não sincronização com sistema externo
     setFrame(0)
-    // troca de item: para o ciclo do item ANTERIOR — senão ele continuaria
-    // avançando com o `images.length` de quem já não está mais ativo
-    // (capturado no closure do interval antigo), dessincronizando do
-    // `images` do item atual.
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [service])
-
-  // primeiro hover no item dispara o ciclo (HOVER_ROTATE_MS entre trocas,
-  // a primeira já na hora) — depois de iniciado, continua rodando
-  // sozinho mesmo com o cursor fora da imagem (pedido explícito: "devem
-  // ficar passando, mesmo depois que o cursor passar por cima"). Só para
-  // ao trocar de item (useEffect acima) ou desmontar.
-  const handleMouseEnter = useCallback(() => {
-    if (images.length < 2 || intervalRef.current) return
-    setFrame((f) => (f + 1) % images.length)
-    intervalRef.current = setInterval(() => {
+    if (images.length < 2) return
+    const interval = setInterval(() => {
       setFrame((f) => (f + 1) % images.length)
-    }, HOVER_ROTATE_MS)
-  }, [images.length])
+    }, AUTO_ROTATE_MS)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- images deriva de service, comparar só service evita recriar o interval a cada render
+  }, [service])
 
   const current = images[frame]
 
   return (
-    <div
-      onMouseEnter={handleMouseEnter}
-      className="relative aspect-[577/580] max-h-full max-w-full overflow-hidden rounded-[20px] border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02]"
-    >
+    <div className="relative aspect-[577/580] max-h-full max-w-full overflow-hidden rounded-[20px] border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02]">
       {!current ? (
         <div className="absolute inset-0 flex items-center justify-center text-sm text-white/30">
           Imagem em breve
