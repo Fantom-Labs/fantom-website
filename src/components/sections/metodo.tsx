@@ -1,3 +1,7 @@
+"use client"
+
+import { useRef, useState } from "react"
+import { useIsMobileLayout } from "@/components/motion/lobby"
 import { CardFrame } from "@/components/ui/card-frame"
 import { TextScramble } from "@/components/ui/text-scramble"
 
@@ -27,20 +31,105 @@ const METHOD_FEATURES = [
   },
 ]
 
+// mobile (Figma node 1437:927): layout bem diferente do desktop — conteúdo
+// centralizado (não alinhado à esquerda) e os 3 feature cards viram um
+// carrossel de UM card por vez (scroll-snap horizontal nativo, sem lib de
+// gesto) com dots de paginação embaixo, em vez dos 3 cards empilhados
+// verticalmente do desktop. Sem métricas (+50/+100) — não existem nesse
+// frame do Figma, foram removidas de propósito nessa versão mobile.
+function MetodoCardMobile() {
+  const [activeIndex, setActiveIndex] = useState(0)
+  const scrollerRef = useRef<HTMLDivElement>(null)
+
+  const handleScroll = () => {
+    const el = scrollerRef.current
+    if (!el) return
+    setActiveIndex(Math.round(el.scrollLeft / el.clientWidth))
+  }
+
+  const scrollToIndex = (index: number) => {
+    const el = scrollerRef.current
+    if (!el) return
+    el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" })
+  }
+
+  return (
+    <CardFrame className="items-center text-center">
+      <div className="flex flex-col items-center">
+        <div className="flex items-center gap-3">
+          <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
+          <span className="text-sm tracking-[0.2em] text-white/70 uppercase">Soluções</span>
+        </div>
+
+        <h2 className="mt-4 text-4xl leading-[40px] font-medium text-white">
+          Crescimento acelerado com resultados metrificáveis
+        </h2>
+
+        <p className="mt-4 text-white/70">
+          Criamos soluções digitais que ajudam a vender e automatizar tarefas,
+          combinando design e tecnologia.
+        </p>
+      </div>
+
+      {/* overflow-x-auto + snap-x nativo (sem drag/gesto em JS): funciona
+          com o swipe padrão do dedo no touch, sem precisar reimplementar
+          gesture handling — scrollbar escondida via utilitários arbitrários
+          (mesmo padrão do html::-webkit-scrollbar em globals.css). */}
+      <div
+        ref={scrollerRef}
+        onScroll={handleScroll}
+        className="mt-8 flex w-full snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {METHOD_FEATURES.map(({ icon, title, description }) => (
+          <div
+            key={title}
+            className="flex w-full shrink-0 snap-center flex-col items-center rounded-[8px] border border-white/15 bg-white/[0.02] p-8 text-center backdrop-blur-[12px]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={icon} alt="" aria-hidden="true" className="h-[62px] w-[62px]" />
+            <p className="mt-6 w-full text-2xl font-medium text-white">{title}</p>
+            <p className="mt-4 w-full text-2xl text-white/60">{description}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 flex items-center justify-center gap-2">
+        {METHOD_FEATURES.map((feature, index) => (
+          <button
+            key={feature.title}
+            type="button"
+            aria-label={`Ir pro card ${index + 1} de ${METHOD_FEATURES.length}`}
+            aria-current={index === activeIndex}
+            onClick={() => scrollToIndex(index)}
+            className={`h-3 w-3 shrink-0 rounded-full bg-white transition-opacity ${index === activeIndex ? "opacity-100" : "opacity-30"}`}
+          />
+        ))}
+      </div>
+    </CardFrame>
+  )
+}
+
 // conteúdo puro (sem consciência de scroll/motion) — reaproveitado tanto no
 // branch pinado do desktop (dentro do slide horizontal de o-que-fazemos.tsx)
-// quanto no fallback empilhado (mobile/reduced-motion).
+// quanto no fallback empilhado (reduced-motion). O mobile ganhou seu próprio
+// layout (MetodoCardMobile, ver acima) — diferente o bastante do desktop
+// (centralizado + carrossel em vez de grid) que não compensava tentar
+// encaixar tudo num componente CSS-responsivo só.
 export function MetodoCard() {
+  const isMobileLayout = useIsMobileLayout()
+
+  if (isMobileLayout) {
+    return <MetodoCardMobile />
+  }
+
   return (
     <CardFrame>
       {/* duas colunas (mesmo padrão de grid do ServiceCard, em
           o-que-fazemos.tsx): texto (badge/heading/parágrafo) alinhado à
           esquerda numa coluna, os 3 cards empilhados VERTICALMENTE na
           outra — pedido explícito: "conteúdo alinhado à esquerda... e à
-          direita dentro do frame alinhados verticalmente os 3 cards". Só
-          empilha lado a lado a partir do lg: (mobile/tablet continuam em
-          fluxo normal, uma coluna só). Badge: mesmo design do ServiceCard
-          (dot quadrado azul + label). */}
+          direita dentro do frame alinhados verticalmente os 3 cards".
+          Badge: mesmo design do ServiceCard (dot quadrado azul + label). */}
       <div className="grid gap-8 sm:min-h-0 sm:flex-1 lg:grid-cols-[1fr_1fr] lg:gap-10">
         <div className="flex flex-col justify-start pb-[77px]">
           <div className="flex items-center gap-3">
@@ -48,20 +137,22 @@ export function MetodoCard() {
             <span className="text-sm tracking-[0.2em] text-white/70 uppercase">Soluções</span>
           </div>
 
-          <h2 className="mt-4 w-[calc(100%-16px)] text-3xl font-medium text-white sm:mt-6 sm:text-4xl">
+          <h2 className="mt-4 w-[calc(100%-48px)] text-3xl font-medium text-white sm:mt-6 sm:text-4xl">
             Crescimento acelerado com resultados metrificáveis
           </h2>
 
-          <p className="mt-4 w-[calc(100%-16px)] text-white/70">
+          <p className="mt-4 w-[calc(100%-48px)] text-white/70">
             Criamos soluções digitais que ajudam a vender e automatizar tarefas,
             combinando design e tecnologia.
           </p>
 
           {/* métricas: scramble uma vez só, quando aparecem na tela
               (scrambleOnVisible, ver text-scramble.tsx) — não em loop
-              (autoScramble) nem por hover (comportamento padrão): pedido
-              explícito: "use o efeito do text-scramble quando elas
-              estiverem aparecendo". */}
+              (autoScramble), mas também rescrambla no hover (mesmo
+              comportamento dos itens do icon-menu) — pedido explícito:
+              "use o efeito do text-scramble quando elas estiverem
+              aparecendo" + "ao passar o cursor pelas métricas deve também
+              ocorrer o efeito text-scramble". */}
           <div className="mt-auto flex flex-wrap gap-6 pt-6">
             {METRICS.map((metric) => (
               <div key={metric.label}>
