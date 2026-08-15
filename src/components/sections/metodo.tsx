@@ -140,11 +140,11 @@ export function MetodoCard() {
             <span className="text-sm tracking-[0.2em] text-white/70 uppercase">Soluções</span>
           </div>
 
-          <h2 className="mt-4 w-[calc(100%-48px)] text-3xl font-medium text-white sm:mt-6 sm:text-4xl">
+          <h2 className="mt-4 max-w-[600px] text-3xl font-medium text-white sm:mt-6 sm:text-4xl">
             Crescimento acelerado com resultados metrificáveis
           </h2>
 
-          <p className="mt-4 w-[calc(100%-48px)] text-white/70">
+          <p className="mt-4 max-w-[600px] text-white/70">
             Criamos soluções digitais que ajudam a vender e automatizar tarefas,
             combinando design e tecnologia.
           </p>
