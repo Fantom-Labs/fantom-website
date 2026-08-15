@@ -1,12 +1,13 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { WHATSAPP_CTA_HREF, useIsMobileLayout } from "@/components/motion/lobby"
+import { useIsMobileLayout } from "@/components/motion/lobby"
 import { CardFrame } from "@/components/ui/card-frame"
-import { TextScramble } from "@/components/ui/text-scramble"
-import { WhatsAppIcon } from "@/components/ui/whatsapp-icon"
 
-const METRICS = [
+// não renderizadas nesta section mais (redesenho desktop, ver MetodoCard
+// abaixo, não tem espaço pras métricas) — exportado, não removido: pedido
+// explícito "métricas irão para outra seção, deixe disponível no código".
+export const METRICS = [
   { value: "+50", label: "negócios desenvolvidos" },
   { value: "+100", label: "projetos entregues" },
 ]
@@ -87,7 +88,7 @@ function MetodoCardMobile() {
         {METHOD_FEATURES.map(({ icon, title, description }) => (
           <div
             key={title}
-            className="flex w-full shrink-0 snap-center flex-col items-center rounded-[8px] border border-white/15 bg-white/[0.02] p-8 text-center backdrop-blur-[12px]"
+            className="flex w-full shrink-0 snap-center flex-col items-center rounded-[8px] border border-white/15 bg-white/[0.02] p-8 text-center backdrop-blur-[24px]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={icon} alt="" aria-hidden="true" className="h-[62px] w-[62px]" />
@@ -128,77 +129,43 @@ export function MetodoCard() {
 
   return (
     <CardFrame>
-      {/* duas colunas (mesmo padrão de grid do ServiceCard, em
-          o-que-fazemos.tsx): texto (badge/heading/parágrafo) alinhado à
-          esquerda numa coluna, os 3 cards empilhados VERTICALMENTE na
-          outra — pedido explícito: "conteúdo alinhado à esquerda... e à
-          direita dentro do frame alinhados verticalmente os 3 cards".
-          Badge: mesmo design do ServiceCard (dot quadrado azul + label). */}
-      <div className="grid gap-8 sm:min-h-0 sm:flex-1 lg:grid-cols-[1fr_1fr] lg:gap-10">
-        <div className="flex flex-col justify-start pb-[77px]">
-          <div className="flex items-center gap-3">
-            <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
-            <span className="text-sm tracking-[0.2em] text-white/70 uppercase">Soluções</span>
-          </div>
-
-          <h2 className="mt-4 max-w-[600px] text-3xl font-medium text-white sm:mt-6 sm:text-4xl">
-            Crescimento acelerado com resultados metrificáveis
-          </h2>
-
-          <p className="mt-4 max-w-[500px] text-white/70">
-            Criamos soluções digitais que ajudam a vender e automatizar tarefas,
-            combinando design e tecnologia.
-          </p>
-
-          {/* botão sólido (pedido explícito: "mude esse botão novamente
-              para o solid") — mesmo padrão visual do CTA "Agende uma
-              reunião" da FAQ antes de virar ShinyButton (bg sólido, sem
-              shader/efeito). */}
-          <a
-            href={WHATSAPP_CTA_HREF}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-flex w-fit items-center gap-2 self-start rounded-full bg-[#3448ff] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#2b3bdb]"
-          >
-            Falar com a Fantom
-            <WhatsAppIcon size={16} />
-          </a>
-
-          {/* métricas: scramble uma vez só, quando aparecem na tela
-              (scrambleOnVisible, ver text-scramble.tsx) — não em loop
-              (autoScramble), mas também rescrambla no hover (mesmo
-              comportamento dos itens do icon-menu) — pedido explícito:
-              "use o efeito do text-scramble quando elas estiverem
-              aparecendo" + "ao passar o cursor pelas métricas deve também
-              ocorrer o efeito text-scramble". */}
-          <div className="mt-auto flex flex-wrap gap-[56px] pt-6">
-            {METRICS.map((metric) => (
-              <div key={metric.label}>
-                <TextScramble text={metric.value} scrambleOnVisible showAffordances={false} textSizeClassName="text-2xl" />
-                <p className="mt-1 max-w-[10rem] text-xs text-white/50 uppercase tracking-[0.15em]">{metric.label}</p>
-              </div>
-            ))}
-          </div>
+      {/* redesenho desktop (Figma node 1458:716, pedido explícito: "ajuste
+          a section 4 no desktop pra ter este design... utilize os
+          princípios que guiam este design como posicionamento dos
+          elementos e alinhamentos"): tudo centralizado numa coluna só
+          (badge/heading/parágrafo), não mais alinhado à esquerda — os 3
+          feature cards ficam lado a lado (grid de 3 colunas), não mais
+          empilhados verticalmente numa coluna à parte, e o conteúdo de
+          CADA card também centraliza (ícone/título/descrição), não mais
+          alinhado à esquerda. Métricas e o CTA "Falar com a Fantom" saíram
+          daqui — não existem nesse frame do Figma (métricas exportadas em
+          METRICS pra reaproveitar em outra section depois, pedido
+          explícito; o CTA foi removido de vez). */}
+      <div className="flex h-full flex-col items-center justify-center text-center">
+        <div className="flex items-center gap-3">
+          <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
+          <span className="text-sm tracking-[0.2em] text-white/70 uppercase">Soluções</span>
         </div>
 
-        {/* cards mais compactos (p-4 não p-5, ícone h-8 não h-10, mt-3 não
-            mt-4, gap-3/sm:gap-4 não gap-4/sm:gap-6): com a copy mais longa
-            das descrições, os 3 cards empilhados passaram a ocupar mais
-            altura que o frame (h-[85vh], fixo) em janelas mais baixas —
-            "os cards no total ocupam uma altura maior que o frame
-            principal" (bug reportado). Não aumentar a altura do frame pra
-            compensar: ele fica centralizado num wrapper sticky com
-            overflow-hidden (ver o branch pinado do desktop em
-            o-que-fazemos.tsx) — crescer além da altura da viewport
-            cortaria o topo/base dos cards em vez de só "vazar" a borda
-            arredondada como acontece hoje. */}
-        <div className="flex flex-col justify-center gap-3 sm:gap-4">
+        <h2 className="mt-4 max-w-[600px] text-3xl font-medium text-white sm:mt-6 sm:text-4xl">
+          Crescimento acelerado com resultados metrificáveis
+        </h2>
+
+        <p className="mt-4 max-w-[500px] text-white/70">
+          Criamos soluções digitais que ajudam a vender e automatizar tarefas,
+          combinando design e tecnologia.
+        </p>
+
+        <div className="mt-10 grid w-full gap-6 sm:grid-cols-3">
           {METHOD_FEATURES.map(({ icon, title, description }) => (
-            <div key={title} className="w-[calc(100%-20px)] max-w-[500px] rounded-[8px] border border-white/15 bg-white/[0.02] p-4 pl-[18px]">
+            <div
+              key={title}
+              className="flex flex-col items-center rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={icon} alt="" aria-hidden="true" className="h-8 w-8" />
-              <p className="mt-3 font-medium text-white">{title}</p>
-              <p className="mt-2 max-w-[500px] text-sm text-white/60">{description}</p>
+              <p className="mt-4 font-medium text-white">{title}</p>
+              <p className="mt-2 text-sm text-white/60">{description}</p>
             </div>
           ))}
         </div>
