@@ -72,7 +72,7 @@ export function FaqCard() {
           {/* card de agendamento — mesmo número de WhatsApp da hero
               (WHATSAPP_CTA_HREF em lobby.tsx), só com a mensagem
               pré-preenchida trocada pro contexto de agendamento. */}
-          <div className="mt-6 max-w-[400px] rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+          <div className="mt-6 max-w-[300px] rounded-2xl border border-white/10 bg-white/[0.03] p-6">
             <p className="text-lg text-white/90">
               Fale com um de nossos especialistas em uma call de{" "}
               <span className="text-[#5699ff]">20 minutos</span>
