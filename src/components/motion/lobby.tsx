@@ -626,8 +626,14 @@ export function LobbyChrome() {
           VISÍVEL do ícone, não só com a margem do container (pedido
           explícito: "margem de logo-left igual a do menu icon"). */}
       <div className="fixed left-[30px] top-0 z-30 flex h-11 items-center sm:left-[42px] sm:top-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-left.svg" alt="Fantom" className="max-w-[80px]" />
+        {/* clicar na logo leva pra section 2 (pedido explícito) — reaproveita
+            handleNavigate("cases"), o MESMO caminho que o menu já usa pra
+            chegar lá (getSection2ScrollTarget no desktop, scroll pro topo no
+            mobile — ver comentário grande em handleNavigate acima). */}
+        <button type="button" onClick={() => handleNavigate("cases")} aria-label="Ir para Cases">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-left.svg" alt="Fantom" className="max-w-[80px]" />
+        </button>
       </div>
 
       <div ref={menuRef} className="fixed right-5 top-0 z-30 sm:right-8 sm:top-3">

@@ -179,7 +179,7 @@ export function MetodoCard() {
             arredondada como acontece hoje. */}
         <div className="flex flex-col justify-center gap-3 sm:gap-4">
           {METHOD_FEATURES.map(({ icon, title, description }) => (
-            <div key={title} className="w-[calc(100%-20px)] max-w-[800px] rounded-[8px] border border-white/15 bg-white/[0.02] p-4 pl-[18px]">
+            <div key={title} className="w-[calc(100%-20px)] max-w-[500px] rounded-[8px] border border-white/15 bg-white/[0.02] p-4 pl-[18px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={icon} alt="" aria-hidden="true" className="h-8 w-8" />
               <p className="mt-3 font-medium text-white">{title}</p>
