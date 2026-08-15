@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { CalendarCheck2, ChevronDown } from "lucide-react"
 import { CardFrame } from "@/components/ui/card-frame"
+import { ShinyButton } from "@/components/ui/shiny-button"
 
 // mesmo link/número da hero (ver WHATSAPP_CTA_HREF em lobby.tsx), só com a
 // mensagem pré-preenchida trocada pro contexto de agendamento — pedido
@@ -135,16 +136,11 @@ export function FaqCard() {
             <span className="text-[#5699ff]">20 minutos</span>
           </p>
 
-          <a
-            href={SCHEDULE_CALL_HREF}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-flex items-center gap-3 rounded-full bg-[#3448ff] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#2b3bdb]"
-          >
+          <ShinyButton href={SCHEDULE_CALL_HREF} className="mt-6">
             Agende uma reunião
             <span className="h-4 w-px bg-white/30" aria-hidden="true" />
             <CalendarCheck2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-          </a>
+          </ShinyButton>
         </div>
       </div>
     </CardFrame>

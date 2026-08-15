@@ -1,9 +1,10 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { useIsMobileLayout } from "@/components/motion/lobby"
+import { WHATSAPP_CTA_HREF, useIsMobileLayout } from "@/components/motion/lobby"
 import { CardFrame } from "@/components/ui/card-frame"
 import { TextScramble } from "@/components/ui/text-scramble"
+import { WhatsAppIcon } from "@/components/ui/whatsapp-icon"
 
 const METRICS = [
   { value: "+50", label: "negócios desenvolvidos" },
@@ -148,6 +149,20 @@ export function MetodoCard() {
             Criamos soluções digitais que ajudam a vender e automatizar tarefas,
             combinando design e tecnologia.
           </p>
+
+          {/* botão sólido (pedido explícito: "mude esse botão novamente
+              para o solid") — mesmo padrão visual do CTA "Agende uma
+              reunião" da FAQ antes de virar ShinyButton (bg sólido, sem
+              shader/efeito). */}
+          <a
+            href={WHATSAPP_CTA_HREF}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 inline-flex w-fit items-center gap-2 self-start rounded-full bg-[#3448ff] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#2b3bdb]"
+          >
+            Falar com a Fantom
+            <WhatsAppIcon size={16} />
+          </a>
 
           {/* métricas: scramble uma vez só, quando aparecem na tela
               (scrambleOnVisible, ver text-scramble.tsx) — não em loop

@@ -28,7 +28,9 @@ const CTA_LABEL = "Falar com a Fantom"
 const CLIENTS_STAT_TEXT = "+ 50 negócios acelerados"
 // wa.me: número sem "+"/espaços + texto pré-preenchido (url-encoded) — abre
 // o WhatsApp já com a mensagem digitada, só falta o usuário mandar.
-const WHATSAPP_CTA_HREF = `https://wa.me/5583991377388?text=${encodeURIComponent("Olá, quero começar meu projeto!")}`
+// exportado: reaproveitado pelo CTA da section 4 (ver metodo.tsx) — mesmo
+// link/mensagem da hero, pedido explícito: "mesmo link da hero".
+export const WHATSAPP_CTA_HREF = `https://wa.me/5583991377388?text=${encodeURIComponent("Olá, quero começar meu projeto!")}`
 
 // entrada em stagger do conteúdo da hero (coluna direita, section 2):
 // eyebrow, H1, subhead e CTA entram na sequência, ~80ms entre cada,
