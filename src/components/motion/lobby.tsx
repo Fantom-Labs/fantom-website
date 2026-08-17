@@ -680,8 +680,9 @@ export function LobbyChrome() {
             // sem card/modal por trás — só os textos flutuando sobre o
             // fundo, sem seta nem linha (showAffordances={false}, essas
             // affordances foram pensadas pro "EXPLORAR" sozinho na tela, não
-            // pra uma lista repetida) e em 16px (textSizeClassName, o padrão
-            // de TextScramble é text-sm/14px).
+            // pra uma lista repetida) e em 10px (textSizeClassName, o padrão
+            // de TextScramble é text-sm/14px — pedido explícito: "mude para
+            // 10px").
             <motion.nav
               aria-label="Menu de navegação"
               initial={{ opacity: 0, y: -8 }}
@@ -696,7 +697,7 @@ export function LobbyChrome() {
                   text={section.label}
                   onClick={() => handleNavigate(section.id)}
                   showAffordances={false}
-                  textSizeClassName="text-xs"
+                  textSizeClassName="text-[10px]"
                   className="items-end text-right"
                 />
               ))}
