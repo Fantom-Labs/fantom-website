@@ -5,7 +5,11 @@ import { cn } from "@/lib/utils"
 // (método) — mesmo fundo/borda/dimensões nos dois, só o conteúdo interno
 // muda. Extraído daqui pra lá pra não duplicar a className longa (pedido
 // explícito: "section 4 terá o mesmo background e o mesmo frame/card").
-export function CardFrame({ children, className }: { children: ReactNode; className?: string }) {
+// children opcional: usada sem filhos como placeholder "só a moldura" no
+// card que está espiando/fora de tela no branch pinado do desktop (ver
+// o-que-fazemos.tsx) — pedido explícito: "ficando apenas o frame da
+// section anterior".
+export function CardFrame({ children, className }: { children?: ReactNode; className?: string }) {
   return (
     <div
       className={cn(
