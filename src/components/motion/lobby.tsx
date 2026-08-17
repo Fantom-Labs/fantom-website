@@ -12,6 +12,11 @@ import { LiquidMetalButton } from "@/components/ui/liquid-metal-button"
 import { NeonRGBText } from "@/components/ui/neon-rgbtext-effect"
 import { LogoMarquee } from "@/components/ui/logo-marquee"
 import { FloatingRock } from "@/components/motion/floating-rock"
+// import "circular" (o-que-fazemos.tsx também importa daqui) mas seguro: só
+// usada dentro do callback de useNavigateToSection (chamada em tempo de
+// clique, bem depois dos dois módulos já terem terminado de inicializar),
+// nunca no topo do módulo — ver useNavigateToSection mais abaixo.
+import { getMetodoScrollTarget } from "@/components/sections/o-que-fazemos"
 
 // mesmo poster usado pelo <AsciiArt> (agora local, ver mo-mosaic.tsx),
 // servido como fallback estático quando o usuário prefere motion
@@ -576,10 +581,12 @@ export const MENU_SECTIONS = [
 // MESMA tela que "início" — os dois viram scroll pro topo (0), sem
 // resting point separado (esse conceito só existe no bloco de 300vh do
 // desktop, que o mobile não tem mais).
-// "soluções" mapeia pro id real de "o que fazemos" nos dois. "sobre" (e
-// qualquer id futuro sem seção própria ainda) cai no fallback `#id`:
-// lenis.scrollTo avisa "Target not found" no console e não faz nada — sem
-// quebrar o clique, só sem navegar até a seção existir.
+// "soluções" mapeia pro id real de "o que fazemos" nos dois. "sobre" mapeia
+// pro id real de "método" (pedido explícito: "aponte Sobre para
+// metodo.tsx") — sem seção própria de "sobre" ainda, reaproveita a de
+// método por ora. Qualquer id futuro ainda sem seção própria cai no
+// fallback `#id`: lenis.scrollTo avisa "Target not found" no console e não
+// faz nada — sem quebrar o clique, só sem navegar até a seção existir.
 //
 // Extraído de LobbyChrome (era um useCallback privado ali, "handleNavigate")
 // pra reaproveitar no footer (ver footer.tsx), que precisa da MESMA
@@ -588,17 +595,34 @@ export const MENU_SECTIONS = [
 // de navegar) — ver handleNavigate lá.
 export function useNavigateToSection() {
   const isMobileLayout = useIsMobileLayout()
+  const prefersReducedMotion = useReducedMotion()
   const lenis = useLenis()
   return useCallback(
     (id: string) => {
-      const elementId = id === "solucoes" ? "o-que-fazemos" : id
+      const elementId = id === "solucoes" ? "o-que-fazemos" : id === "sobre" ? "metodo" : id
       const isTopTarget = id === "inicio" || (isMobileLayout && id === "cases")
-      const target = isTopTarget ? 0 : id === "cases" ? getSection2ScrollTarget() : `#${elementId}`
-      if (lenis) lenis.scrollTo(target, { duration: 1.2 })
+      // "metodo" pinado no desktop (branch !isMobileLayout && !prefersReducedMotion
+      // em o-que-fazemos.tsx): os 3 cards (o-que-fazemos/metodo/faq) são
+      // absolute inset-0 dentro do MESMO wrapper sticky, então TODOS
+      // reportam a mesma posição (getBoundingClientRect().top já é 0) não
+      // importa qual esteja visível — a âncora `#metodo` "já chega lá" sem
+      // rolar nada, deixando o card errado na tela (mesmo bug documentado
+      // em section-nav.tsx, que já usa getMetodoScrollTarget() por isso).
+      // lock:true pelo mesmo motivo de lá: sem travar, o auto-advance do
+      // lobby (que reage a QUALQUER scroll cruzando sectionThreeStart, não
+      // só wheel/touch reais) sequestra essa navegação no meio do caminho.
+      const needsPinnedMetodoTarget = elementId === "metodo" && !isMobileLayout && !prefersReducedMotion
+      let target: number | string
+      if (isTopTarget) target = 0
+      else if (needsPinnedMetodoTarget) target = getMetodoScrollTarget()
+      else if (id === "cases") target = getSection2ScrollTarget()
+      else target = `#${elementId}`
+
+      if (lenis) lenis.scrollTo(target, needsPinnedMetodoTarget ? { duration: 1.2, lock: true } : { duration: 1.2 })
       else if (typeof target === "number") window.scrollTo({ top: target, behavior: "smooth" })
       else document.getElementById(elementId)?.scrollIntoView({ behavior: "smooth" })
     },
-    [lenis, isMobileLayout]
+    [lenis, isMobileLayout, prefersReducedMotion]
   )
 }
 
