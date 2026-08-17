@@ -241,21 +241,20 @@ const DWELL_THRESHOLD_2 = 2 / 3
 // "o espaço sobrando deve ser em cima, não embaixo" — tentativa anterior
 // movia o card corrente pra +48px, sobrando embaixo).
 //
-// -32px: espaço entre uma camada da pilha e a próxima (pedido explícito:
-// "o espaço entre os cards está muito curto. deixe uns 32px" — o valor
-// anterior de -8px deixava o espiar quase imperceptível).
+// -20px: espaço entre uma camada da pilha e a próxima (pedido explícito:
+// "o espaço entre os cards está muito grande, deixe 20px" — ajuste fino
+// depois de já ter passado por -8px, muito sutil, e -32px, grande demais).
 //
 // (histórico: começou em -48px, empurrando o topo do frame de 2
 // profundidades pra FORA da área visível — pedido explícito: "o frame da
 // section anterior está subindo no scroll, o que faz ele ficar acima da
-// área visível da tela". Caiu pra -24px, depois pra -8px por causa disso.
-// Agora sobe de novo pra -32px a pedido do usuário — 2×-32px=-64px É mais
-// extremo que o -48px que já tinha sido sinalizado como "quase saindo da
-// tela", e de fato voltou a cortar em janelas mais baixas (medido: clipa
-// a partir de ~800px de altura de viewport). Ver BASE_Y_OFFSET_PX logo
-// abaixo, que resolve isso abrindo vão extra em vez de reduzir esse
-// espaçamento entre camadas.)
-const PEEK_OFFSET_PX = -32
+// área visível da tela". Caiu pra -24px, depois pra -8px por causa disso,
+// depois subiu pra -32px a pedido do usuário e voltou a cortar em janelas
+// mais baixas — daí o BASE_Y_OFFSET_PX logo abaixo, que abre vão extra em
+// vez de mexer nesse espaçamento entre camadas. Com -20px o vão necessário
+// pra 2 profundidades é bem menor — 2×-20px=-40px — cabendo com folga
+// ainda maior que -32px em qualquer altura de janela testada.)
+const PEEK_OFFSET_PX = -20
 
 // desloca a pilha inteira (corrente + todas as camadas de peek) pra baixo
 // em px fixos — abre vão extra ACIMA do CardFrame sem precisar reduzir
