@@ -36,6 +36,7 @@ const SERVICES: ServiceItem[] = [
     images: [
       "/images/section-3/websites1-s3.png",
       "/images/section-3/websites2-s3.png",
+      "/images/section-3/websites3-s3.png",
       "/images/section-3/websites4-s3.png",
     ],
   },

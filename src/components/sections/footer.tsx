@@ -23,9 +23,15 @@ export function Footer() {
   return (
     <footer id="contato" className="relative border-t border-white/10 bg-black px-5 py-12 sm:px-8 sm:py-16">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-10 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+        {/* logo-footer.svg (não logo-left.svg): versão completa da marca,
+            com o acento colorido do ícone (308x57, vs. 233x56 só do
+            wordmark em branco) — pedido explícito: "utilize logo-footer.svg
+            em vez do atual". max-w-[120px] (não 90px): mesma altura
+            renderizada de antes (~90px × 56/233 ≈ o logo-left antigo),
+            escalado pra proporção mais larga do novo arquivo (308/57). */}
         <button type="button" onClick={() => navigateToSection("inicio")} aria-label="Voltar ao início" className="shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-left.svg" alt="Fantom" className="max-w-[90px]" />
+          <img src="/logo-footer.svg" alt="Fantom" className="max-w-[120px]" />
         </button>
 
         <nav aria-label="Navegação do rodapé" className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
