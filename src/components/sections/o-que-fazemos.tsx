@@ -679,7 +679,7 @@ export function OQueFazemos() {
   if (isMobileLayout) {
     return (
       <div className="relative bg-black">
-        <GradientBars numBars={15} animationDuration={2} className="z-0 opacity-80" />
+        <GradientBars numBars={15} animationDuration={2} className="z-0 opacity-10" />
         <section id="o-que-fazemos" className="relative flex items-center justify-center py-8">
           <ServiceCard activeIndex={activeIndex} onSelect={setActiveIndex} />
         </section>

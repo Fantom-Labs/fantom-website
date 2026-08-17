@@ -39,24 +39,46 @@ const METHOD_FEATURES = [
 // gesto) com dots de paginação embaixo, em vez dos 3 cards empilhados
 // verticalmente do desktop. Sem métricas (+50/+100) — não existem nesse
 // frame do Figma, foram removidas de propósito nessa versão mobile.
+//
+// Sem CardFrame envolvendo tudo (pedido explícito: "remova o frame
+// principal da section 3") — moldura de borda/fundo/blur removida, o
+// conteúdo fica direto sobre o fundo (GradientBars) compartilhado da
+// section, só com a largura/centralização que o CardFrame também dava
+// (w-[calc(100vw-40px)], z-10 pra ficar acima do fundo).
 function MetodoCardMobile() {
   const [activeIndex, setActiveIndex] = useState(0)
   const scrollerRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
+  // não dá mais pra assumir "1 card = 1 clientWidth" (índice ==
+  // scrollLeft/clientWidth): os cards agora ocupam só 85% da largura, com
+  // um pedaço do próximo à mostra (pedido explícito: "deixe como um
+  // carrossel com o segundo card visível") — em vez disso, acha o card
+  // cujo CENTRO está mais perto do centro visível do scroller.
   const handleScroll = () => {
     const el = scrollerRef.current
     if (!el) return
-    setActiveIndex(Math.round(el.scrollLeft / el.clientWidth))
+    const viewportCenter = el.scrollLeft + el.clientWidth / 2
+    let closestIndex = 0
+    let closestDistance = Number.POSITIVE_INFINITY
+    cardRefs.current.forEach((card, index) => {
+      if (!card) return
+      const cardCenter = card.offsetLeft + card.offsetWidth / 2
+      const distance = Math.abs(cardCenter - viewportCenter)
+      if (distance < closestDistance) {
+        closestDistance = distance
+        closestIndex = index
+      }
+    })
+    setActiveIndex(closestIndex)
   }
 
   const scrollToIndex = (index: number) => {
-    const el = scrollerRef.current
-    if (!el) return
-    el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" })
+    cardRefs.current[index]?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" })
   }
 
   return (
-    <CardFrame className="items-center text-center">
+    <div className="relative z-10 flex w-[calc(100vw-40px)] flex-col items-center text-center">
       <div className="flex flex-col items-center">
         <div className="flex items-center gap-3">
           <span className="h-3 w-3 shrink-0 bg-[#3448ff]" aria-hidden="true" />
@@ -79,16 +101,27 @@ function MetodoCardMobile() {
       {/* overflow-x-auto + snap-x nativo (sem drag/gesto em JS): funciona
           com o swipe padrão do dedo no touch, sem precisar reimplementar
           gesture handling — scrollbar escondida via utilitários arbitrários
-          (mesmo padrão do html::-webkit-scrollbar em globals.css). */}
+          (mesmo padrão do html::-webkit-scrollbar em globals.css).
+          mask-image (mesma técnica de logo-marquee.tsx): funde as bordas
+          num gradiente escuro em vez de cortar os cards de forma abrupta
+          (pedido explícito: "com um gradiente escuro nas bordas") — funciona
+          porque o fundo da section é escuro (bg-black + GradientBars), então
+          desvanecer pra transparente aqui revela esse fundo escuro por trás.
+          px-[7.5%] no scroller (metade do respiro de w-[85%] dos cards):
+          deixa o PRIMEIRO e o ÚLTIMO card também centralizarem no snap, não
+          só os do meio. */}
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
-        className="mt-8 flex w-full snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="mt-8 flex w-full snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-[7.5%] [-ms-overflow-style:none] [-webkit-mask-image:linear-gradient(to_right,transparent_0%,black_10%,black_90%,transparent_100%)] [mask-image:linear-gradient(to_right,transparent_0%,black_10%,black_90%,transparent_100%)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {METHOD_FEATURES.map(({ icon, title, description }) => (
+        {METHOD_FEATURES.map(({ icon, title, description }, index) => (
           <div
             key={title}
-            className="flex w-full shrink-0 snap-center flex-col items-center rounded-[8px] border border-white/15 bg-white/[0.02] p-8 text-center backdrop-blur-[24px]"
+            ref={(el) => {
+              cardRefs.current[index] = el
+            }}
+            className="flex w-[85%] shrink-0 snap-center flex-col items-center rounded-[24px] border border-white/15 bg-white/[0.02] p-8 text-center backdrop-blur-[24px]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={icon} alt="" aria-hidden="true" className="h-[62px] w-[62px]" />
@@ -110,7 +143,7 @@ function MetodoCardMobile() {
           />
         ))}
       </div>
-    </CardFrame>
+    </div>
   )
 }
 
