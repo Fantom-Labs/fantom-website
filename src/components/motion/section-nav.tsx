@@ -77,6 +77,19 @@ export function SectionNav() {
   // progresso simulada é necessária.
   const { scrollY } = useScroll()
   useMotionValueEvent(scrollY, "change", (y) => {
+    // último degrau da página (footer, id="contato"): mais baixo que a
+    // viewport, então nunca cruza a faixa central de 20% que o
+    // IntersectionObserver abaixo usa pra decidir "seção ativa" (rootMargin
+    // "-40% 0px -40% 0px") — rolando até o fim de verdade, ele fica preso
+    // na faixa DE BAIXO da tela, nunca no meio. Sem isso, o ponto "Contato"
+    // nunca acende, mesmo com o rodapé inteiro visível. Só força quando
+    // está realmente no fim (scroll não tem mais pra onde ir, com 2px de
+    // folga pra arredondamento) — em qualquer outro ponto o
+    // IntersectionObserver continua sendo a única fonte de verdade.
+    if (y + window.innerHeight >= document.documentElement.scrollHeight - 2) {
+      setActiveId(SECTIONS[SECTIONS.length - 1].id)
+      return
+    }
     if (isMobileLayout) return
     const lobbyMaxScroll = (LOBBY_SCROLL_HEIGHT_VH / 100) * window.innerHeight - window.innerHeight
     if (lobbyMaxScroll <= 0 || y > lobbyMaxScroll) return

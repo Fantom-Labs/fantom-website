@@ -50,7 +50,6 @@ O site é a principal peça de prova desse reposicionamento. Como a Fantom se ve
 ## 3. Empresa
 
 - **Fundadores:** Múcio Miranda (founder, CTO, desenvolvedor e designer) e Caio Torres (cofundador, atendimento ao cliente e suporte técnico).
-- **Decisão de site:** fundadores aparecem com nome e foto (alinhado a founder-led content). Na página, o time entra como assinatura/rodapé, não como seção central.
 - **Relação KOMMUchat:** Fantom (Múcio e Caio) cofundou a KOMMUchat junto com Arthur Eickmann, da KOMMU. Fantom detém 50%. Pode ser citado explicitamente no site.
 - **Parcerias de ecossistema:** agências parceiras de tráfego pago e marketing de conteúdo (a Fantom entrega a base de tecnologia e design; aquisição/conteúdo via parceiros, ex. KOMMU).
 
@@ -100,7 +99,7 @@ O site é a principal peça de prova desse reposicionamento. Como a Fantom se ve
 4. **#metodo** — "Soluções": badge + headline + parágrafo + 3 cards (churn, performance/segurança, suporte).
 5. **#faq** — objeções principais (faz o trabalho da triagem que foi tirada da navegação).
 6. **#contato** — CTA final.
-7. **Rodapé** — assinatura dos fundadores.
+7. **Rodapé**
 
 Copy completa versionada em `fantom-website-home.md`.
 
@@ -226,7 +225,6 @@ Críticos porque a Fantom se vende como autoridade técnica (site lento contradi
 - [ ] Ano de fundação da Fantom
 - [ ] Layout definitivo da hero (frame à esquerda com texto em coluna vs. composição criativa)
 - [ ] Identidade visual (logo, paleta, tipografia) — não iniciada; site nasce com copy + estrutura, visual entra como módulo próprio
-- [ ] Fotos e frase de trajetória dos fundadores
 - [ ] Definir se o blog (fase 3) usa MDX ou Sanity
 - [ ] Decisão de layout/versão final do Hero (6 opções de copy em aberto)
 ```

@@ -24,7 +24,10 @@ const POSTER_SRC = "/images/mo-mosaic-poster.webp"
 const EYEBROW_TEXT = "Websites · SaaS · Sistemas com IA"
 const HEADLINE_TEXT = "Somos o time de design e tecnologia de grandes negócios e startups"
 const SUBHEAD_TEXT = "Do mapeamento estratégico inicial ao produto gerando receita com suporte aos usuários, cuidamos de cada detalhe."
-const CTA_LABEL = "Falar com a Fantom"
+// exportado: reaproveitado pelo footer (ver footer.tsx), que reproduz o
+// mesmo CTA único do site (project.md, seção 1: "CTA único: Falar com a
+// Fantom") em vez de inventar um texto próprio.
+export const CTA_LABEL = "Falar com a Fantom"
 const CLIENTS_STAT_TEXT = "+ 50 negócios acelerados"
 // wa.me: número sem "+"/espaços + texto pré-preenchido (url-encoded) — abre
 // o WhatsApp já com a mensagem digitada, só falta o usuário mandar.
@@ -554,7 +557,9 @@ function useRockOrbit() {
 // fazemos" (única que fala de serviços hoje); "sobre" ainda não tem seção
 // própria (fica clicável mas sem navegar — mesmo placeholder que
 // método/faq/contato já tinham antes, ver handleNavigate).
-const MENU_SECTIONS = [
+// exportado: reaproveitado pelo footer (ver footer.tsx), que repete a
+// mesma navegação principal do menu em vez de inventar uma lista própria.
+export const MENU_SECTIONS = [
   { id: "inicio", label: "Início" },
   { id: "solucoes", label: "Soluções" },
   { id: "cases", label: "Cases" },
@@ -562,6 +567,41 @@ const MENU_SECTIONS = [
 ] as const
 
 // elementos fixos que não participam do zoom: logo-left e o menu (ícone +
+// desktop: "início"/"cases" não são elementos reais no DOM (o lobby ocupa
+// o topo da página sozinho, com scroll-jacking) — precisam do alvo
+// calculado (topo da página / resting point da section 2, mesma fonte que
+// scrollToSection2 usa), não de um id pra resolver.
+// mobile: a section 2 já é um elemento real no DOM (id="portfolio", sem
+// scroll-jacking, ver o branch isMobileLayout em Lobby()) e mostra a
+// MESMA tela que "início" — os dois viram scroll pro topo (0), sem
+// resting point separado (esse conceito só existe no bloco de 300vh do
+// desktop, que o mobile não tem mais).
+// "soluções" mapeia pro id real de "o que fazemos" nos dois. "sobre" (e
+// qualquer id futuro sem seção própria ainda) cai no fallback `#id`:
+// lenis.scrollTo avisa "Target not found" no console e não faz nada — sem
+// quebrar o clique, só sem navegar até a seção existir.
+//
+// Extraído de LobbyChrome (era um useCallback privado ali, "handleNavigate")
+// pra reaproveitar no footer (ver footer.tsx), que precisa da MESMA
+// resolução de alvo pros mesmos ids de MENU_SECTIONS sem duplicar a lógica.
+// LobbyChrome ainda mantém seu próprio wrapper por cima (fecha o menu antes
+// de navegar) — ver handleNavigate lá.
+export function useNavigateToSection() {
+  const isMobileLayout = useIsMobileLayout()
+  const lenis = useLenis()
+  return useCallback(
+    (id: string) => {
+      const elementId = id === "solucoes" ? "o-que-fazemos" : id
+      const isTopTarget = id === "inicio" || (isMobileLayout && id === "cases")
+      const target = isTopTarget ? 0 : id === "cases" ? getSection2ScrollTarget() : `#${elementId}`
+      if (lenis) lenis.scrollTo(target, { duration: 1.2 })
+      else if (typeof target === "number") window.scrollTo({ top: target, behavior: "smooth" })
+      else document.getElementById(elementId)?.scrollIntoView({ behavior: "smooth" })
+    },
+    [lenis, isMobileLayout]
+  )
+}
+
 // painel de navegação). Exportado e renderizado uma vez em page.tsx (fora
 // do Lobby): nested dentro do container "overflow-hidden" do lobby, um
 // `position: fixed` ainda fica CLIPADO quando esse ancestral sai da tela
@@ -569,10 +609,9 @@ const MENU_SECTIONS = [
 // descendente mesmo ele sendo fixed) — sumia ao entrar na section 3. Fora
 // do lobby, sempre acima do conteúdo, em qualquer seção.
 export function LobbyChrome() {
-  const isMobileLayout = useIsMobileLayout()
-  const lenis = useLenis()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const navigateToSection = useNavigateToSection()
 
   // fecha clicando fora do painel ou com Escape — comportamento padrão
   // esperado de um menu dropdown. Só escuta enquanto está aberto.
@@ -592,30 +631,12 @@ export function LobbyChrome() {
     }
   }, [isMenuOpen])
 
-  // desktop: "início"/"cases" não são elementos reais no DOM (o lobby ocupa
-  // o topo da página sozinho, com scroll-jacking) — precisam do alvo
-  // calculado (topo da página / resting point da section 2, mesma fonte que
-  // scrollToSection2 usa), não de um id pra resolver.
-  // mobile: a section 2 já é um elemento real no DOM (id="portfolio", sem
-  // scroll-jacking, ver o branch isMobileLayout em Lobby()) e mostra a
-  // MESMA tela que "início" — os dois viram scroll pro topo (0), sem
-  // resting point separado (esse conceito só existe no bloco de 300vh do
-  // desktop, que o mobile não tem mais).
-  // "soluções" mapeia pro id real de "o que fazemos" nos dois. "sobre" (e
-  // qualquer id futuro sem seção própria ainda) cai no fallback `#id`:
-  // lenis.scrollTo avisa "Target not found" no console e não faz nada — sem
-  // quebrar o clique, só sem navegar até a seção existir.
   const handleNavigate = useCallback(
     (id: string) => {
       setIsMenuOpen(false)
-      const elementId = id === "solucoes" ? "o-que-fazemos" : id
-      const isTopTarget = id === "inicio" || (isMobileLayout && id === "cases")
-      const target = isTopTarget ? 0 : id === "cases" ? getSection2ScrollTarget() : `#${elementId}`
-      if (lenis) lenis.scrollTo(target, { duration: 1.2 })
-      else if (typeof target === "number") window.scrollTo({ top: target, behavior: "smooth" })
-      else document.getElementById(elementId)?.scrollIntoView({ behavior: "smooth" })
+      navigateToSection(id)
     },
-    [lenis, isMobileLayout]
+    [navigateToSection]
   )
 
   return (
