@@ -11,8 +11,9 @@ import {
 import { useLenis } from "lenis/react"
 import { CardFrame } from "@/components/ui/card-frame"
 import { GradientBars } from "@/components/ui/gradient-bars-background"
+import { TextScramble } from "@/components/ui/text-scramble"
 import { autoJumpScrollTo, getSection2ScrollTarget, getSectionThreeStart, useIsMobileLayout } from "@/components/motion/lobby"
-import { MetodoCard } from "@/components/sections/metodo"
+import { MetodoCard, METRICS } from "@/components/sections/metodo"
 import { FaqCard } from "@/components/sections/faq"
 
 type ServiceItem = {
@@ -23,6 +24,11 @@ type ServiceItem = {
   // uma imagem: ciclo automático (crossfade) enquanto o item estiver
   // selecionado — ver ImageFrame.
   images?: string[]
+  // false: item sai da lista renderizada (ver activeServices em
+  // ServiceCard), mas o conteúdo fica aqui, não deletado — mesmo padrão de
+  // METRICS em metodo.tsx (removido de onde estava, guardado pra
+  // reativar/reaproveitar depois). undefined conta como ativo.
+  active?: boolean
 }
 
 // project.md, seção 4 ("O que entregamos") — mesmo texto usado no
@@ -41,18 +47,40 @@ const SERVICES: ServiceItem[] = [
   },
   {
     title: "SaaS",
-    description: "Produtos digitais completos, do zero ao produto rodando.",
-    images: ["/images/section-3/saas-s3.png", "/images/section-3/saas2-s3.png"],
+    // baseado nas expertises reais já provadas no site (project.md, seção
+    // 5): dashboards de gestão em tempo real + histórico auditável
+    // (GeoService), plataforma B2B (Growlab AI), performance/segurança/
+    // escala (feature card "Performance e Segurança" em metodo.tsx) —
+    // pedido explícito: "com bases nas expertises presentes no site
+    // atualize a copy do item 2 (SaaS)".
+    description:
+      "Produtos digitais completos, do zero ao produto rodando, como dashboards de gestão em tempo real, plataformas B2B escaláveis e sistemas com histórico auditável, performance e segurança de ponta a ponta.",
+    images: ["/images/section-3/saas-s3.png"],
   },
   {
     title: "Sistemas de IA",
+    // pedido explícito: copy original do usuário era "Automações e
+    // ferramentas com IA que resolvem um problema real de negócio.
+    // Desenvolvemos soluções de atendimento com IA para negócios com
+    // agendamentos automático de consultas e reuniões integrado a
+    // dashboards de gestão operacional e de relacionamento com clientes e
+    // leads." — reescrita numa frase só (mesmo padrão dos outros itens,
+    // sem sujeito em 1ª pessoa "desenvolvemos"), corrigindo concordância
+    // ("agendamentos automático" -> "agendamento automático") e o
+    // encadeamento "com...com" repetido.
     description:
-      "Automações e ferramentas com IA que resolvem um problema real de negócio.",
+      "Automações e ferramentas com IA que resolvem um problema real de negócio, como atendimento inteligente com agendamento automático de consultas e reuniões, integrado a dashboards de gestão operacional e de relacionamento com clientes e leads.",
+    images: ["/images/section-3/websites0-s3.png"],
+    // pedido explícito: "desative os itens Sistemas de IA e Design" — no
+    // espaço vago na lista, entram as métricas (ver METRICS em
+    // ServiceCard).
+    active: false,
   },
   {
     title: "Design",
     description:
       "Interfaces e identidade visual sob medida, alinhadas ao produto e à marca.",
+    active: false,
   },
 ]
 
@@ -132,11 +160,30 @@ function ImageFrame({ service }: { service: ServiceItem }) {
 function ServiceCard({
   activeIndex,
   onSelect,
+  showMetrics = true,
 }: {
   activeIndex: number
   onSelect: (index: number) => void
+  // false no branch mobile (ver isMobileLayout em OQueFazemos): lá as
+  // métricas saem da lista e viram um bloco próprio entre as sections (ver
+  // MobileMetrics), lado a lado — pedido explícito: "as métricas devem
+  // ficar abaixo da section que está, entre uma section e outra... devem
+  // ficar lado a lado". Default true preserva o desktop pinado e o
+  // fallback de reduced-motion exatamente como já estavam (não pedido,
+  // não muda).
+  showMetrics?: boolean
 }) {
-  const activeService = SERVICES[activeIndex]
+  const activeServices = SERVICES.filter((service) => service.active !== false)
+  const activeService = activeServices[activeIndex]
+  // no mobile os itens ficam sempre abertos (pedido explícito: "no mobile
+  // os dois itens da section 3 devem ficar sempre abertos") — não é um
+  // accordion de seleção única lá, os dois textos (Websites/SaaS) mostram
+  // a descrição ao mesmo tempo; clicar ainda troca a imagem em destaque
+  // (activeIndex continua controlando ImageFrame). Chamado aqui dentro (não
+  // recebido via prop, diferente de showMetrics): precisa refletir a
+  // largura de tela de verdade em qualquer branch que renderize
+  // ServiceCard, inclusive o fallback de reduced-motion em telas estreitas.
+  const isMobileLayout = useIsMobileLayout()
 
   return (
     <CardFrame>
@@ -164,8 +211,8 @@ function ServiceCard({
             que permite ela encolher pra caber ali, com scroll interno se
             precisar). */}
         <ul className="flex flex-col justify-center pr-2 sm:min-h-0 sm:overflow-y-auto">
-          {SERVICES.map((service, index) => {
-            const isActive = index === activeIndex
+          {activeServices.map((service, index) => {
+            const isActive = isMobileLayout || index === activeIndex
             return (
               <li
                 key={service.title}
@@ -198,6 +245,34 @@ function ServiceCard({
               </li>
             )
           })}
+
+          {/* métricas (ver METRICS em metodo.tsx) no espaço vago que
+              "Sistemas de IA"/"Design" deixaram (pedido explícito: "no
+              espaço que eles estavam, adicione as métricas") — mesmo
+              componente/efeito text-scramble que a section 4 já usava pra
+              elas antes do redesenho de lá (pedido explícito: "tem que ser
+              com o componente text-scramble de métricas que tinha na
+              section metodos.tsx"): scramble uma vez ao entrar na tela
+              (scrambleOnVisible) e de novo no hover (comportamento nativo
+              do componente nesse modo, ver text-scramble.tsx). Linha
+              estática, sem botão/expand: não é um item selecionável. UM
+              <li> só pras duas métricas (não uma cada) — pedido explícito:
+              "desktop: deixe as métricas uma do lado da outra" — lado a
+              lado com gap, como no design original (metodo.tsx), em vez de
+              empilhadas na lista. showMetrics=false no mobile (ver
+              MobileMetrics, renderizado à parte lá). */}
+          {showMetrics && (
+            <li className="border-t border-white/15">
+              <div className="flex flex-wrap gap-10 py-3 lg:py-4">
+                {METRICS.map((metric) => (
+                  <div key={metric.label}>
+                    <TextScramble text={metric.value} scrambleOnVisible showAffordances={false} textSizeClassName="text-2xl" />
+                    <p className="mt-1 text-xs tracking-[0.15em] text-white/50 uppercase">{metric.label}</p>
+                  </div>
+                ))}
+              </div>
+            </li>
+          )}
         </ul>
 
         <div className="flex min-w-0 items-center justify-center sm:h-full sm:min-h-0">
@@ -210,6 +285,35 @@ function ServiceCard({
         </div>
       </div>
     </CardFrame>
+  )
+}
+
+// métricas do mobile (ver isMobileLayout em OQueFazemos) — fora de
+// ServiceCard (showMetrics={false} lá) e do CardFrame, direto entre as
+// sections "o que fazemos" e "método" (pedido explícito: "as métricas
+// devem ficar abaixo da section que está, entre uma section e outra").
+// flex-wrap (não flex fixo): lado a lado quando cabe, mas se a tela for
+// estreita demais pras duas caberem numa linha só, quebra pra uma embaixo
+// da outra em vez de espremer/cortar (pedido explícito: "se não tiver
+// espaço pra ficar lado a lado deixe uma em cima da outra mesmo
+// centralizadas") — items-center+text-center em cada uma garante que
+// ficam centralizadas nos dois casos.
+function MobileMetrics() {
+  return (
+    <div className="relative flex flex-wrap items-start justify-center gap-x-10 gap-y-6 py-6">
+      {METRICS.map((metric) => (
+        <div key={metric.label} className="flex max-w-[10rem] flex-col items-center text-center">
+          <TextScramble text={metric.value} scrambleOnVisible showAffordances={false} textSizeClassName="text-2xl" />
+          {/* max-w-[10rem] no wrapper (mesmo valor que o rótulo já tinha no
+              design original de metodo.tsx, antes de virar lista): deixa
+              "NEGÓCIOS DESENVOLVIDOS"/"PROJETOS ENTREGUES" quebrar em 2
+              linhas em vez de forçar uma caixa larga — sem isso as duas
+              métricas quase nunca cabiam lado a lado num celular comum
+              (390px), caindo sempre no fallback empilhado. */}
+          <p className="mt-1 text-xs tracking-[0.15em] text-white/50 uppercase">{metric.label}</p>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -681,8 +785,9 @@ export function OQueFazemos() {
       <div className="relative bg-black">
         <GradientBars numBars={15} animationDuration={2} className="z-0 opacity-10" />
         <section id="o-que-fazemos" className="relative flex items-center justify-center py-8">
-          <ServiceCard activeIndex={activeIndex} onSelect={setActiveIndex} />
+          <ServiceCard activeIndex={activeIndex} onSelect={setActiveIndex} showMetrics={false} />
         </section>
+        <MobileMetrics />
         <section id="metodo" className="relative flex items-center justify-center py-8">
           <MetodoCard />
         </section>
